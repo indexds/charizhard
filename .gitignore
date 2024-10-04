@@ -1,4 +1,8 @@
 /.vscode
 /.embuild
-/target
 /Cargo.lock
+**/target/
+**/debug/
+**/*.rs.bk
+*.pdb
+*.exe
