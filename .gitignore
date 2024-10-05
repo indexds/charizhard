@@ -6,3 +6,4 @@
 **/*.rs.bk
 *.pdb
 *.exe
+**/sta2eth_c_example
