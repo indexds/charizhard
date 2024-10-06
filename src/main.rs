@@ -1,58 +1,64 @@
+use embedded_svc::wifi::{AuthMethod, ClientConfiguration, Configuration};
 
-use std::{
-    thread::sleep,
-    time::Duration,
-};
-use esp_idf_hal::peripherals::Peripherals;
-use esp_idf_svc::{
-    wifi::EspWifi,
-    nvs::EspDefaultNvsPartition,
-    eventloop::EspSystemEventLoop,
-};
+use esp_idf_svc::hal::prelude::Peripherals;
+use esp_idf_svc::log::EspLogger;
+use esp_idf_svc::wifi::{BlockingWifi, EspWifi};
+use esp_idf_svc::{eventloop::EspSystemEventLoop, nvs::EspDefaultNvsPartition};
 
-use embedded_svc::wifi::{ClientConfiguration, Wifi, Configuration};
+use log::info;
 
-use heapless::String;
+mod wifi_ids;
+use wifi_ids::WifiIds;
 
-fn main() {
-    // It is necessary to call this function once. Otherwise some patches to the runtime
-    // implemented by esp-idf-sys might not link properly. See https://github.com/esp-rs/esp-idf-template/issues/71
+
+fn main() -> anyhow::Result<()> {
     esp_idf_svc::sys::link_patches();
+    EspLogger::initialize_default();
+    
 
-    // Bind the log crate to the ESP Logging facilities
-    esp_idf_svc::log::EspLogger::initialize_default();
+    let peripherals = Peripherals::take()?;
+    let sys_loop = EspSystemEventLoop::take()?;
+    let nvs = EspDefaultNvsPartition::take()?;
 
-    let peripherals = Peripherals::take().unwrap();
-    let sys_loop = EspSystemEventLoop::take().unwrap();
-    let nvs = EspDefaultNvsPartition::take().unwrap();
-
-    let mut wifi_driver = EspWifi::new(
-        peripherals.modem,
+    let mut wifi = BlockingWifi::wrap(
+        EspWifi::new(peripherals.modem, sys_loop.clone(), Some(nvs))?,
         sys_loop,
-        Some(nvs)
-    ).unwrap();
+    )?;
 
-    let mut ssid: String<32> = String::new();
-    let mut password: String<64> = String::new();
-    ssid.push_str("fishingrodent").unwrap();
-    password.push_str("iliketrains").unwrap();
+    connect_wifi(&mut wifi)?;
 
-    wifi_driver.set_configuration(&Configuration::Client(ClientConfiguration{
-        ssid,
-        password,
+    let ip_info = wifi.wifi().sta_netif().get_ip_info()?;
+
+    info!("Wifi DHCP info: {:?}", ip_info);
+
+
+    std::thread::sleep(core::time::Duration::from_secs(60));
+
+    Ok(())
+}
+
+fn connect_wifi(wifi: &mut BlockingWifi<EspWifi<'static>>) -> anyhow::Result<()> {
+    let wifi_ids = WifiIds::new()?;
+
+    let wifi_configuration: Configuration = Configuration::Client(ClientConfiguration {
+        ssid: wifi_ids.ssid,
+        bssid: None,
+        auth_method: AuthMethod::WPA2Personal,
+        password: wifi_ids.password,
+        channel: None,
         ..Default::default()
-    })).unwrap();
+    });
 
-    wifi_driver.start().unwrap();
-    wifi_driver.connect().unwrap();
-    while !wifi_driver.is_connected().unwrap(){
-        let config = wifi_driver.get_configuration().unwrap();
-        println!("Waiting for station {:?}", config);
-    }
-    println!("Should be connected now");
-    loop{
-        println!("IP info: {:?}", wifi_driver.sta_netif().get_ip_info().unwrap());
-        sleep(Duration::new(10,0));
-    }
+    wifi.set_configuration(&wifi_configuration)?;
 
+    wifi.start()?;
+    info!("Wifi started");
+
+    wifi.connect()?;
+    info!("Wifi connected");
+
+    wifi.wait_netif_up()?;
+    info!("Wifi netif up");
+
+    Ok(())
 }

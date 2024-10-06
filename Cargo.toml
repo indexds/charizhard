@@ -34,6 +34,7 @@ esp-idf-hal = "0.44.1"
 embedded-hal = "1.0.0"
 embedded-svc = "0.28.0"
 heapless = "0.8.0"
+anyhow = "1.0.41"
 
 [build-dependencies]
 embuild = "0.32.0"
