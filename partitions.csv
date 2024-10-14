@@ -1,0 +1,11 @@
+# ESP-IDF Partition Table
+# Name,   Type, SubType, Offset,  Size, Flags
+nvs,      data, nvs,     0x11000,  0x4000, encrypted
+otadata,  data, ota,     0x15000,  0x2000, encrypted
+phy_init, data, phy,     0x17000,  0x1000, encrypted
+factory,  app,  factory, 0x20000, 2M, encrypted
+
+#ALL APPS MUST BE ALIGNED WITH 0x10000
+
+# ota_0,    app,  ota_0,   ????????, 512K,
+# ota_1,    app,  ota_1,   ????????, 512K,
