@@ -39,6 +39,7 @@ embedded-svc = "0.28.0"
 heapless = "0.8.0"
 anyhow = "1.0.89"
 tokio = { version = "1.40.0", features = ["io-std","net", "rt", "io-util"] }
+base64 = "0.22.1"
 cargo-make = "0.37.22"
 
 [build-dependencies]
