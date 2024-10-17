@@ -1,0 +1,28 @@
+[tasks.build-release]
+command = "cargo"
+args = ["build", "--release"]
+
+[tasks.convert-to-bin]
+command = "esptool"
+args = ["--chip", "esp32", "elf2image", "--output", "${CARGO_MAKE_WORKSPACE_WORKING_DIRECTORY}/target/xtensa-esp32-espidf/release/charizhard.bin", "C:/chhard/target/xtensa-esp32-espidf/release/charizhard"]
+
+[tasks.flash]
+command = "esptool"
+args = [
+    "write_flash", "--encrypt", 
+    "0x1000", "${CARGO_MAKE_WORKSPACE_WORKING_DIRECTORY}/target/xtensa-esp32-espidf/release/bootloader.bin",
+    "0x10000", "${CARGO_MAKE_WORKSPACE_WORKING_DIRECTORY}/target/xtensa-esp32-espidf/release/partition-table.bin",
+    "0x30000", "${CARGO_MAKE_WORKSPACE_WORKING_DIRECTORY}/target/xtensa-esp32-espidf/release/charizhard.bin"
+]
+
+[tasks.monitor]
+command = "putty"
+args = ["-serial", "COM4", "-sercfg", "115200,8,n,1,N"]
+
+[tasks.chocoblast]
+dependencies = [
+    "build-release",
+    "convert-to-bin",
+    "flash",
+    "monitor"
+]
