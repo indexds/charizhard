@@ -1,12 +1,18 @@
+
 use esp_idf_svc::hal::prelude::Peripherals;
 use esp_idf_svc::log::EspLogger;
 use esp_idf_svc::wifi::{BlockingWifi, EspWifi};
 use esp_idf_svc::{eventloop::EspSystemEventLoop, nvs::EspDefaultNvsPartition};
 
+
+use http::start_http_server;
+use std::time::Duration;
+
 use log::info;
 
 mod env_vars;
 mod wifi;
+mod http;
 
 fn main() -> anyhow::Result<()> {
     esp_idf_svc::sys::link_patches();
@@ -27,6 +33,9 @@ fn main() -> anyhow::Result<()> {
 
     info!("Wifi DHCP info: {:?}", ip_info);
 
-   std::thread::sleep(core::time::Duration::from_secs(60));
-    Ok(())
+    start_http_server()?;
+
+    loop {
+        std::thread::sleep(Duration::from_millis(1000));
+    }
 }

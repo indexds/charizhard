@@ -3,7 +3,7 @@ target = "xtensa-esp32-espidf"
 
 [target.xtensa-esp32-espidf]
 linker = "ldproxy"
-runner = "espflash flash --monitor --chip esp32 --baud 115200 --port COM4 --flash-freq 40mhz --flash-mode dio --flash-size 4mb" # Select this runner for espflash v3.x.x
+runner = "espflash flash --monitor" # Select this runner for espflash v3.x.x
 rustflags = [ "--cfg",  "espidf_time64"] # Extending time_t for ESP IDF 5: https://github.com/esp-rs/rust/issues/110
 
 [unstable]
