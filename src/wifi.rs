@@ -1,6 +1,6 @@
-use crate::env_vars::EnvVars;
 use embedded_svc::wifi::{AuthMethod, ClientConfiguration, Configuration};
 use esp_idf_svc::wifi::{BlockingWifi, EspWifi};
+use crate::env_vars::EnvVars;
 use log::info;
 
 pub fn connect_wifi(wifi: &mut BlockingWifi<EspWifi<'static>>) -> anyhow::Result<()> {

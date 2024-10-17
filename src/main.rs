@@ -1,19 +1,17 @@
-
 use esp_idf_svc::hal::prelude::Peripherals;
 use esp_idf_svc::log::EspLogger;
 use esp_idf_svc::wifi::{BlockingWifi, EspWifi};
 use esp_idf_svc::{eventloop::EspSystemEventLoop, nvs::EspDefaultNvsPartition};
-
-
-use http::start_http_server;
 use std::time::Duration;
-
 use log::info;
+
+use crate::http::start_http_server;
 
 mod env_vars;
 mod wifi;
 mod http;
 
+#[allow(unused_variables)]
 fn main() -> anyhow::Result<()> {
     esp_idf_svc::sys::link_patches();
     EspLogger::initialize_default();

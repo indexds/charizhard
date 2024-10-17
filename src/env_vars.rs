@@ -1,6 +1,5 @@
 use heapless::String as HeaplessString;
 
-
 #[derive(Debug)]
 pub struct EnvVars{
     pub ssid: HeaplessString<32>,
