@@ -30,6 +30,28 @@ fn index_html() -> String {
     )
 }
 
+fn submit() -> String {
+
+    let favicon_data = include_bytes!("../favicon.ico");
+    let favicon = BASE64_STANDARD.encode(favicon_data);
+
+    format!(
+        r###"
+        <!DOCTYPE html>
+        <html>
+            <head>
+                <meta charset="utf-8">
+                <title>Charizhard</title>
+                <link rel="icon" type="image/png" href="data:image/png;base64,{favicon}">
+            </head>
+            <body>
+                Issou
+            </body>
+        </html>
+        "###
+    )
+}
+
 #[allow(unused_must_use)]
 pub fn start_http_server() -> anyhow::Result<(EspHttpServer<'static>, EspMdns)> {
     
@@ -53,7 +75,8 @@ pub fn start_http_server() -> anyhow::Result<(EspHttpServer<'static>, EspMdns)> 
     })?;
 
     http_server.fn_handler("/#", Method::Get, |request| {
-        let html = "Bite.";
+        
+        let html = submit();
 
         let mut response = request.into_ok_response()?;
 
