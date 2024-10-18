@@ -1,5 +1,6 @@
 use heapless::String as HeaplessString;
 
+#[allow(dead_code)]
 #[derive(Debug)]
 pub struct EnvVars{
     pub sta_ssid: HeaplessString<32>,
