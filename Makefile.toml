@@ -6,7 +6,7 @@ args = ["build", "--release"]
 command = "esptool"
 args = ["--chip", "esp32", "elf2image", "--output", "${CARGO_MAKE_WORKSPACE_WORKING_DIRECTORY}/target/xtensa-esp32-espidf/release/charizhard.bin", "C:/chhard/target/xtensa-esp32-espidf/release/charizhard"]
 
-[tasks.flash]
+[tasks.write]
 command = "esptool"
 args = [
     "write_flash", "--encrypt", 
@@ -19,10 +19,10 @@ args = [
 command = "putty"
 args = ["-serial", "COM4", "-sercfg", "115200,8,n,1,N"]
 
-[tasks.chocoblast]
+[tasks.flash]
 dependencies = [
     "build-release",
     "convert-to-bin",
-    "flash",
+    "write",
     "monitor"
 ]
