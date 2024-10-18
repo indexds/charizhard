@@ -27,12 +27,20 @@ fn index_html() -> String {
             </body>
         </html>
         "###
-)
+    )
 }
 
-pub fn start_http_server() -> anyhow::Result<()> {
+#[allow(unused_must_use)]
+pub fn start_http_server() -> anyhow::Result<(EspHttpServer<'static>, EspMdns)> {
+    
 
-    let mut http_server = EspHttpServer::new(&HttpServerConfig::default())?;
+    let http_config = HttpServerConfig {
+        http_port: 80,
+        https_port: 443,
+        ..Default::default()
+    };
+
+    let mut http_server = EspHttpServer::new(&http_config)?;
 
     http_server.fn_handler("/", Method::Get, |request| {
 
@@ -44,9 +52,19 @@ pub fn start_http_server() -> anyhow::Result<()> {
         Ok::<(), Error>(())
     })?;
 
+    http_server.fn_handler("/#", Method::Get, |request| {
+        let html = "Bite.";
+
+        let mut response = request.into_ok_response()?;
+
+        response.write(html.as_bytes())?;
+        Ok::<(), Error>(())
+    });
+
     let mut mdns = EspMdns::take()?;
     mdns.set_hostname("charizhard")?;
     mdns.add_service(Some("_http"), "_tcp", "80", 60, &[])?;
+    mdns.add_service(Some("_https"), "_tcp", "443", 60, &[])?;
 
-    Ok(())
+    Ok((http_server, mdns))
 }

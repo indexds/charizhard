@@ -7,7 +7,7 @@ use log::info;
 
 use crate::http::start_http_server;
 
-mod env_vars;
+mod env;
 mod wifi;
 mod http;
 
@@ -25,13 +25,12 @@ fn main() -> anyhow::Result<()> {
         sys_loop,
     )?;
 
-    wifi::connect_wifi(&mut wifi)?;
+    wifi::start_wifi(&mut wifi)?;
 
     let ip_info = wifi.wifi().sta_netif().get_ip_info()?;
-
     info!("Wifi DHCP info: {:?}", ip_info);
 
-    start_http_server()?;
+    let (http_server, mdns) = start_http_server()?;
 
     loop {
         std::thread::sleep(Duration::from_millis(1000));
