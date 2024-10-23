@@ -20,7 +20,8 @@ jobs:
         cd /
         cargo install espup@0.11.0
         espup install
+        cd $GITHUB_WORKSPACE
         git clone https://github.com/indexds/charizhard chhard
-        cd chhard
+        cd $GITHUB_WORKSPACE/chhard
         cargo install cargo-make
         cargo ci
