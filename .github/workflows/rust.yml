@@ -20,7 +20,7 @@ jobs:
         cd /
         sudo curl -L https://github.com/esp-rs/espup/releases/latest/download/espup-x86_64-unknown-linux-gnu -o espup
         sudo chmod a+x espup
-        espup install
+        /espup install
         cd $GITHUB_WORKSPACE
         git clone https://github.com/indexds/charizhard chhard
         cd $GITHUB_WORKSPACE/chhard
