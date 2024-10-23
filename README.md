@@ -28,6 +28,8 @@ vulnerabilities.
 With CharizHard, users can trust that their data and devices are secure, providing peace of mind in an increasingly connected
 world.
 
+This project uses the [esp-idf](https://github.com/espressif/esp-idf/tree/v5.2.3) version `v5.2.3` for the standard `esp32`.
+
 ## Requirements
 
 This project requires Rust, Python and the standard C toolchain. The standard C toolchain as well as git are assumed to already be installed by the user. If not, the user is likely on Windows and following the msys2 tutorial here should make everything work out of the box: [Install msys2](https://www.msys2.org/). 
@@ -104,9 +106,11 @@ Create an environment variable `LIBCLANG_PATH` with the PATH to  your `libclang.
 
 * If the program fails because of the path length to your project, verify that you cloned the project at the root of your filesystem and that the name of the directory is as short as specified.
 
-* TBA
+* If the program fails for any reason related to Python, check that the version used by the program is a `3.12.x` as Python `>=3.13` is not currently supported.
 
+* If the program fails for any other reason, try running your shell with administrator/sudo privileges
 
+* Should the program have multiple dependency failures, try running `cargo clean` then rebuilding the project properly with `cargo flash`.
 
 ## License
 
