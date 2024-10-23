@@ -4,13 +4,13 @@ args = ["install", "--upgrade", "platformio"]
 
 [tasks.install-deps]
 command = "cargo"
-args = ["install", "cargo-pio", "cargo-generate", "espflash", "ldproxy", "espup@0.11.0", "cargo-binstall"]
+args = ["install", "cargo-pio", "cargo-generate", "espflash", "ldproxy", "espup@0.11.0"]
 
 [tasks.install-esp32]
 command = "espup"
 args = ["install"]
 
-[tasks-set-override]
+[tasks.set-override]
 command = "rustup"
 args = ["override", "set", "esp"]
 
@@ -40,6 +40,7 @@ dependencies = [
     "install-pip-deps",
     "install-deps",
     "install-esp32",
+    "set-override",
     "build-release",
     "convert-to-bin",
     "write",
