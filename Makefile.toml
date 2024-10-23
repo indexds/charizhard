@@ -10,6 +10,10 @@ args = ["install", "cargo-pio", "cargo-generate", "espflash", "ldproxy", "espup@
 command = "espup"
 args = ["install"]
 
+[tasks-set-override]
+command = "rustup"
+args = ["override", "set", "esp"]
+
 [tasks.build-release]
 command = "cargo"
 args = ["build", "--release"]
@@ -39,5 +43,4 @@ dependencies = [
     "build-release",
     "convert-to-bin",
     "write",
-    "monitor"
 ]
