@@ -1,3 +1,10 @@
+name: Rust
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
 jobs:
   build:
 
@@ -13,4 +20,3 @@ jobs:
       with:
         esp_idf_version: v5.2.3
         target: esp32
-        path: 'src/'
