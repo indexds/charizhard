@@ -19,4 +19,8 @@ CRATE_CC_NO_DEFAULTS = "1"
 
 [alias]
 flash="make flash"
-monitor="make monitor"
+f = "make flash"
+monitor-windows="make monitor-windows"
+mw = "make monitor-windows"
+monitor-linux="make monitor-linux"
+ml="make monitor-linux"

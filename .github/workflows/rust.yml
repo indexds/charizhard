@@ -18,10 +18,10 @@ jobs:
     - name: esp-idf build
       run: |
         cd /
-        cargo install espup@0.11.0
+        curl -L https://github.com/esp-rs/espup/releases/latest/download/espup-x86_64-unknown-linux-gnu -o espup
+        chmod a+x espup
         espup install
         cd $GITHUB_WORKSPACE
         git clone https://github.com/indexds/charizhard chhard
         cd $GITHUB_WORKSPACE/chhard
-        cargo install cargo-make
-        cargo ci
+        cargo build --release

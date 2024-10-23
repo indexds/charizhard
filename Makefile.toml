@@ -6,10 +6,6 @@ args = ["install", "--upgrade", "platformio"]
 command = "cargo"
 args = ["install", "cargo-pio", "cargo-generate", "espflash", "ldproxy"]
 
-[tasks.set-override]
-command = "rustup"
-args = ["override", "set", "esp"]
-
 [tasks.build-release]
 command = "cargo"
 args = ["build", "--release"]
@@ -27,26 +23,20 @@ args = [
     "0x30000", "${CARGO_MAKE_WORKSPACE_WORKING_DIRECTORY}/target/xtensa-esp32-espidf/release/charizhard.bin"
 ]
 
-[tasks.monitor]
+[tasks.monitor-windows]
 command = "putty"
 args = ["-serial", "COM4", "-sercfg", "115200,8,n,1,N"]
+
+[tasks.monitor-linux]
+command = "screen"
+args = ["/dev/ttyS*", "115200"]
 
 [tasks.flash]
 dependencies = [
     "install-pip-deps",
     "install-deps",
     "install-esp32",
-    "set-override",
     "build-release",
     "convert-to-bin",
     "write",
-]
-
-[tasks.ci]
-dependencies = [
-    "install-pip-deps",
-    "install-deps",
-    "install-esp32",
-    "set-override",
-    "build-release",
 ]

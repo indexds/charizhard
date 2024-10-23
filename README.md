@@ -28,6 +28,25 @@ vulnerabilities.
 With CharizHard, users can trust that their data and devices are secure, providing peace of mind in an increasingly connected
 world.
 
+## Requirements
+
+This project requires Rust, Python and the standard C toolchain. The standard C toolchain as well as git are assumed to already be installed by the user. If not, the user is likely on Windows and following the msys2 tutorial here should make everything work out of the box: [Install msys2](https://www.msys2.org/). 
+
+Installing git can then be done using `pacman -Syu && pacman -S git` in a `ucrt64` shell.  
+The `C:\msys64\ucrt64\bin` folder must be added to the PATH environment variable.
+
+### Windows
+**Installing Rust:**
+```curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh```
+
+**Installing Python:** ```https://www.python.org/downloads/release/latest```
+
+### Linux
+
+**Installing Rust:**
+```curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh```
+
+**Installing Python:** Using your favorite package manager, install `python3` `python3-pip` or `python` and `python-pip`
 
 ## Installing
 
@@ -35,19 +54,59 @@ This project needs to be cloned in your root directory, as the esp32 cannot hand
 
 ```cd /```
 
+Install espup to get the esp toolchain required to compile on the `xtensa-esp32-espidf` architecture. Until [*this issue*](https://github.com/esp-rs/espup/issues/440) is fixed, ensure you install the `0.11.0` version of the binary.
+
 ```cargo install espup@0.11.0```
+
+Install the toolchain and follow any additional instruction written to the standard output.
 
 ```espup install```
 
+Clone the repository then `cd` inside. Note that the name of the folder must be short and located at the root of your filesystem. Here, we use chhard. 
+
 ```git clone https://github.com/indexds/charizhard chhard && cd chhard```
+
+Install the `cargo-make` binary to make the build process less of a chore. If not possible, the project *can* be compiled by running the commands found in `Makefile.toml` manually.
 
 ```cargo install cargo-make```
 
+All that remains is to install all remaining dependencies, build the project and flash the esp32 with:
+
 ```cargo flash```
 
-## Implementation details
+## Monitoring
 
-.
+### Windows
+
+On Windows, you can install Putty here: [Download Putty](https://www.putty.org/).
+
+Then run `cargo monitor-windows` or `cargo mw`.
+
+### Linux
+
+On Linux, install the `screen` package using your favorite package manager, then run:
+
+`screen /dev/ttyS* 115200` or `cargo monitor-linux` or `cargo ml`.
+
+## Troubleshooting
+
+* If the compilation process fails to find `libclang.dll` or `clang.dll`:
+
+Create an environment variable `LIBCLANG_PATH` with the PATH to  your `libclang.dll` as such:
+
+### Linux
+```~/.rustup/toolchains/esp/xtensa-esp32-elf-clang/esp-clang/bin/```
+
+### Windows
+```%USERPROFILE%\.rustup\toolchains\esp\xtensa-esp32-elf-clang\esp-clang\bin\```
+
+* If the program fails upon flashing the `esp32`, press and hold the `BOOT/EN` button on the SOC to put it in bootloader mode. Firmware should start flashing. 
+
+* If the program fails because of the path length to your project, verify that you cloned the project at the root of your filesystem and that the name of the directory is as short as specified.
+
+* TBA
+
+
 
 ## License
 
