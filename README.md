@@ -41,14 +41,16 @@ The `C:\msys64\ucrt64\bin` folder must be added to the PATH environment variable
 **Installing Rust:**
 ```curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh```
 
-**Installing Python:** ```https://www.python.org/downloads/release/latest```
+**Installing Python:** ```https://www.python.org/downloads/release/python-3125/```
 
 ### Linux
 
 **Installing Rust:**
 ```curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh```
 
-**Installing Python:** Using your favorite package manager, install `python3` `python3-pip` or `python` and `python-pip`
+**Installing Python:** Using your favorite package manager, install `python3.12` `python3-pip` or `python312` and `python-pip`
+
+Ensure the version is 3.12.5 as more recent versions have proved unstable.
 
 ## Installing
 
@@ -96,11 +98,14 @@ On Linux, install the `screen` package using your favorite package manager, then
 
 Create an environment variable `LIBCLANG_PATH` with the PATH to  your `libclang.dll` as such:
 
-### Linux
-```~/.rustup/toolchains/esp/xtensa-esp32-elf-clang/esp-clang/bin/```
 
-### Windows
-```%USERPROFILE%\.rustup\toolchains\esp\xtensa-esp32-elf-clang\esp-clang\bin\```
+    ### Linux
+    ```~/.rustup/toolchains/esp/xtensa-esp32-elf-clang/esp-clang/bin/```
+
+    ### Windows
+    ```%USERPROFILE%\.rustup\toolchains\esp\xtensa-esp32-elf-clang\esp-clang\bin\```
+
+#
 
 * If the program fails upon flashing the `esp32`, press and hold the `BOOT/EN` button on the SOC to put it in bootloader mode. Firmware should start flashing. 
 
