@@ -23,4 +23,4 @@ jobs:
         git clone https://github.com/indexds/charizhard chhard
         cd chhard
         cargo install cargo-make
-        cargo flash
+        cargo ci
