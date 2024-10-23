@@ -72,7 +72,13 @@ Clone the repository then `cd` inside. Note that the name of the folder must be 
 
 Install the `cargo-make` binary to make the build process less of a chore. If not possible, the project *can* be compiled by running the commands found in `Makefile.toml` manually.
 
-```cargo install cargo-make```
+You're also going to need espflash and ldproxy as dependencies.
+
+```cargo install cargo-make cargo-generate espflash ldproxy```
+
+Then you're gonna need:
+
+```pip install esptool```
 
 All that remains is to install all remaining dependencies, build the project and flash the esp32 with:
 

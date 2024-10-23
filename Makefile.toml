@@ -1,7 +1,3 @@
-[tasks.install-deps]
-command = "cargo"
-args = ["install", "cargo-generate", "espflash", "ldproxy"]
-
 [tasks.build-release]
 command = "cargo"
 args = ["build", "--release"]
@@ -29,8 +25,6 @@ args = ["/dev/ttyS*", "115200"]
 
 [tasks.flash]
 dependencies = [
-    "install-deps",
-    "install-esp32",
     "build-release",
     "convert-to-bin",
     "write",
