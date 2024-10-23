@@ -16,8 +16,6 @@ jobs:
       with:
         submodules: 'recursive'
     - name: esp-idf build
-      uses: espressif/esp-idf-ci-action@v1
-      with:
-        esp_idf_version: v5.2.3
-        target: esp32
-        command: "curl '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y && export PATH=$PATH:$HOME/.cargo/bin && cargo install cargo-make && cargo ci"
+      run: |
+        cargo install cargo-make
+        cargo ci
