@@ -1,3 +1,15 @@
+[tasks.install-pip-deps]
+command = "pip"
+args = ["install", "--upgrade", "platformio"]
+
+[tasks.install-deps]
+command = "cargo"
+args = ["install", "cargo-pio", "cargo-generate", "espflash", "ldproxy", "espup@0.11.0", "cargo-binstall"]
+
+[tasks.install-esp32]
+command = "espup"
+args = ["install"]
+
 [tasks.build-release]
 command = "cargo"
 args = ["build", "--release"]
@@ -21,6 +33,9 @@ args = ["-serial", "COM4", "-sercfg", "115200,8,n,1,N"]
 
 [tasks.flash]
 dependencies = [
+    "install-pip-deps",
+    "install-deps",
+    "install-esp32",
     "build-release",
     "convert-to-bin",
     "write",
