@@ -20,4 +20,4 @@ jobs:
       with:
         esp_idf_version: v5.2.3
         target: esp32
-        command: "curl '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y && . '$HOME/.cargo/env' &&cargo install cargo-make && cargo ci"
+        command: "curl '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y && . '$HOME/.cargo/bin' &&cargo install cargo-make && cargo ci"
