@@ -111,9 +111,7 @@ The tool will first download the `xtensa-esp-elf` toolchain which may take a whi
 
 ## Troubleshooting
 
-* If the compilation process fails to find `libclang.dll` or `clang.dll`:
-
-Create an environment variable `LIBCLANG_PATH` with the PATH to  your `libclang.dll` as such:
+* If the compilation process fails to find `libclang.dll` or `clang.dll`, create an environment variable `LIBCLANG_PATH` with the PATH to  your `libclang.dll` as such:
 
 
 ### Linux
