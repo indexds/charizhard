@@ -29,10 +29,21 @@ With CharizHard, users can trust that their data and devices are secure, providi
 world.
 
 
-## Overview
+## Installing
 
-.
+This project needs to be cloned in your root directory, as the esp32 cannot handle long paths.
 
+```cd /```
+
+```cargo install espup@0.11.0```
+
+```espup install```
+
+```git clone https://github.com/indexds/charizhard chhard && cd chhard```
+
+```cargo install cargo-make```
+
+```cargo flash```
 
 ## Implementation details
 
