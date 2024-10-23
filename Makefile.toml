@@ -45,3 +45,12 @@ dependencies = [
     "convert-to-bin",
     "write",
 ]
+
+[tasks.ci]
+dependencies = [
+    "install-pip-deps",
+    "install-deps",
+    "install-esp32",
+    "set-override",
+    "build-release",
+]

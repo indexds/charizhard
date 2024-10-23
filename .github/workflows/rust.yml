@@ -20,3 +20,4 @@ jobs:
       with:
         esp_idf_version: v5.2.3
         target: esp32
+        command: "cargo ci"
