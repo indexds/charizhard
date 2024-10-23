@@ -21,7 +21,7 @@ args = ["-serial", "COM4", "-sercfg", "115200,8,n,1,N"]
 
 [tasks.monitor-linux]
 command = "screen"
-args = ["/dev/ttyS*", "115200"]
+args = ["/dev/ttyUSB0", "115200"]
 
 [tasks.flash]
 dependencies = [

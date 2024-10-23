@@ -64,6 +64,8 @@ Install espup to get the esp toolchain required to compile on the `xtensa-esp32-
 
 Install the toolchain and follow any additional instruction written to the standard output.
 
+Do not forget to run the `export.bat` on Windows or `./export.sh` on Linux situated in `.embuild/esp-idf/v5.2.3/`. Otherwise you will not have access to `espefuse` and `espsecure`
+
 ```espup install```
 
 Clone the repository then `cd` inside. Note that the name of the folder must be short and located at the root of your filesystem. Here, we use chhard. 
@@ -74,7 +76,7 @@ Install the `cargo-make` binary to make the build process less of a chore. If no
 
 You're also going to need espflash and ldproxy as dependencies.
 
-```cargo install cargo-make cargo-generate espflash ldproxy```
+```cargo install cargo-make cargo-generate cargo-espflash ldproxy```
 
 Then you're gonna need:
 
