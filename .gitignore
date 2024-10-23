@@ -7,3 +7,4 @@
 *.pdb
 *.exe
 **/*.env
+**/sdkconfig.debug

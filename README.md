@@ -92,6 +92,23 @@ On Linux, install the `screen` package using your favorite package manager, then
 
 `screen /dev/ttyS* 115200` or `cargo monitor-linux` or `cargo ml`.
 
+## Menuconfig
+
+To access the menuconfig tool, install the following dependencies:
+
+```cargo install cargo-pio```
+```pip install --upgrade platformio```
+
+Then, run:
+
+```cargo pio installpio```
+
+You can now access the menuconfig tool using:
+
+```cargo pio espidf menuconfig```
+
+The tool will first download the `xtensa-esp-elf` toolchain which may take a while.
+
 ## Troubleshooting
 
 * If the compilation process fails to find `libclang.dll` or `clang.dll`:
@@ -116,6 +133,8 @@ Create an environment variable `LIBCLANG_PATH` with the PATH to  your `libclang.
 * If the program fails for any other reason, try running your shell with administrator/sudo privileges
 
 * Should the program have multiple dependency failures, try running `cargo clean` then rebuilding the project properly with `cargo flash`.
+
+* If you cannot move the selection while in menuconfig inside an integrated terminal like the one provided by vscode, the correct bindings are J/K.
 
 ## License
 
