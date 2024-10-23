@@ -17,5 +17,8 @@ jobs:
         submodules: 'recursive'
     - name: esp-idf build
       run: |
-        cargo install cargo-make
-        cargo ci
+        pip install --upgrade platformio
+        cargo install cargo-pio cargo-generate espflash ldproxy espup@0.11.0
+        espup install
+        rustup override set esp
+        cargo build --release
