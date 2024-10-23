@@ -105,6 +105,7 @@ On Linux, install the `screen` package using your favorite package manager, then
 To access the menuconfig tool, install the following dependencies:
 
 ```cargo install cargo-pio```
+
 ```pip install --upgrade platformio```
 
 Then, run:
