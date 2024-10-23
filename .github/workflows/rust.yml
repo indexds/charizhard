@@ -1,4 +1,5 @@
-name: Rust
+name: Rust and ESP-IDF Build
+
 on:
   push:
     branches: [ "main" ]
@@ -7,17 +8,31 @@ on:
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout repo
+    
+    - name: Checkout code
       uses: actions/checkout@v2
       with:
         submodules: 'recursive'
-    - name: esp-idf build
+    
+    - name: Install ESP-IDF
       uses: espressif/esp-idf-ci-action@v1
       with:
         esp_idf_version: v5.2.3
         target: esp32
-        command: "curl '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y && . '$HOME/.cargo/bin' &&cargo install cargo-make && cargo ci"
+
+    - name: Install Rust via rustup
+      run: |
+        curl --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+        echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+
+    - name: Source Cargo environment
+      run: source $HOME/.cargo/env
+
+    - name: Install cargo-make
+      run: cargo install cargo-make
+
+    - name: Run Cargo CI
+      run: cargo ci
