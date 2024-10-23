@@ -20,4 +20,4 @@ jobs:
       with:
         esp_idf_version: v5.2.3
         target: esp32
-        command: "cargo ci"
+        command: "curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh && cargo install cargo-make && cargo ci"
