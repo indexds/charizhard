@@ -34,19 +34,27 @@ This project uses the [esp-idf](https://github.com/espressif/esp-idf/tree/v5.2.3
 
 This project requires Rust, Python and the standard C toolchain. The standard C toolchain as well as git are assumed to already be installed by the user. If not, the user is likely on Windows and following the msys2 tutorial here should make everything work out of the box: [Install msys2](https://www.msys2.org/). 
 
-Installing git can then be done using `pacman -Syu && pacman -S git` in a `ucrt64` shell.  
+Installing git can then be done using 
+```sh
+pacman -Syu && pacman -S git
+``` 
+in a `ucrt64` shell.  
 The `C:\msys64\ucrt64\bin` folder must be added to the PATH environment variable.
 
 ### Windows
 **Installing Rust:**
-```curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh```
+```sh
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+```
 
 **Installing Python:** ```https://www.python.org/downloads/release/python-3125/```
 
 ### Linux
 
 **Installing Rust:**
-```curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh```
+```sh
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+```
 
 **Installing Python:** Using your favorite package manager, install `python3.12` `python3-pip` or `python312` and `python-pip`
 
@@ -56,35 +64,49 @@ Ensure the version is 3.12.5 as more recent versions have proved unstable.
 
 This project needs to be cloned in your root directory, as the esp32 cannot handle long paths.
 
-```cd /```
+```sh
+cd /
+```
 
 Install espup to get the esp toolchain required to compile on the `xtensa-esp32-espidf` architecture. Until [*this issue*](https://github.com/esp-rs/espup/issues/440) is fixed, ensure you install the `0.11.0` version of the binary.
 
-```cargo install espup@0.11.0```
+```sh
+cargo install espup@0.11.0
+```
 
 Install the toolchain and follow any additional instruction written to the standard output.
 
 Do not forget to run the `export.bat` on Windows or `./export.sh` on Linux situated in `.embuild/esp-idf/v5.2.3/`. Otherwise you will not have access to `espefuse` and `espsecure`
 
-```espup install```
+```sh
+espup install
+```
 
 Clone the repository then `cd` inside. Note that the name of the folder must be short and located at the root of your filesystem. Here, we use chhard. 
 
-```git clone https://github.com/indexds/charizhard chhard && cd chhard```
+```sh
+git clone https://github.com/indexds/charizhard chhard && cd chhard
+```
 
 Install the `cargo-make` binary to make the build process less of a chore. If not possible, the project *can* be compiled by running the commands found in `Makefile.toml` manually.
 
 You're also going to need espflash and ldproxy as dependencies.
 
-```cargo install cargo-make cargo-generate cargo-espflash ldproxy```
+```sh
+cargo install cargo-make cargo-generate cargo-espflash ldproxy
+```
 
 Then you're gonna need:
 
-```pip install esptool```
+```sh
+pip install esptool
+```
 
 All that remains is to install all remaining dependencies, build the project and flash the esp32 with:
 
-```cargo flash```
+```sh
+cargo flash
+```
 
 ## Monitoring
 
@@ -92,39 +114,69 @@ All that remains is to install all remaining dependencies, build the project and
 
 On Windows, you can install Putty here: [Download Putty](https://www.putty.org/).
 
-Then run `cargo monitor-windows` or `cargo mw`.
+Then run 
+
+```sh
+cargo monitor-windows
+```
+or
+```sh
+cargo mw
+```
 
 ### Linux
 
 On Linux, install the `screen` package using your favorite package manager, then run:
 
-`screen /dev/ttyS* 115200` or `cargo monitor-linux` or `cargo ml`.
+```ssh
+screen /dev/ttyS* 115200
+``` 
+or 
+```sh
+cargo monitor-linux
+``` 
+or 
+```sh
+cargo ml
+```
 
 ## Menuconfig
 
 To access the menuconfig tool, install the following dependencies:
 
-```cargo install cargo-pio```
+```sh
+cargo install cargo-pio
+```
 
-```pip install --upgrade platformio```
+```sh
+pip install --upgrade platformio
+```
 
 Then, run:
 
-```cargo pio installpio```
+```sh
+cargo pio installpio
+```
 
 You can now access the menuconfig tool using:
 
-```cargo pio espidf menuconfig```
+```sh
+cargo pio espidf menuconfig
+```
 
 The tool will first download the `xtensa-esp-elf` toolchain which may take a while.
 
 ## Troubleshooting
 
-* If the compilation process fails to find `libclang.dll` or `clang.dll`, create an environment variable `LIBCLANG_PATH` with the PATH to  your `libclang.dll` as such:
+* If the compilation process fails to find `libclang.dll` or `clang.dll`, create an environment variable `LIBCLANG_PATH` with the path to  your `libclang.dll` as such:
 ### Linux
-```~/.rustup/toolchains/esp/xtensa-esp32-elf-clang/esp-clang/bin/```
+```sh
+~/.rustup/toolchains/esp/xtensa-esp32-elf-clang/esp-clang/bin/
+```
 ### Windows
-```%USERPROFILE%\.rustup\toolchains\esp\xtensa-esp32-elf-clang\esp-clang\bin\```
+```sh
+%USERPROFILE%\.rustup\toolchains\esp\xtensa-esp32-elf-clang\esp-clang\bin\
+```
 
 #
 
