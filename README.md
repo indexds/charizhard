@@ -184,13 +184,23 @@ The tool will first download the `xtensa-esp-elf` toolchain which may take a whi
 
 * If the program fails upon flashing the `esp32`, press and hold the `BOOT/EN` button on the SOC to put it in bootloader mode. Firmware should start flashing. 
 
+#
+
 * If the program fails because of the path length to your project, verify that you cloned the project at the root of your filesystem and that the name of the directory is as short as specified.
+
+#
 
 * If the program fails for any reason related to Python, check that the version used by the program is a `3.12.x` as Python `>=3.13` is not currently supported.
 
+#
+
 * If the program fails for any other reason, try running your shell with administrator/sudo privileges
 
+#
+
 * Should the program have multiple dependency failures, try running `cargo clean` then rebuilding the project properly with `cargo flash`.
+
+#
 
 * If you cannot move the selection while in menuconfig inside an integrated terminal like the one provided by vscode, the correct bindings are J/K.
 
