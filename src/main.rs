@@ -10,6 +10,7 @@ use crate::http::start_http_server;
 mod env;
 mod wifi;
 mod http;
+mod redirection;
 
 #[allow(unused_variables)]
 fn main() -> anyhow::Result<()> {
