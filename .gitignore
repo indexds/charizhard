@@ -5,6 +5,6 @@
 **/debug/
 **/*.rs.bk
 *.pdb
+**/*.bin
 *.exe
-**/*.env
 **/sdkconfig.debug

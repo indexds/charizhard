@@ -17,8 +17,9 @@ pub fn index_html() -> String {
             </head>
             <body>
                 <form action="#" method="post">
-                    <label for="user-input">Enter something:</label>
+                    <label for="user-input"></label>
                     <input type="text" id="user-input" name="user-input">
+                    <label for="
                     <button type="submit">Submit</button>
                 </form>
             </body>
