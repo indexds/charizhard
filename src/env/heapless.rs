@@ -1,7 +1,6 @@
 use heapless::String;
 
 #[derive(Debug)]
-//Wrapper around heapless::String to allow for TryFrom impl
 pub struct HeaplessString<const N: usize>(String<N>);
 
 impl<const N: usize> HeaplessString<N> {
@@ -57,5 +56,4 @@ impl<const N: usize> TryInto<heapless::String<N>> for HeaplessString<N> {
         
         Ok(self.0)
     }
-
 }
