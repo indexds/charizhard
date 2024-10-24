@@ -34,11 +34,10 @@ This project uses the [esp-idf](https://github.com/espressif/esp-idf/tree/v5.2.3
 
 This project requires Rust, Python and the standard C toolchain. The standard C toolchain as well as git are assumed to already be installed by the user. If not, the user is likely on Windows and following the msys2 tutorial here should make everything work out of the box: [Install msys2](https://www.msys2.org/). 
 
-Installing git can then be done using 
+Installing git can then be done using the following command in a `ucrt64` shell.  
 ```sh
 pacman -Syu && pacman -S git
 ``` 
-in a `ucrt64` shell.  
 The `C:\msys64\ucrt64\bin` folder must be added to the PATH environment variable.
 
 ### Windows
@@ -47,7 +46,10 @@ The `C:\msys64\ucrt64\bin` folder must be added to the PATH environment variable
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 ```
 
-**Installing Python:** ```https://www.python.org/downloads/release/python-3125/```
+**Installing Python:** 
+```sh
+https://www.python.org/downloads/release/python-3125/
+```
 
 ### Linux
 
