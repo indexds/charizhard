@@ -1,6 +1,8 @@
 use heapless::String;
+use std::fmt;
+use serde::Deserialize;
 
-#[derive(Debug)]
+#[derive(Debug, Deserialize, Default)]
 pub struct HeaplessString<const N: usize>(String<N>);
 
 impl<const N: usize> HeaplessString<N> {
@@ -19,7 +21,22 @@ impl<const N: usize> HeaplessString<N> {
         
         Ok(())
     }
+
+    pub fn from_utf8(s: &[u8]) -> anyhow::Result<Self> {
+            
+        let mut heapless_string = HeaplessString::<N>::new();
+        
+        _ = heapless_string.0.push_str(core::str::from_utf8(s)?);
+        
+        Ok(heapless_string)
+    }
+
+    pub fn as_str(&self) -> anyhow::Result<&str> {
+        
+        Ok(self.0.as_str())
+    }
 }
+
 
 impl<const N: usize> TryInto<HeaplessString<N>> for &str {
     
@@ -57,3 +74,11 @@ impl<const N: usize> TryInto<heapless::String<N>> for HeaplessString<N> {
         Ok(self.0)
     }
 }
+
+impl<const N: usize> fmt::Display for HeaplessString<N> {
+        
+        fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
+            write!(f, "{}", self.0.as_str())
+        }
+}
+

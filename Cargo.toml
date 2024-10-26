@@ -27,6 +27,7 @@ nightly = ["esp-idf-svc/nightly"]
 experimental = ["esp-idf-svc/experimental"]
 embassy = ["esp-idf-svc/embassy-sync", "esp-idf-svc/critical-section", "esp-idf-svc/embassy-time-driver"]
 
+
 [[package.metadata.esp-idf-sys.extra_components]]
 remote_component = { name = "espressif/mdns", version = "1.4" }
 
@@ -37,9 +38,11 @@ esp-idf-hal = "0.44.1"
 embedded-hal = "1.0.0"
 embedded-svc = "0.28.0"
 heapless = "0.8.0"
-anyhow = "1.0.89"
-tokio = { version = "1.40.0", features = ["io-std","net", "rt", "io-util"] }
+anyhow = { version = "1.0.91", default-features = false }
 base64 = "0.22.1"
+serde = { version = "1.0.213", default-features = false, features = ["derive"] }
+serde_urlencoded = "0.7.1"
+async-executor = "1.13.1"
 
 [build-dependencies]
 embuild = "0.32.0"

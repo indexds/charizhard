@@ -1,12 +1,13 @@
 use embedded_svc::wifi::{AuthMethod, ClientConfiguration, Configuration};
-use esp_idf_svc::wifi::{AccessPointConfiguration, BlockingWifi, EspWifi};
-use crate::env::Env;
+use esp_idf_svc::wifi::{AccessPointConfiguration, AsyncWifi, EspWifi};
 use log::info;
+use crate::utils::nvs::Nvs;
 
-use heapless::String as heapless_string;
+//temp
+use crate::utils::heapless::HeaplessString;
 
-pub fn start_wifi(wifi: &mut BlockingWifi<EspWifi<'static>>) -> anyhow::Result<()> {
-    let env = Env::new()?;
+pub async fn start_wifi(wifi: &mut AsyncWifi<EspWifi<'static>>) -> anyhow::Result<()> {
+    let env = Nvs::new()?;
 
     let sta_configuration = ClientConfiguration {
         ssid: env.sta_ssid.try_into()?,
@@ -17,17 +18,17 @@ pub fn start_wifi(wifi: &mut BlockingWifi<EspWifi<'static>>) -> anyhow::Result<(
         ..Default::default()
     };
 
-    //temp
-    let mut heapless_ssid = heapless_string::<32>::new();
-    let mut heapless_passwd = heapless_string::<64>::new();
 
-    heapless_ssid.push_str("charizhard").unwrap();
-    heapless_passwd.push_str("test").unwrap();
-    
+    //temp
+    let mut heapless_ssid = HeaplessString::<32>::new();
+    let mut heapless_passwd = HeaplessString::<64>::new();
+
+    heapless_ssid.push_str("charizhard")?;
+    heapless_passwd.push_str("testpassword")?;
 
     let ap_configuration = AccessPointConfiguration {
-        ssid: heapless_ssid,
-        password: heapless_passwd,
+        ssid: heapless_ssid.try_into()?,
+        password: heapless_passwd.try_into()?,
         channel: 1,
         max_connections: 4,
         auth_method: AuthMethod::WPA2Personal,
@@ -40,13 +41,13 @@ pub fn start_wifi(wifi: &mut BlockingWifi<EspWifi<'static>>) -> anyhow::Result<(
 
     wifi.set_configuration(&mixed_config)?;
 
-    wifi.start()?;
+    wifi.start().await?;
     info!("WIFI STARTED..");
 
-    wifi.connect()?;
+    wifi.connect().await?;
     info!("WIFI CONNECTED.");
 
-    wifi.wait_netif_up()?;
+    wifi.wait_netif_up().await?;
     info!("WIFI NETIF UP.");
 
     Ok(())

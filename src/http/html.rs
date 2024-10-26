@@ -1,13 +1,15 @@
 use base64::Engine;
 use base64::prelude::BASE64_STANDARD;
 
+use crate::utils::nvs::Nvs;
+
 const FAVICON_DATA: &'static [u8] = include_bytes!("favicon.ico");
 
-
-pub fn index_html() -> String {
+pub fn index_html() -> anyhow::Result<String> {
+    let nvs = Nvs::new()?;
     let favicon = BASE64_STANDARD.encode(FAVICON_DATA);
 
-    format!(
+    Ok(format!(
         r###"
             <!DOCTYPE html>
             <html lang="en">
@@ -15,7 +17,7 @@ pub fn index_html() -> String {
                 <link rel="icon" type="image/png" href="data:image/png;base64,{favicon}">
                 <meta charset="UTF-8">
                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                <title>Wi-Fi and WireGuard Configuration</title>
+                <title>Charizhard</title>
                 <style>
                     
                     body {{
@@ -61,56 +63,35 @@ pub fn index_html() -> String {
             </head>
             <body>
 
-            <h1>Configuration Form</h1>
+            <h1>Configuration</h1>
             
-            <form id="configForm">
-                <label for="ssid">Wi-Fi SSID:</label>
-                <input type="text" id="ssid" name="ssid" value="wifi" required>
+            <form id="config" method="post" action="/config">
+                <label for="sta_ssid">Wi-Fi SSID:</label>
+                <input type="text" id="sta_ssid" name="sta_ssid" value="{}" required>
 
-                <label for="password">Wi-Fi Password:</label>
-                <input type="text" id="password" name="password" value="password" required>
+                <label for="sta_passwd">Wi-Fi Password:</label>
+                <input type="text" id="sta_passwd" name="sta_passwd" value="{}" required>
 
-                <label for="wgAddr">WireGuard Address:</label>
-                <input type="text" id="wgAddr" name="wgAddr" value="0.0.0.0/24" required>
+                <label for="wg_addr">WireGuard Address:</label>
+                <input type="text" id="wg_addr" name="wg_addr" value="{}" required>
 
-                <label for="wgPort">WireGuard Port:</label>
-                <input type="text" id="wgPort" name="wgPort" value="51820" required>
+                <label for="wg_port">WireGuard Port:</label>
+                <input type="text" id="wg_port" name="wg_port" value="{}">
 
-                <label for="wgDns">WireGuard DNS:</label>
-                <input type="text" id="wgDns" name="wgDns" value="1.1.1.1" required>
+                <label for="wg_dns">WireGuard DNS:</label>
+                <input type="text" id="wg_dns" name="wg_dns" value="{}">
 
-                <label for="wgPskClient">WireGuard PSK Client:</label>
-                <input type="text" id="wgPskClient" name="wgPskClient" value="00000000000000000000000000000000" required>
+                <label for="wg_psk_client">Client Private Key:</label>
+                <input type="text" id="wg_psk_client" name="wg_psk_client" value="{}" required>
 
-                <label for="wgPskPubServer">WireGuard PSK Public Server:</label>
-                <input type="text" id="wgPskPubServer" name="wgPskPubServer" value="00000000000000000000000000000000" required>
+                <label for="wg_psk_pub_server">Remote Host Public Key:</label>
+                <input type="text" id="wg_psk_pub_server" name="wg_psk_pub_server" value="{}" required>
 
                 <button type="submit">Submit</button>
             </form>
 
             </body>
             </html>
-        "###
-    )
-}
-
-pub fn submit() -> String {
-
-    let favicon = BASE64_STANDARD.encode(FAVICON_DATA);
-
-    format!(
-        r###"
-        <!DOCTYPE html>
-        <html>
-            <head>
-                <meta charset="utf-8">
-                <title>Charizhard</title>
-                <link rel="icon" type="image/png" href="data:image/png;base64,{favicon}">
-            </head>
-            <body>
-                Issou
-            </body>
-        </html>
-        "###
-    )
+        "###, nvs.sta_ssid, nvs.sta_passwd, nvs.wg_addr, nvs.wg_port, nvs.wg_dns, nvs.wg_psk_client, nvs.wg_psk_pub_server
+    ))
 }
