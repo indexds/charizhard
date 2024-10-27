@@ -1,12 +1,11 @@
 use base64::Engine;
 use base64::prelude::BASE64_STANDARD;
-
 use crate::utils::nvs::Nvs;
+use std::sync::Arc;
 
 const FAVICON_DATA: &'static [u8] = include_bytes!("favicon.ico");
 
-pub fn index_html() -> anyhow::Result<String> {
-    let nvs = Nvs::new()?;
+pub fn index_html(nvs: Arc<Nvs>) -> anyhow::Result<String> {
     let favicon = BASE64_STANDARD.encode(FAVICON_DATA);
 
     Ok(format!(
@@ -81,17 +80,24 @@ pub fn index_html() -> anyhow::Result<String> {
                 <label for="wg_dns">WireGuard DNS:</label>
                 <input type="text" id="wg_dns" name="wg_dns" value="{}">
 
-                <label for="wg_psk_client">Client Private Key:</label>
-                <input type="text" id="wg_psk_client" name="wg_psk_client" value="{}" required>
+                <label for="wg_client_priv_key">Client Private Key:</label>
+                <input type="text" id="wg_client_priv_key" name="wg_client_priv_key" value="{}" required>
 
-                <label for="wg_psk_pub_server">Remote Host Public Key:</label>
-                <input type="text" id="wg_psk_pub_server" name="wg_psk_pub_server" value="{}" required>
-
+                <label for="wg_server_pub_key">Remote Host Public Key:</label>
+                <input type="text" id="wg_server_pub_key" name="wg_server_pub_key" value="{}" required>
                 <button type="submit">Submit</button>
+
             </form>
 
             </body>
             </html>
-        "###, nvs.sta_ssid, nvs.sta_passwd, nvs.wg_addr, nvs.wg_port, nvs.wg_dns, nvs.wg_psk_client, nvs.wg_psk_pub_server
+        "###, 
+        nvs.sta_ssid.as_str(), 
+        nvs.sta_passwd.as_str(), 
+        nvs.wg_addr.as_str(), 
+        nvs.wg_port.as_str(), 
+        nvs.wg_dns.as_str(), 
+        nvs.wg_client_priv_key.as_str(), 
+        nvs.wg_server_pub_key.as_str()
     ))
 }

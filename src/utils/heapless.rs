@@ -31,12 +31,61 @@ impl<const N: usize> HeaplessString<N> {
         Ok(heapless_string)
     }
 
-    pub fn as_str(&self) -> anyhow::Result<&str> {
+    pub fn as_str(&self) -> &str {
         
-        Ok(self.0.as_str())
+        self.0.as_str()
+    }
+
+    pub fn is_empty(&self) -> bool {
+        
+        self.0.is_empty()
+    }
+
+    pub fn chars(&self) -> std::str::Chars<'_>{
+        self.0.chars()
+    }
+
+    pub fn trim(&self) -> anyhow::Result<HeaplessString<N>> {
+        
+        let trimmed = self.0.trim();
+
+        let mut heapless_string = HeaplessString::new();
+
+        heapless_string.push_str(trimmed)?;
+
+        Ok(heapless_string)
+    }
+
+    pub fn clean_string(&self) -> HeaplessString<N> {
+
+        self.chars()
+        .filter(|&c| c.is_ascii_alphanumeric() || c.is_ascii_whitespace())
+        .collect()
+        
     }
 }
 
+impl<const N: usize> FromIterator<char> for HeaplessString<N> {
+    
+    fn from_iter<T: IntoIterator<Item = char>>(iter: T) -> Self {
+        let mut heapless_string = HeaplessString::<N>::new();
+
+        for c in iter {
+            if heapless_string.0.len() < N {
+
+                if let Err(_) = heapless_string.0.push(c){
+                    break
+                }
+            }
+            else {
+                
+                break
+            }
+        }
+
+        heapless_string
+    }
+}
 
 impl<const N: usize> TryInto<HeaplessString<N>> for &str {
     

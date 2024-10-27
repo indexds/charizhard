@@ -1,32 +1,37 @@
 use crate::utils::heapless::HeaplessString;
-use esp_idf_svc::nvs::{EspDefaultNvs, EspDefaultNvsPartition, EspNvs, NvsDefault};
+use esp_idf_svc::nvs::{EspNvs, NvsDefault};
+use std::sync::MutexGuard;
 
-const DEFAULT_STA_SSID: &str = "";
-const DEFAULT_STA_PASSWD: &str = "";
+
+const DEFAULT_STA_SSID: &str = "ssid";
+const DEFAULT_STA_PASSWD: &str = "passwd";
+
 const DEFAULT_WG_ADDR: &str = "0.0.0.0/24";
 const DEFAULT_WG_PORT: &str = "51820";
 const DEFAULT_WG_DNS: &str = "1.1.1.1";
-const DEFAULT_WG_PSK_CLIENT: &str = "default_psk";
-const DEFAULT_WG_PSK_PUB_SERVER: &str = "default_psk_pub";
 
-#[allow(dead_code)]
+const DEFAULT_WG_CLIENT_PRIV_KEY: &str = "";
+const DEFAULT_WG_SERVER_PUB_KEY: &str = "";
+
+
+#[derive(serde::Deserialize, Debug)]
 pub struct Nvs{
 
-    //Wifi credentials
     pub sta_ssid: HeaplessString<32>,
     pub sta_passwd: HeaplessString<64>,
 
-    //Wireguard credentials
     pub wg_addr: HeaplessString<32>,
     pub wg_port: HeaplessString<16>,
     pub wg_dns: HeaplessString<32>,
-    pub wg_psk_client: HeaplessString<32>,
-    pub wg_psk_pub_server: HeaplessString<32>,
+
+    pub wg_client_priv_key: HeaplessString<32>,
+    pub wg_server_pub_key: HeaplessString<32>,
 }
+
 
 #[allow(dead_code)]
 impl Nvs{
-    pub fn get_field<const N: usize>(nvs: &EspNvs<NvsDefault>, key: &str) -> anyhow::Result<HeaplessString<N>> {
+    pub fn get_field<const N: usize>(nvs: &MutexGuard<'_, EspNvs<NvsDefault>>, key: &str) -> anyhow::Result<HeaplessString<N>> {
 
         let mut buf = [0u8; N];
         nvs.get_str(key, &mut buf)?;
@@ -34,19 +39,22 @@ impl Nvs{
         let mut value = HeaplessString::<N>::new();
         value.push_str(core::str::from_utf8(&buf)?)?;
 
+        if value.clean_string().trim()?.is_empty(){
+
+            return Err(anyhow::anyhow!("String is empty!"))
+        }
+        
         Ok(value)
     }
 
-    pub fn set_field(nvs: &mut EspNvs<NvsDefault>, key: &str, value: &str) -> anyhow::Result<()> {
+    pub fn set_field(nvs: &mut MutexGuard<'_, EspNvs<NvsDefault>>, key: &str, value: &str) -> anyhow::Result<()> {
         
         nvs.set_str(key, value)?;
 
         Ok(())
     }
 
-    pub fn new() -> Result<Self, anyhow::Error>{
-
-        let nvs = EspDefaultNvs::new(EspDefaultNvsPartition::take()?, "config", false)?;
+    pub fn new(nvs: MutexGuard<'_, EspNvs<NvsDefault>>) -> anyhow::Result<Self>{
 
         Ok(Self { 
 
@@ -65,11 +73,11 @@ impl Nvs{
             wg_dns: Nvs::get_field::<32>(&nvs, "WG_DNS")
             .unwrap_or(DEFAULT_WG_DNS.try_into()?),
             
-            wg_psk_client: Nvs::get_field::<32>(&nvs, "WG_PSK_CLIENT")
-            .unwrap_or(DEFAULT_WG_PSK_CLIENT.try_into()?),
+            wg_client_priv_key: Nvs::get_field::<32>(&nvs, "WG_CLIENT_PRIV_KEY")
+            .unwrap_or(DEFAULT_WG_CLIENT_PRIV_KEY.try_into()?),
             
-            wg_psk_pub_server: Nvs::get_field::<32>(&nvs, "WG_PSK_PUB_SERVER")
-            .unwrap_or(DEFAULT_WG_PSK_PUB_SERVER.try_into()?),
+            wg_server_pub_key: Nvs::get_field::<32>(&nvs, "WG_SERVER_PUB_KEY")
+            .unwrap_or(DEFAULT_WG_SERVER_PUB_KEY.try_into()?),
 
         })
     }   

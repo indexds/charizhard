@@ -2,27 +2,20 @@ use esp_idf_hal::io::Write;
 use esp_idf_svc::http::server::{EspHttpServer, Configuration as HttpServerConfig, Method};
 use esp_idf_svc::mdns::EspMdns;
 use anyhow::Error;
-use serde::Deserialize;
 use serde_urlencoded;
-use crate::utils::heapless::HeaplessString;
+use crate::utils::nvs::Nvs;
+use std::sync::{Arc, Mutex};
+use esp_idf_svc::nvs::{EspNvs, NvsDefault};
 
-mod html;
-
-#[allow(dead_code)]
-#[derive(Debug, Deserialize)]
-struct Config {
-    sta_ssid: HeaplessString<32>,
-    sta_passwd: HeaplessString<64>,
-    wg_addr: HeaplessString<32>,
-    wg_port: HeaplessString<16>,
-    wg_dns: HeaplessString<32>,
-    wg_psk_client: HeaplessString<32>,
-    wg_psk_pub_server: HeaplessString<32>,
-}
+mod index;
 
 #[allow(unused_must_use)]
-pub fn start_http_server() -> anyhow::Result<(EspHttpServer<'static>, EspMdns)> {
+pub fn start_http_server(nvs: Arc<Mutex<EspNvs<NvsDefault>>>) -> anyhow::Result<(EspHttpServer<'static>, EspMdns)> {
 
+    let nvs = nvs.lock().map_err(|_| anyhow::anyhow!("Failed to lock NVS Mutex."))?;
+
+    let nvs_config = Arc::new(Nvs::new(nvs)?);
+    
     let http_config = HttpServerConfig {
         http_port: 80,
         https_port: 443,
@@ -36,9 +29,9 @@ pub fn start_http_server() -> anyhow::Result<(EspHttpServer<'static>, EspMdns)> 
     mdns.add_service(Some("_http"), "_tcp", "80", 60, &[])?;
     mdns.add_service(Some("_https"), "_tcp", "443", 60, &[])?;
 
-    http_server.fn_handler("/", Method::Get, |request| {
+    http_server.fn_handler("/", Method::Get, move |request| {
 
-        let html = html::index_html()?;
+        let html = index::index_html(nvs_config.clone())?;
 
         let mut response = request.into_ok_response()?;
 
@@ -48,9 +41,9 @@ pub fn start_http_server() -> anyhow::Result<(EspHttpServer<'static>, EspMdns)> 
     });
 
     http_server.fn_handler("/config", Method::Post, |mut request| {
-        // Parse the form data
+        
         let mut body = Vec::new();
-        let mut buffer = [0_u8; 16];
+        let mut buffer = [0_u8; 128];
 
         loop {
             match request.read(&mut buffer) {
@@ -61,12 +54,8 @@ pub fn start_http_server() -> anyhow::Result<(EspHttpServer<'static>, EspMdns)> 
         }
         
         let form_data = String::from_utf8(body)?;
-        let config: Config = serde_urlencoded::from_str(form_data.as_str())?;
+        let _config: Nvs = serde_urlencoded::from_str(form_data.as_str())?;
     
-        // Log the parsed configuration (you can replace this with writing to your config struct)
-        println!("Received configuration: {:?}", config);
-    
-        // Return a success response
         let mut response = request.into_ok_response()?;
         response.write_all(b"Configuration saved successfully")?;
     

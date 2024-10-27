@@ -1,12 +1,14 @@
 use esp_idf_svc::hal::prelude::Peripherals;
 use esp_idf_svc::log::EspLogger;
-use esp_idf_svc::timer::EspTimerService;
-use esp_idf_svc::wifi::{AsyncWifi, EspWifi};
-use esp_idf_svc::{eventloop::EspSystemEventLoop, nvs::EspDefaultNvsPartition};
-use async_executor::Executor;
+use esp_idf_svc::wifi::{BlockingWifi, EspWifi};
+use esp_idf_svc::eventloop::EspSystemEventLoop;
+use esp_idf_svc::nvs::{EspNvs, EspDefaultNvsPartition};
 use std::sync::Arc;
+use std::sync::Mutex;
 use std::time::Duration;
-use log::info;
+
+// use esp_idf_svc::sys::esp_get_free_heap_size;
+// use log::info;
 
 mod wifi;
 mod http;
@@ -21,25 +23,22 @@ fn main() -> anyhow::Result<()> {
     let peripherals = Peripherals::take()?;
     let event_loop = EspSystemEventLoop::take()?;
     let nvs = EspDefaultNvsPartition::take()?;
-    let timer = EspTimerService::new()?;
 
-    let executor = Arc::new(Executor::new());
-
-    let mut wifi = AsyncWifi::wrap(
-        EspWifi::new(peripherals.modem, event_loop.clone(), Some(nvs))?,
+    let mut wifi = BlockingWifi::wrap(
+        EspWifi::new(peripherals.modem, event_loop.clone(), Some(nvs.clone()))?,
         event_loop,
-        timer,
     )?;
-
-    executor.spawn(async move {
-        match wifi::start_wifi(&mut wifi).await {
-            Ok(_) => info!("wifi started"),
-            Err(e) => info!("wifi error: {:?}", e),
-        }
-    }).detach();
     
+    wifi::start_wifi(&mut wifi)?;
 
-    let (http_server, mdns) = crate::http::start_http_server()?;
+    let nvs_instance = EspNvs::new(nvs.clone(), "config", true)?;
+    let nvs_config = Arc::new(Mutex::new(nvs_instance));    
+    // let nvs_instance = Arc::new(Mutex::new(Nvs::new(nvs_config)?));
+
+    let (http_server, mdns) = http::start_http_server(nvs_config)?;
+
+    // let free_heap_size = unsafe {esp_get_free_heap_size()};
+    // info!("free heap: {}", free_heap_size);
 
     loop {
         std::thread::sleep(Duration::from_millis(100));
