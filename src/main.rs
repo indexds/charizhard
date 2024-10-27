@@ -3,8 +3,7 @@ use esp_idf_svc::log::EspLogger;
 use esp_idf_svc::wifi::{BlockingWifi, EspWifi};
 use esp_idf_svc::eventloop::EspSystemEventLoop;
 use esp_idf_svc::nvs::{EspNvs, EspDefaultNvsPartition};
-use std::sync::Arc;
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
 // use esp_idf_svc::sys::esp_get_free_heap_size;
@@ -33,8 +32,7 @@ fn main() -> anyhow::Result<()> {
 
     let nvs_instance = EspNvs::new(nvs.clone(), "config", true)?;
     let nvs_config = Arc::new(Mutex::new(nvs_instance));    
-    // let nvs_instance = Arc::new(Mutex::new(Nvs::new(nvs_config)?));
-
+    
     let (http_server, mdns) = http::start_http_server(nvs_config)?;
 
     // let free_heap_size = unsafe {esp_get_free_heap_size()};

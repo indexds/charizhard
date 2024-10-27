@@ -1,9 +1,11 @@
-use base64::Engine;
 use base64::prelude::BASE64_STANDARD;
 use crate::utils::nvs::Nvs;
 use std::sync::Arc;
+use base64::Engine;
+
 
 const FAVICON_DATA: &'static [u8] = include_bytes!("favicon.ico");
+
 
 pub fn index_html(nvs: Arc<Nvs>) -> anyhow::Result<String> {
     let favicon = BASE64_STANDARD.encode(FAVICON_DATA);

@@ -1,13 +1,15 @@
-use esp_idf_hal::io::Write;
 use esp_idf_svc::http::server::{EspHttpServer, Configuration as HttpServerConfig, Method};
-use esp_idf_svc::mdns::EspMdns;
-use anyhow::Error;
-use serde_urlencoded;
-use crate::utils::nvs::Nvs;
-use std::sync::{Arc, Mutex};
 use esp_idf_svc::nvs::{EspNvs, NvsDefault};
+use esp_idf_svc::mdns::EspMdns;
+use std::sync::{Arc, Mutex};
+use esp_idf_hal::io::Write;
+use crate::utils::nvs::Nvs;
+use serde_urlencoded;
+use anyhow::Error;
+
 
 mod index;
+
 
 #[allow(unused_must_use)]
 pub fn start_http_server(nvs: Arc<Mutex<EspNvs<NvsDefault>>>) -> anyhow::Result<(EspHttpServer<'static>, EspMdns)> {
