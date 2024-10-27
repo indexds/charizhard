@@ -1,13 +1,12 @@
 use base64::prelude::BASE64_STANDARD;
 use crate::utils::nvs::Nvs;
-use std::sync::Arc;
 use base64::Engine;
 
 
 const FAVICON_DATA: &'static [u8] = include_bytes!("favicon.ico");
 
 
-pub fn index_html(nvs: Arc<Nvs>) -> anyhow::Result<String> {
+pub fn index_html(nvs: &Nvs) -> anyhow::Result<String> {
     let favicon = BASE64_STANDARD.encode(FAVICON_DATA);
 
     Ok(format!(
@@ -66,7 +65,7 @@ pub fn index_html(nvs: Arc<Nvs>) -> anyhow::Result<String> {
 
             <h1>Configuration</h1>
             
-            <form id="config" method="post" action="/config">
+            <form id="config" method="post" action="/save">
                 <label for="sta_ssid">Wi-Fi SSID:</label>
                 <input type="text" id="sta_ssid" name="sta_ssid" value="{}" required>
 
