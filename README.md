@@ -30,6 +30,8 @@ world.
 
 This project uses the [esp-idf](https://github.com/espressif/esp-idf/tree/v5.2.3) version `v5.2.3` for the standard `esp32`.
 
+Drivers for the esp32 can be found on the [esp-idf website](https://dl.espressif.com/dl/esp-idf/?idf=5.2.3). 
+
 ## Requirements
 
 This project requires Rust, Python and the standard C toolchain. The standard C toolchain as well as git are assumed to already be installed by the user. If not, the user is likely on Windows and following the msys2 tutorial here should make everything work out of the box: [Install msys2](https://www.msys2.org/). 
