@@ -1,6 +1,7 @@
 use esp_idf_svc::http::server::{EspHttpServer, Configuration as HttpServerConfig, Method};
 use esp_idf_svc::nvs::{EspNvs, NvsDefault};
 use esp_idf_svc::mdns::EspMdns;
+use esp_idf_svc::wifi::{BlockingWifi, EspWifi};
 use std::sync::{Arc, Mutex};
 use esp_idf_hal::io::Write;
 use crate::utils::nvs::Nvs;
@@ -11,7 +12,7 @@ use anyhow::Error;
 mod index;
 
 #[allow(unused_must_use)]
-pub fn start_http_server(nvs: Arc<Mutex<EspNvs<NvsDefault>>>) -> anyhow::Result<(EspHttpServer<'static>, EspMdns)> {
+pub fn start_http_server(nvs: Arc<Mutex<EspNvs<NvsDefault>>>, wifi: Arc<Mutex<BlockingWifi<EspWifi<'static>>>>) -> anyhow::Result<(EspHttpServer<'static>, EspMdns)> {
 
     let http_config = HttpServerConfig {
         http_port: 80,        
@@ -97,6 +98,27 @@ pub fn start_http_server(nvs: Arc<Mutex<EspNvs<NvsDefault>>>) -> anyhow::Result<
         connection.write(css.as_bytes())?;
 
         Ok::<(), Error>(())
+    });
+
+    let wifi_get = Arc::clone(&wifi);
+
+    http_server.fn_handler("/wifi", Method::Get, move |request| {
+
+        let mut wifi = wifi_get.lock().map_err(|_| anyhow::anyhow!("Failed to lock Wifi Mutex."))?;
+        
+        let mut html = String::new();
+
+        let scanned = wifi.scan()?;
+
+        for access_point in scanned.iter() {
+            html.push_str(format!("<div>{}</div>", access_point.ssid).as_str());
+        }
+
+        let mut response = request.into_ok_response()?;
+
+        response.write_all(html.as_bytes())?;
+
+        Ok::<(), Error>(())        
     });
 
     let mut mdns = EspMdns::take()?;

@@ -23,17 +23,19 @@ fn main() -> anyhow::Result<()> {
     let event_loop = EspSystemEventLoop::take()?;
     let nvs = EspDefaultNvsPartition::take()?;
 
-    let mut wifi = BlockingWifi::wrap(
+    let nvs_instance = EspNvs::new(nvs.clone(), "config", true)?;
+    let guarded_nvs = Arc::new(Mutex::new(nvs_instance));   
+
+    let wifi = BlockingWifi::wrap(
         EspWifi::new(peripherals.modem, event_loop.clone(), Some(nvs.clone()))?,
         event_loop,
     )?;
-    
-    wifi::start_wifi(&mut wifi)?;
 
-    let nvs_instance = EspNvs::new(nvs.clone(), "config", true)?;
-    let nvs_config = Arc::new(Mutex::new(nvs_instance));    
+    let mut guarded_wifi = Arc::new(Mutex::new(wifi));
+
+    wifi::start_wifi(&mut guarded_wifi)?;
     
-    let (http_server, mdns) = http::start_http_server(nvs_config)?;
+    let (http_server, mdns) = http::start_http_server(guarded_nvs, guarded_wifi)?;
 
     // let free_heap_size = unsafe {esp_get_free_heap_size()};
     // info!("free heap: {}", free_heap_size);
