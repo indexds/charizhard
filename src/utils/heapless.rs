@@ -60,7 +60,7 @@ impl<const N: usize> HeaplessString<N> {
     pub fn clean_string(&self) -> HeaplessString<N> {
 
         self.chars()
-        .filter(|&c| c.is_ascii_alphanumeric() || c.is_ascii_whitespace())
+        .filter(|&c| c.is_ascii() && (c.is_ascii_graphic() || c.is_ascii_whitespace()))
         .collect()
         
     }

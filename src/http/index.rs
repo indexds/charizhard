@@ -66,26 +66,26 @@ pub fn index_html(nvs: &Nvs) -> anyhow::Result<String> {
             <h1>Configuration</h1>
             
             <form id="config" method="post" action="/save">
-                <label for="sta_ssid">Wi-Fi SSID:</label>
-                <input type="text" id="sta_ssid" name="sta_ssid" value="{}" required>
+                <label for="ssid">Wi-Fi SSID:</label>
+                <input type="text" id="ssid" name="ssid" value="{}" required>
 
-                <label for="sta_passwd">Wi-Fi Password:</label>
-                <input type="text" id="sta_passwd" name="sta_passwd" value="{}" required>
+                <label for="passwd">Wi-Fi Password:</label>
+                <input type="text" id="passwd" name="passwd" value="{}" required>
 
-                <label for="wg_addr">WireGuard Address:</label>
-                <input type="text" id="wg_addr" name="wg_addr" value="{}" required>
+                <label for="address">WireGuard Address:</label>
+                <input type="text" id="address" name="address" value="{}" required>
 
-                <label for="wg_port">WireGuard Port:</label>
-                <input type="text" id="wg_port" name="wg_port" value="{}">
+                <label for="port">WireGuard Port:</label>
+                <input type="text" id="port" name="port" value="{}">
 
-                <label for="wg_dns">WireGuard DNS:</label>
-                <input type="text" id="wg_dns" name="wg_dns" value="{}">
+                <label for="dns">WireGuard DNS:</label>
+                <input type="text" id="dns" name="dns" value="{}">
 
-                <label for="wg_client_priv_key">Client Private Key:</label>
-                <input type="text" id="wg_client_priv_key" name="wg_client_priv_key" value="{}" required>
+                <label for="privkey">Client Private Key:</label>
+                <input type="text" id="privkey" name="privkey" value="{}" required>
 
-                <label for="wg_server_pub_key">Remote Host Public Key:</label>
-                <input type="text" id="wg_server_pub_key" name="wg_server_pub_key" value="{}" required>
+                <label for="pubkey">Remote Host Public Key:</label>
+                <input type="text" id="pubkey" name="pubkey" value="{}" required>
                 <button type="submit">Submit</button>
 
             </form>
@@ -93,12 +93,12 @@ pub fn index_html(nvs: &Nvs) -> anyhow::Result<String> {
             </body>
             </html>
         "###, 
-        nvs.sta_ssid.as_str(), 
-        nvs.sta_passwd.as_str(), 
-        nvs.wg_addr.as_str(), 
-        nvs.wg_port.as_str(), 
-        nvs.wg_dns.as_str(), 
-        nvs.wg_client_priv_key.as_str(), 
-        nvs.wg_server_pub_key.as_str()
+        nvs.sta_ssid.clean_string().as_str(), 
+        nvs.sta_passwd.clean_string().as_str(), 
+        nvs.wg_addr.clean_string().as_str(), 
+        nvs.wg_port.clean_string().as_str(), 
+        nvs.wg_dns.clean_string().as_str(), 
+        nvs.wg_client_priv_key.clean_string().as_str(), 
+        nvs.wg_server_pub_key.clean_string().as_str()
     ))
 }

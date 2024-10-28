@@ -4,6 +4,7 @@ use esp_idf_svc::mdns::EspMdns;
 use std::sync::{Arc, Mutex};
 use esp_idf_hal::io::Write;
 use crate::utils::nvs::Nvs;
+use crate::utils::nvs::NvsKeys;
 use serde_urlencoded;
 use anyhow::Error;
 
@@ -61,13 +62,13 @@ pub fn start_http_server(nvs: Arc<Mutex<EspNvs<NvsDefault>>>) -> anyhow::Result<
         let config: Nvs = serde_urlencoded::from_str(form_data.as_str())?;
         
 
-        Nvs::set_field(&mut nvs, "STA_SSID", config.sta_ssid.as_str());
-        Nvs::set_field(&mut nvs, "STA_PASSWD", config.sta_passwd.as_str());
-        Nvs::set_field(&mut nvs, "WG_ADDR", config.wg_addr.as_str());
-        Nvs::set_field(&mut nvs, "WG_PORT", config.wg_port.as_str());
-        Nvs::set_field(&mut nvs, "WG_DNS", config.wg_dns.as_str());
-        Nvs::set_field(&mut nvs, "WG_CLIENT_PRIV_KEY", config.wg_client_priv_key.as_str());
-        Nvs::set_field(&mut nvs, "WG_SERVER_PUB_KEY", config.wg_server_pub_key.as_str());
+        Nvs::set_field(&mut nvs, NvsKeys::STA_SSID, config.sta_ssid.clean_string().as_str());
+        Nvs::set_field(&mut nvs, NvsKeys::STA_PASSWD, config.sta_passwd.clean_string().as_str());
+        Nvs::set_field(&mut nvs, NvsKeys::WG_ADDR, config.wg_addr.clean_string().as_str());
+        Nvs::set_field(&mut nvs, NvsKeys::WG_PORT, config.wg_port.clean_string().as_str());
+        Nvs::set_field(&mut nvs, NvsKeys::WG_DNS, config.wg_dns.clean_string().as_str());
+        Nvs::set_field(&mut nvs, NvsKeys::WG_CLIENT_PRIV_KEY, config.wg_client_priv_key.clean_string().as_str());
+        Nvs::set_field(&mut nvs, NvsKeys::WG_SERVER_PUB_KEY, config.wg_server_pub_key.clean_string().as_str());
 
         let mut response = request.into_ok_response()?;
         response.write_all(b"Configuration saved successfully")?;
