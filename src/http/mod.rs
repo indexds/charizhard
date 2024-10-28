@@ -18,6 +18,7 @@ pub fn start_http_server(nvs: Arc<Mutex<EspNvs<NvsDefault>>>) -> anyhow::Result<
     let http_config = HttpServerConfig {
         http_port: 80,
         https_port: 443,
+        
         ..Default::default()
     };
 
@@ -73,6 +74,32 @@ pub fn start_http_server(nvs: Arc<Mutex<EspNvs<NvsDefault>>>) -> anyhow::Result<
         let mut response = request.into_ok_response()?;
         response.write_all(b"Configuration saved successfully")?;
     
+        Ok::<(), Error>(())
+    });
+
+    http_server.fn_handler("/index.js", Method::Get, move |mut request| {
+
+        let javascript = include_str!("./index.js");
+        
+        let connection = request.connection();
+        
+        connection.initiate_response(200, Some("OK"), &[("Content-Type", "application/javascript")])?;
+        
+        connection.write(javascript.as_bytes())?;
+
+        Ok::<(), Error>(())
+    });
+
+    http_server.fn_handler("/index.css", Method::Get, move |mut request| {
+
+        let css = include_str!("./index.css");
+
+        let connection = request.connection();
+
+        connection.initiate_response(200, Some("OK"), &[("Content-Type", "text/css")])?;
+        
+        connection.write(css.as_bytes())?;
+
         Ok::<(), Error>(())
     });
 
