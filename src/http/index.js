@@ -20,8 +20,8 @@ document.getElementById('config').addEventListener('submit', function(event){
         event.preventDefault();
         return;
     }
-    if (address && !/^(\d{1,3}\.){3}\d{1,3}$/.test(address)){
-        alert("WireGuard Address must be a valid IP address (e.g., 192.168.1.1).");
+    if (address && !/^(?:\d{1,3}\.){3}\d{1,3}\/(?:[0-9]|[1-2][0-9]|3[0-2])$/.test(address)){
+        alert("WireGuard Address must be a valid CIDR address (e.g., 0.0.0.0/24).");
         event.preventDefault();
         return;
     }

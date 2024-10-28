@@ -8,22 +8,18 @@ use crate::utils::nvs::NvsKeys;
 use serde_urlencoded;
 use anyhow::Error;
 
-
 mod index;
-
 
 #[allow(unused_must_use)]
 pub fn start_http_server(nvs: Arc<Mutex<EspNvs<NvsDefault>>>) -> anyhow::Result<(EspHttpServer<'static>, EspMdns)> {
 
     let http_config = HttpServerConfig {
-        http_port: 80,
-        https_port: 443,
-        
+        http_port: 80,        
         ..Default::default()
     };
 
     let mut http_server = EspHttpServer::new(&http_config)?;
-    
+
     let nvs_get = Arc::clone(&nvs);
 
     http_server.fn_handler("/", Method::Get, move |request| {
