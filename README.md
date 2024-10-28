@@ -116,8 +116,15 @@ cargo flash
 
 On Windows, you can install Putty here: [Download Putty](https://www.putty.org/).
 
-Then run 
+Then set the environment variable defining the port your esp32 is available on.
+You only need to do this once per terminal. 
+Alternatively you can use `setx` to make the variable permanent.
+```sh
+set COM_PORT=COM{X}
+```  
+With `{X}` being the port your esp32 is available on. This can be found in the device manager.
 
+Then run,
 ```sh
 cargo monitor-windows
 ```
@@ -131,9 +138,17 @@ cargo mw
 On Linux, install the `screen` package using your favorite package manager, then run:
 
 ```ssh
-screen /dev/ttyS* 115200
+screen /dev/ttyUSB? 115200
 ``` 
-or 
+
+Or set an environment variable for your `ttyUSB` like so:
+```sh
+export ttyUSB=ttyUSB{X}
+```
+With `{X}` being the port your esp32 is available on. 
+
+You can then run either of the following commands:
+
 ```sh
 cargo monitor-linux
 ``` 
