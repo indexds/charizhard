@@ -30,33 +30,33 @@ world.
 
 This project uses the [esp-idf](https://github.com/espressif/esp-idf/tree/v5.2.3) version `v5.2.3` for the standard `esp32`.
 
-Drivers for the esp32 can be found on the [esp-idf website](https://dl.espressif.com/dl/esp-idf/?idf=5.2.3). 
+Drivers for the `esp32` can be found on the [esp-idf website](https://dl.espressif.com/dl/esp-idf/?idf=5.2.3). 
 
 ## Requirements
 
 This project requires Rust, Python and the standard C toolchain. The standard C toolchain as well as git are assumed to already be installed by the user. If not, the user is likely on Windows and following the msys2 tutorial here should make everything work out of the box: [Install msys2](https://www.msys2.org/). 
 
 Installing git can then be done using the following command in a `ucrt64` shell.  
-```sh
+```fish
 pacman -Syu && pacman -S git
 ``` 
 The `C:\msys64\ucrt64\bin` folder must be added to the PATH environment variable.
 
 ### Windows
 **Installing Rust:**
-```sh
+```fish
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 ```
 
 **Installing Python:** 
-```sh
+```fish
 https://www.python.org/downloads/release/python-3125/
 ```
 
 ### Linux
 
 **Installing Rust:**
-```sh
+```fish
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 ```
 
@@ -66,15 +66,15 @@ Ensure the version is 3.12.5 as more recent versions have proved unstable.
 
 ## Installing
 
-This project needs to be cloned in your root directory, as the esp32 cannot handle long paths.
+This project needs to be cloned in your root directory, as the `esp32` cannot handle long paths.
 
-```sh
+```fish
 cd /
 ```
 
 Install espup to get the esp toolchain required to compile on the `xtensa-esp32-espidf` architecture. Until [*this issue*](https://github.com/esp-rs/espup/issues/440) is fixed, ensure you install the `0.11.0` version of the binary.
 
-```sh
+```fish
 cargo install espup@0.11.0
 ```
 
@@ -82,13 +82,13 @@ Install the toolchain and follow any additional instruction written to the stand
 
 Do not forget to run the `export.bat` on Windows or `./export.sh` on Linux situated in `.embuild/esp-idf/v5.2.3/`. Otherwise you will not have access to `espefuse` and `espsecure`
 
-```sh
+```fish
 espup install
 ```
 
 Clone the repository then `cd` inside. Note that the name of the folder must be short and located at the root of your filesystem. Here, we use chhard. 
 
-```sh
+```fish
 git clone https://github.com/indexds/charizhard chhard && cd chhard
 ```
 
@@ -96,19 +96,19 @@ Install the `cargo-make` binary to make the build process less of a chore. If no
 
 You're also going to need espflash and ldproxy as dependencies.
 
-```sh
+```fish
 cargo install cargo-make cargo-generate cargo-espflash ldproxy
 ```
 
 Then you're gonna need:
 
-```sh
+```fish
 pip install esptool
 ```
 
-All that remains is to install all remaining dependencies, build the project and flash the esp32 with:
+All that remains is to install all remaining dependencies, build the project and flash the `esp32` with:
 
-```sh
+```fish
 cargo flash
 ```
 
@@ -118,20 +118,20 @@ cargo flash
 
 On Windows, you can install Putty here: [Download Putty](https://www.putty.org/).
 
-Then set the environment variable defining the port your esp32 is available on.
+Then set the environment variable defining the port your `esp32` is available on.
 You only need to do this once per terminal. 
 Alternatively you can use `setx` to make the variable permanent.
-```sh
+```fish
 set COM_PORT=COM{X}
 ```  
-With `{X}` being the port your esp32 is available on. This can be found in the device manager.
+With `{X}` being the port your `esp32` is available on. This can be found in the device manager.
 
 Then run,
-```sh
+```fish
 cargo monitor-windows
 ```
 or
-```sh
+```fish
 cargo mw
 ```
 
@@ -144,18 +144,18 @@ screen /dev/ttyUSB? 115200
 ``` 
 
 Or set an environment variable for your `ttyUSB` like so:
-```sh
+```fish
 export ttyUSB=ttyUSB{X}
 ```
-With `{X}` being the port your esp32 is available on. 
+With `{X}` being the port your `esp32` is available on. 
 
 You can then run either of the following commands:
 
-```sh
+```fish
 cargo monitor-linux
 ``` 
 or 
-```sh
+```fish
 cargo ml
 ```
 
@@ -163,23 +163,23 @@ cargo ml
 
 To access the menuconfig tool, install the following dependencies:
 
-```sh
+```fish
 cargo install cargo-pio
 ```
 
-```sh
+```fish
 pip install --upgrade platformio
 ```
 
 Then, run:
 
-```sh
+```fish
 cargo pio installpio
 ```
 
 You can now access the menuconfig tool using:
 
-```sh
+```fish
 cargo pio espidf menuconfig
 ```
 
@@ -189,11 +189,11 @@ The tool will first download the `xtensa-esp-elf` toolchain which may take a whi
 
 * If the compilation process fails to find `libclang.dll` or `clang.dll`, create an environment variable `LIBCLANG_PATH` with the path to  your `libclang.dll` as such:
 ### Linux
-```sh
+```fish
 ~/.rustup/toolchains/esp/xtensa-esp32-elf-clang/esp-clang/bin/
 ```
 ### Windows
-```sh
+```fish
 %USERPROFILE%\.rustup\toolchains\esp\xtensa-esp32-elf-clang\esp-clang\bin\
 ```
 
