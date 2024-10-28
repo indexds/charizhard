@@ -1,7 +1,7 @@
 use embedded_svc::wifi::{AuthMethod, Configuration};
 use esp_idf_svc::wifi::{AccessPointConfiguration, BlockingWifi, EspWifi};
 use log::info;
-use embedded_svc::wifi::ClientConfiguration;
+// use embedded_svc::wifi::ClientConfiguration;
 use std::sync::{Arc, Mutex};
 //use crate::utils::nvs::Nvs;
 
@@ -12,20 +12,20 @@ pub fn start_wifi(wifi: &mut Arc<Mutex<BlockingWifi<EspWifi<'static>>>>) -> anyh
 
     let mut wifi = wifi.lock().map_err(|_| anyhow::anyhow!("Failed to lock Wifi Mutex."))?;
 
-    let mut sta_ssid = HeaplessString::<32>::new();
-    let mut sta_passwd = HeaplessString::<64>::new();
+    // let mut sta_ssid = HeaplessString::<32>::new();
+    // let mut sta_passwd = HeaplessString::<64>::new();
 
-    sta_ssid.push_str("Cyber")?;
-    sta_passwd.push_str("i <3 la cyber")?;
+    // sta_ssid.push_str("fishingrodent")?;
+    // sta_passwd.push_str("ijustlovepearssofuckingmuchbros")?;
 
-    let sta_configuration = ClientConfiguration {
-        ssid: sta_ssid.try_into()?,
-        bssid: None,
-        auth_method: AuthMethod::WPA2Personal,
-        password: sta_passwd.try_into()?,
-        channel: None,
-        ..Default::default()
-    };
+    // let sta_configuration = ClientConfiguration {
+    //     ssid: sta_ssid.try_into()?,
+    //     bssid: None,
+    //     auth_method: AuthMethod::WPA2Personal,
+    //     password: sta_passwd.try_into()?,
+    //     channel: None,
+    //     ..Default::default()
+    // };
 
 
     //temp
@@ -45,20 +45,21 @@ pub fn start_wifi(wifi: &mut Arc<Mutex<BlockingWifi<EspWifi<'static>>>>) -> anyh
     
     };
 
-    let mixed_config = Configuration::Mixed(sta_configuration, ap_configuration);
-    //let ap_config = Configuration::AccessPoint(ap_configuration);
+    // let mixed_config = Configuration::Mixed(sta_configuration, ap_configuration);
+    let ap_config = Configuration::AccessPoint(ap_configuration);
     //end temp
 
-    wifi.set_configuration(&mixed_config)?;
+    wifi.set_configuration(&ap_config)?;
+    // wifi.set_configuration(&mixed_config)?;
 
     wifi.start()?;
     info!("WIFI STARTED..");
 
-    wifi.connect()?;
-    info!("WIFI CONNECTED.");
+    // wifi.connect()?;
+    // info!("WIFI CONNECTED.");
 
-    wifi.wait_netif_up()?;
-    info!("WIFI NETIF UP.");
+    // wifi.wait_netif_up()?;
+    // info!("WIFI NETIF UP.");
 
     Ok(())
 }
