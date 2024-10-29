@@ -63,7 +63,7 @@ pub fn index_html(nvs: &Nvs) -> anyhow::Result<String> {
                     
                     <div class="wifi-block">
                         <button onclick="fetchScannedWifis()">Scan</button>
-                        <div id="scanned-wifis"></div>
+                        <div id="scanned-wifis" class="scrollable-box"></div>
                     </div>
                 </body>
             </html>

@@ -82,3 +82,12 @@ button:active{
     font-weight: bold;
     color: red;
 }
+
+.scrollable-box {
+    max-height: 300px; /* Adjust the height as needed */
+    overflow-y: auto; /* Enables vertical scrolling */
+    background-color: #2e2e3e; /* Background color to match the theme */
+    border-radius: 8px; /* Rounded corners */
+    padding: 10px; /* Padding for inner content */
+    margin-top: 10px; /* Spacing above the box */
+}

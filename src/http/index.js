@@ -93,9 +93,9 @@ async function fetchScannedWifis() {
         
         const scannedWifis = await response.text();
 
-        document.getElementById('scanned-wifis').value = scannedWifis;
+        document.getElementById('scanned-wifis').innerHTML = scannedWifis;
     } 
     catch (error) {
-        document.getElementById('scanned-wifis').value = 'Error fetching scanned Wi-Fi.';
+        document.getElementById('scanned-wifis').innerHTML = 'Error fetching scanned Wi-Fi.';
     }
 }
