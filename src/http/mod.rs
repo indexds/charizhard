@@ -245,10 +245,10 @@ pub fn start_http_server(
                     <div class='wifi' id={}>
                         <div class='ssid'>{}</div>
                         <div class='auth-method'>
-                            <img src='{}' alt='Auth Method'>
+                            <img src='{}' alt=''>
                         </div>
                         <div class='signal-strength'>
-                            <img src='{}' alt='Signal Strength'>
+                            <img src='{}' alt=''>
                         </div>
                     </div>
                 "###, 
