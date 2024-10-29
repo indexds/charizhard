@@ -112,17 +112,35 @@ pub fn start_http_server(
         
         let mut html = String::new();
 
-        let scanned = wifi.scan()?;
+        let mut scanned = wifi.scan()?;
+        scanned.sort_by(|a, b| a.ssid.cmp(&b.ssid));
+        scanned.dedup_by(|a, b| a.ssid == b.ssid);
+        
 
         for access_point in scanned.iter() {
-            html.push_str(format!("<div class='ssid'>{}</div>", &access_point.ssid).as_str());
+            html.push_str(format!(
+                r###"
+                    <div class='wifi' id={}>
+                        <div class='ssid'>{}</div>
+                        <div class='auth-method'>{:?}</div>
+                        <div class='signal-strength'>{}</div>
+                        <div class='channel'>{}</div>
+                    </div>
+                "###, 
+                
+                &access_point.ssid,
+                &access_point.ssid,
+                &access_point.auth_method,
+                &access_point.signal_strength,
+                &access_point.channel,
+            ).as_str());
         }
 
         let mut response = request.into_ok_response()?;
 
         response.write_all(html.as_bytes())?;
 
-        Ok::<(), Error>(())        
+        Ok::<(), Error>(()) 
     });
 
     let mut mdns = EspMdns::take()?;

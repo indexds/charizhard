@@ -85,3 +85,17 @@ document.getElementById('config').addEventListener('submit', function(event) {
         event.preventDefault();
     }
 });
+
+async function fetchScannedWifis() {
+    try {
+        const response = await fetch('/wifi');
+        if (!response.ok) throw new Error('Error fetching scanned Wi-Fi.');
+        
+        const scannedWifis = await response.text();
+
+        document.getElementById('scanned-wifis').value = scannedWifis;
+    } 
+    catch (error) {
+        document.getElementById('scanned-wifis').value = 'Error fetching scanned Wi-Fi.';
+    }
+}
