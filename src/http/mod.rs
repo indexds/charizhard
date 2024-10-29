@@ -228,6 +228,11 @@ pub fn start_http_server(
 
         for access_point in scanned.iter() {
 
+            let auth_method = match access_point.auth_method {
+                Some(_) => "/locked.svg",
+                None => "/unlocked.svg"
+            }
+
             let svg_icon = match access_point.signal_strength {
                 -50..=0 => "/signal-4.svg",
                 -60..=-51 => "/signal-3.svg",
@@ -239,7 +244,9 @@ pub fn start_http_server(
                 r###"
                     <div class='wifi' id={}>
                         <div class='ssid'>{}</div>
-                        <div class='auth-method'>{:?}</div>
+                        <div class='auth-method'>
+                            <img src='{}' alt='Auth Method'>
+                        </div>
                         <div class='signal-strength'>
                             <img src='{}' alt='Signal Strength'>
                         </div>
@@ -248,7 +255,7 @@ pub fn start_http_server(
                 
                 &access_point.ssid,
                 &access_point.ssid,
-                &access_point.auth_method.as_ref().map_or("Open".to_string(), |method| format!("{}", method)),
+                auth_method,
                 svg_icon
             ).as_str());
         }
