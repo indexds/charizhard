@@ -84,10 +84,29 @@ button:active{
 }
 
 .scrollable-box {
-    max-height: 300px; /* Adjust the height as needed */
-    overflow-y: auto; /* Enables vertical scrolling */
-    background-color: #2e2e3e; /* Background color to match the theme */
-    border-radius: 8px; /* Rounded corners */
-    padding: 10px; /* Padding for inner content */
-    margin-top: 10px; /* Spacing above the box */
+    max-height: 300px; 
+    overflow-y: auto; 
+    background-color: #2e2e3e; 
+    border-radius: 8px; 
+    padding: 10px; 
+    margin-top: 10px; 
+}
+
+
+.scrollable-box::-webkit-scrollbar {
+    width: 8px; 
+}
+
+.scrollable-box::-webkit-scrollbar-track {
+    background: #3a3a4f; 
+    border-radius: 8px; 
+}
+
+.scrollable-box::-webkit-scrollbar-thumb {
+    background: #ff5733; 
+    border-radius: 8px; 
+}
+
+.scrollable-box::-webkit-scrollbar-thumb:hover {
+    background: #ff4400; 
 }
