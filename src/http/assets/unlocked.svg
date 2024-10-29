@@ -1,7 +1,11 @@
 <!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
-<!-- Uploaded to: SVG Repo, www.svgrepo.com, Transformed by: SVG Repo Mixer Tools -->
-<svg height="800px" width="800px" version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 481.6 481.6" xml:space="preserve" fill="#000000">
-<g id="SVGRepo_bgCarrier" stroke-width="0"/>
-<g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"/>
-<g id="SVGRepo_iconCarrier"> <path style="fill:#3a3a4f;" d="M348.8,403.2c-11.2,0-20-8.8-20-20v-284c0-32-40-59.2-88-59.2s-88,27.2-88,59.2v88 c0,11.2-8.8,20-20,20s-20-8.8-20-20v-88C112.8,44,169.6,0,240.8,0s128,44.8,128,99.2v283.2C368.8,394.4,360,403.2,348.8,403.2z"/> <path style="fill:#3a3a4f;" d="M408.8,453.6c0,16-12.8,28-28,28h-280c-16,0-28-12.8-28-28v-192c0-16,12.8-28,28-28H380 c16,0,28,12.8,28,28v192H408.8z"/> <path style="fill:#3a3a4f;" d="M72.8,264c0-18.4,12.8-30.4,28-30.4H380c16,0,28,12.8,28,28v192.8c0,16-12.8,26.4-28,26.4"/> <path style="fill:#3a3a4f;" d="M240,0c-52,0-95.2,24-116,58.4l32.8,23.2c12-23.2,44.8-40.8,83.2-40.8c48,0,88.8,27.2,88.8,59.2v104 l40,28.8V99.2C368.8,44.8,311.2,0,240,0z"/> <path style="fill:#3a3a4f;" d="M274.4,348c0-17.6-15.2-32-32.8-32c-17.6,0-34.4,14.4-34.4,32c0,13.6,9.6,24.8,17.6,29.6v24 c0,6.4,9.6,12,16,12s16-5.6,16-12v-24C264.8,372.8,274.4,361.6,274.4,348z"/> <path style="fill:#ff4400;" d="M274.4,343.2c0-17.6-15.2-32-32.8-32c-17.6,0-34.4,14.4-34.4,32c0,13.6,9.6,24.8,17.6,29.6v24 c0,6.4,9.6,12,16,12s16-5.6,16-12v-24C264.8,368,274.4,356.8,274.4,343.2z"/> <path style="fill:#ff4400;" d="M240.8,311.2c-17.6,0-33.6,14.4-33.6,32c0,13.6,9.6,24.8,17.6,29.6v0.8l32,20v-20.8 c8-4.8,17.6-16,17.6-29.6C274.4,325.6,258.4,311.2,240.8,311.2z"/> <path style="fill:#3a3a4f;" d="M408.8,454.4c0,16-11.2,27.2-28,27.2h-280c-16,0-28-12-28-28"/> </g>
-</svg>
+
+<svg width="64px" height="64px" viewBox="-16 -16 64.00 64.00" fill="none" xmlns="http://www.w3.org/2000/svg" transform="rotate(0)matrix(1, 0, 0, 1, 0, 0)">
+
+<g id="SVGRepo_bgCarrier" stroke-width="0"/>
+
+<g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round" stroke="#CCCCCC" stroke-width="0.512"/>
+
+<g id="SVGRepo_iconCarrier"> <path d="M27 14V20C27 26.08 22.08 31 16 31C9.92 31 5 26.08 5 20V14C5 13.44 5.45 13 6 13H11H21H26C26.59 13 27 13.47 27 14Z" fill="#ff5733"/> <path d="M16 21C16.55 21 17 20.55 17 20C17 19.45 16.55 19 16 19C15.45 19 15 19.45 15 20C15 20.55 15.45 21 16 21Z" fill="#668077"/> <path d="M16 21V23M16 21C15.447 21 15 20.553 15 20C15 19.447 15.447 19 16 19C16.553 19 17 19.447 17 20C17 20.553 16.553 21 16 21ZM1 9V6C1 3.238 3.238 1 6 1C8.762 1 11 3.238 11 6V13H26C26.594 13 27 13.469 27 14V20C27 26.075 22.075 31 16 31C9.925 31 5 26.075 5 20V14C5 13.437 5.453 13 6 13H8" stroke="#000000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/> </g>
+
+</svg>
