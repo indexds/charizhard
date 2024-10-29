@@ -6,9 +6,9 @@ use std::sync::MutexGuard;
 const DEFAULT_STA_SSID: &str = "";
 const DEFAULT_STA_PASSWD: &str = "";
 
-const DEFAULT_WG_ADDR: &str = "0.0.0.0/24";
-const DEFAULT_WG_PORT: &str = "51820";
-const DEFAULT_WG_DNS: &str = "1.1.1.1";
+const DEFAULT_WG_ADDR: &str = "";
+const DEFAULT_WG_PORT: &str = "";
+const DEFAULT_WG_DNS: &str = "";
 
 const DEFAULT_WG_CLIENT_PRIV_KEY: &str = "";
 const DEFAULT_WG_SERVER_PUB_KEY: &str = "";
@@ -82,7 +82,7 @@ impl Nvs{
         Ok(())
     }
 
-    pub fn new(nvs: MutexGuard<'_, EspNvs<NvsDefault>>) -> anyhow::Result<Self>{
+    pub fn new(nvs: &MutexGuard<'_, EspNvs<NvsDefault>>) -> anyhow::Result<Self>{
 
         Ok(Self { 
 

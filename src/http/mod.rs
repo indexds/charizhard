@@ -12,7 +12,10 @@ use anyhow::Error;
 mod index;
 
 #[allow(unused_must_use)]
-pub fn start_http_server(nvs: Arc<Mutex<EspNvs<NvsDefault>>>, wifi: Arc<Mutex<BlockingWifi<EspWifi<'static>>>>) -> anyhow::Result<(EspHttpServer<'static>, EspMdns)> {
+pub fn start_http_server(
+    nvs: Arc<Mutex<EspNvs<NvsDefault>>>, 
+    wifi: Arc<Mutex<BlockingWifi<EspWifi<'static>>>>
+) -> anyhow::Result<(EspHttpServer<'static>, EspMdns)> {
 
     let http_config = HttpServerConfig {
         http_port: 80,        
@@ -26,8 +29,7 @@ pub fn start_http_server(nvs: Arc<Mutex<EspNvs<NvsDefault>>>, wifi: Arc<Mutex<Bl
     http_server.fn_handler("/", Method::Get, move |request| {
         
         let nvs = nvs_get.lock().map_err(|_| anyhow::anyhow!("Failed to lock NVS Mutex."))?;
-        
-        let nvs_config = Nvs::new(nvs)?;
+        let nvs_config = Nvs::new(&nvs)?;
 
         let html = index::index_html(&nvs_config)?;
 
@@ -43,9 +45,11 @@ pub fn start_http_server(nvs: Arc<Mutex<EspNvs<NvsDefault>>>, wifi: Arc<Mutex<Bl
     http_server.fn_handler("/save", Method::Post, move |mut request| {
 
         let mut nvs = nvs_post.lock().map_err(|_| anyhow::anyhow!("Failed to lock NVS Mutex."))?;
-        
-        let mut body = Vec::new();
+        let nvs_config = Nvs::new(&nvs)?;
 
+        let html = index::index_html(&nvs_config)?;
+
+        let mut body = Vec::new();
         let mut buffer = [0_u8; 128];
 
         loop {
@@ -69,8 +73,8 @@ pub fn start_http_server(nvs: Arc<Mutex<EspNvs<NvsDefault>>>, wifi: Arc<Mutex<Bl
         Nvs::set_field(&mut nvs, NvsKeys::WG_SERVER_PUB_KEY, config.wg_server_pub_key.clean_string().as_str());
 
         let mut response = request.into_ok_response()?;
-        response.write_all(b"Configuration saved successfully")?;
-    
+        response.write(html.as_bytes())?;
+        
         Ok::<(), Error>(())
     });
 
@@ -111,7 +115,7 @@ pub fn start_http_server(nvs: Arc<Mutex<EspNvs<NvsDefault>>>, wifi: Arc<Mutex<Bl
         let scanned = wifi.scan()?;
 
         for access_point in scanned.iter() {
-            html.push_str(format!("<div>{}</div>", access_point.ssid).as_str());
+            html.push_str(format!("<div class='ssid'>{}</div>", &access_point.ssid).as_str());
         }
 
         let mut response = request.into_ok_response()?;

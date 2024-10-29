@@ -35,7 +35,8 @@ label{
     font-weight: bold;
 }
 
-input[type="text"]{
+input[type="text"],
+input[type="password"]{
     width: 100%;
     padding: 10px;
     margin-bottom: 15px;
@@ -49,7 +50,8 @@ input[type="text"]{
     text-align: center;
 }
 
-input[type="text"]:focus{
+input[type="text"]:focus,
+input[type="password"]:focus{
     border-color: #ff5733;
     outline: none;
 }
@@ -69,5 +71,14 @@ button{
 }
 
 button:hover{
-    background-color: #ff4500;
+    background-color: #ff4400;
+}
+
+button:active{
+    background-color: #cf3700;
+}
+
+.error{
+    font-weight: bold;
+    color: red;
 }

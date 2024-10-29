@@ -28,25 +28,33 @@ pub fn index_html(nvs: &Nvs) -> anyhow::Result<String> {
                     
                     <form id="config" method="post" action="/save">
                         <label for="ssid">Wi-Fi SSID</label>
-                        <input type="text" id="ssid" name="ssid" value="{}" required>
+                        <input type="text" id="ssid" name="ssid" value="{}" placeholder="e.g. charizhard" required>
+                        <div class="error" id="ssid-error"></div>
 
                         <label for="passwd">Wi-Fi Password</label>
-                        <input type="text" id="passwd" name="passwd" value="{}" required>
+                        <input type="password" id="passwd" name="passwd" value="{}" placeholder="e.g. 1234">
+                        <div class="error" id="passwd-error"></div>
 
                         <label for="address">WireGuard Address</label>
-                        <input type="text" id="address" name="address" value="{}" required>
+                        <input type="text" id="address" name="address" value="{}" placeholder="e.g. 0.0.0.0/24" required>
+                        <div class="error" id="address-error"></div>
 
                         <label for="port">WireGuard Port</label>
-                        <input type="text" id="port" name="port" value="{}">
+                        <input type="text" id="port" name="port" value="{}" placeholder="e.g. 51820" required>
+                        <div class="error" id="port-error"></div>
 
                         <label for="dns">WireGuard DNS</label>
-                        <input type="text" id="dns" name="dns" value="{}">
+                        <input type="text" id="dns" name="dns" value="{}" placeholder="e.g. 1.1.1.1" required>
+                        <div class="error" id="dns-error"></div>
 
                         <label for="privkey">Client Private Key</label>
-                        <input type="text" id="privkey" name="privkey" value="{}" required>
+                        <input type="password" id="privkey" name="privkey" value="{}" placeholder="e.g. mymtN3XjUj/UkbZkIPI1X28=" required>
+                        <div class="error" id="privkey-error"></div>
 
                         <label for="pubkey">Remote Host Public Key</label>
-                        <input type="text" id="pubkey" name="pubkey" value="{}" required> 
+                        <input type="text" id="pubkey" name="pubkey" value="{}" placeholder="e.g. vBTj0TgQpQzjBWEShTkd8AU=" required>
+                        <div class="error" id="pubkey-error"></div>
+
                         <button type="submit">Submit</button>
                     </form>
 
