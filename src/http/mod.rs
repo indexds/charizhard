@@ -241,7 +241,7 @@ pub fn start_http_server(
                         <div class='ssid'>{}</div>
                         <div class='auth-method'>{:?}</div>
                         <div class='signal-strength'>
-                            <img src='/{}' alt='Signal Strength'>
+                            <img src='{}' alt='Signal Strength'>
                         </div>
                     </div>
                 "###, 
