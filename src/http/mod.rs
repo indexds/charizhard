@@ -40,11 +40,11 @@ pub fn start_http_server(
         Ok::<(), Error>(())
     });
 
-    let nvs_post = Arc::clone(&nvs);
+    let nvs_post_wg = Arc::clone(&nvs);
 
-    http_server.fn_handler("/save", Method::Post, move |mut request| {
+    http_server.fn_handler("/save-wg", Method::Post, move |mut request| {
 
-        let mut nvs = nvs_post.lock().map_err(|_| anyhow::anyhow!("Failed to lock NVS Mutex."))?;
+        let mut nvs = nvs_post_wg.lock().map_err(|_| anyhow::anyhow!("Failed to lock NVS Mutex."))?;
         let nvs_config = Nvs::new(&nvs)?;
 
         let html = index::index_html(&nvs_config)?;
@@ -61,16 +61,45 @@ pub fn start_http_server(
         }
         
         let form_data = String::from_utf8(body)?;
-        let config: Nvs = serde_urlencoded::from_str(form_data.as_str())?;
+        let wg_config: Nvs = serde_urlencoded::from_str(form_data.as_str())?;
         
+        Nvs::set_field(&mut nvs, NvsKeys::WG_ADDR, wg_config.wg_addr.clean_string().as_str());
+        Nvs::set_field(&mut nvs, NvsKeys::WG_PORT, wg_config.wg_port.clean_string().as_str());
+        Nvs::set_field(&mut nvs, NvsKeys::WG_DNS, wg_config.wg_dns.clean_string().as_str());
+        Nvs::set_field(&mut nvs, NvsKeys::WG_CLIENT_PRIV_KEY, wg_config.wg_client_priv_key.clean_string().as_str());
+        Nvs::set_field(&mut nvs, NvsKeys::WG_SERVER_PUB_KEY, wg_config.wg_server_pub_key.clean_string().as_str());
 
-        Nvs::set_field(&mut nvs, NvsKeys::STA_SSID, config.sta_ssid.clean_string().as_str());
-        Nvs::set_field(&mut nvs, NvsKeys::STA_PASSWD, config.sta_passwd.clean_string().as_str());
-        Nvs::set_field(&mut nvs, NvsKeys::WG_ADDR, config.wg_addr.clean_string().as_str());
-        Nvs::set_field(&mut nvs, NvsKeys::WG_PORT, config.wg_port.clean_string().as_str());
-        Nvs::set_field(&mut nvs, NvsKeys::WG_DNS, config.wg_dns.clean_string().as_str());
-        Nvs::set_field(&mut nvs, NvsKeys::WG_CLIENT_PRIV_KEY, config.wg_client_priv_key.clean_string().as_str());
-        Nvs::set_field(&mut nvs, NvsKeys::WG_SERVER_PUB_KEY, config.wg_server_pub_key.clean_string().as_str());
+        let mut response = request.into_ok_response()?;
+        response.write(html.as_bytes())?;
+        
+        Ok::<(), Error>(())
+    });
+
+    let nvs_post_wifi = Arc::clone(&nvs);
+
+    http_server.fn_handler("/save-wifi", Method::Post, move |mut request| {
+
+        let mut nvs = nvs_post_wifi.lock().map_err(|_| anyhow::anyhow!("Failed to lock NVS Mutex."))?;
+        let nvs_config = Nvs::new(&nvs)?;
+
+        let html = index::index_html(&nvs_config)?;
+
+        let mut body = Vec::new();
+        let mut buffer = [0_u8; 128];
+
+        loop {
+            match request.read(&mut buffer) {
+                Ok(0) => break,
+                Ok(n) => body.extend_from_slice(&buffer[..n]),
+                Err(e) => return Err(e.into()),
+            }
+        }
+        
+        let form_data = String::from_utf8(body)?;
+        let wifi_config: Nvs = serde_urlencoded::from_str(form_data.as_str())?;
+        
+        Nvs::set_field(&mut nvs, NvsKeys::STA_SSID, wifi_config.sta_ssid.clean_string().as_str());
+        Nvs::set_field(&mut nvs, NvsKeys::STA_PASSWD, wifi_config.sta_passwd.clean_string().as_str());
 
         let mut response = request.into_ok_response()?;
         response.write(html.as_bytes())?;
@@ -157,7 +186,7 @@ pub fn start_http_server(
     });
 
     http_server.fn_handler("/signal-4.svg", Method::Get, move |mut request| {
-        
+
         let signal_four = include_str!("./assets/signal-4.svg");
 
         let connection = request.connection();
@@ -165,6 +194,19 @@ pub fn start_http_server(
         connection.initiate_response(200, Some("OK"), &[("Content-Type", "image/svg+xml")])?;
 
         connection.write(signal_four.as_bytes())?;
+        
+        Ok::<(), Error>(())
+    });
+
+    http_server.fn_handler("/unlocked.svg", Method::Get, move |mut request| {
+
+        let unlocked = include_str!("./assets/unlocked.svg");
+
+        let connection = request.connection();
+
+        connection.initiate_response(200, Some("OK"), &[("Content-Type", "image/svg+xml")])?;
+
+        connection.write(unlocked.as_bytes())?;
         
         Ok::<(), Error>(())
     });
@@ -185,19 +227,29 @@ pub fn start_http_server(
         
 
         for access_point in scanned.iter() {
+
+            let svg_icon = match access_point.signal_strength {
+                -50..=0 => "/signal-4.svg",
+                -60..=-51 => "/signal-3.svg",
+                -70..=-61 => "/signal-2.svg",
+                _ => "/signal-1.svg"
+            };
+
             html.push_str(format!(
                 r###"
                     <div class='wifi' id={}>
                         <div class='ssid'>{}</div>
                         <div class='auth-method'>{:?}</div>
-                        <div class='signal-strength'>{}</div>
+                        <div class='signal-strength'>
+                            <img src='/{}' alt='Signal Strength'>
+                        </div>
                     </div>
                 "###, 
                 
                 &access_point.ssid,
                 &access_point.ssid,
                 &access_point.auth_method.as_ref().map_or("Open".to_string(), |method| format!("{}", method)),
-                &access_point.signal_strength,
+                svg_icon
             ).as_str());
         }
 

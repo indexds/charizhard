@@ -22,26 +22,18 @@ pub fn index_html(nvs: &Nvs) -> anyhow::Result<String> {
                 
                 <body>
                     <div class="form-container">
-                        <h1>Configuration</h1>
+                        <h1>Wireguard</h1>
                         
                         <form id="config" method="post" action="/save">
-                            <label for="ssid">Wi-Fi SSID</label>
-                            <input type="text" id="ssid" name="ssid" value="{}" placeholder="e.g. charizhard" required>
-                            <div class="error" id="ssid-error"></div>
-
-                            <label for="passwd">Wi-Fi Password</label>
-                            <input type="password" id="passwd" name="passwd" value="{}" placeholder="e.g. 1234">
-                            <div class="error" id="passwd-error"></div>
-
-                            <label for="address">WireGuard Address</label>
+                            <label for="address">Address</label>
                             <input type="text" id="address" name="address" value="{}" placeholder="e.g. 0.0.0.0/24" required>
                             <div class="error" id="address-error"></div>
 
-                            <label for="port">WireGuard Port</label>
+                            <label for="port">Port</label>
                             <input type="text" id="port" name="port" value="{}" placeholder="e.g. 51820" required>
                             <div class="error" id="port-error"></div>
 
-                            <label for="dns">WireGuard DNS</label>
+                            <label for="dns">DNS</label>
                             <input type="text" id="dns" name="dns" value="{}" placeholder="e.g. 1.1.1.1" required>
                             <div class="error" id="dns-error"></div>
 
@@ -58,6 +50,7 @@ pub fn index_html(nvs: &Nvs) -> anyhow::Result<String> {
                     </div>
                     
                     <div class="wifi-container">
+                        <h1>Wi-Fi</h1>
                         <div id="scanned-wifis" class="scrollable-box">
                             <div id="inner-scanned-wifis"></div>
                             <img id="loading-svg" src="spinner.svg" alt="Loading...">
@@ -68,8 +61,6 @@ pub fn index_html(nvs: &Nvs) -> anyhow::Result<String> {
                 <script src="index.js"></script>
             </html>
         "###, 
-        nvs.sta_ssid.clean_string().as_str(), 
-        nvs.sta_passwd.clean_string().as_str(), 
         nvs.wg_addr.clean_string().as_str(), 
         nvs.wg_port.clean_string().as_str(), 
         nvs.wg_dns.clean_string().as_str(), 

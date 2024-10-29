@@ -137,3 +137,8 @@ button:active{
     height: 80px
 }
 
+.signal-strength {
+    width: 30px;
+    height: 30px;
+    display: inline-block;
+}
