@@ -231,7 +231,7 @@ pub fn start_http_server(
             let auth_method = match access_point.auth_method {
                 Some(_) => "/locked.svg",
                 None => "/unlocked.svg"
-            }
+            };
 
             let svg_icon = match access_point.signal_strength {
                 -50..=0 => "/signal-4.svg",
