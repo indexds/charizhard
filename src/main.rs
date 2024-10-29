@@ -7,7 +7,7 @@ use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
 // use esp_idf_svc::sys::esp_get_free_heap_size;
-// use log::info;
+use log::info;
 
 mod wifi;
 mod http;
@@ -33,7 +33,15 @@ fn main() -> anyhow::Result<()> {
 
     let mut guarded_wifi = Arc::new(Mutex::new(wifi));
 
-    wifi::start_wifi(&mut guarded_wifi)?;
+    loop {
+        match wifi::start_wifi(&mut guarded_wifi) {
+            Ok(_) => break,
+            Err(e) => {
+                info!("Failed to connect to wifi. Retrying..");
+                std::thread::sleep(Duration::from_millis(100));
+            }
+        }
+    }
     
     let (http_server, mdns) = http::start_http_server(guarded_nvs, guarded_wifi)?;
 

@@ -87,15 +87,26 @@ document.getElementById('config').addEventListener('submit', function(event) {
 });
 
 async function fetchScannedWifis() {
+
+    let scanned_wifis = document.getElementById('inner-scanned-wifis');
+    scanned_wifis.innerHTML = "";
+
     try {
-        const response = await fetch('/wifi');
-        if (!response.ok) throw new Error('Error fetching scanned Wi-Fi.');
+        document.getElementById('loading-svg').style.display = 'block'; 
         
+        const response = await fetch('/wifi');
+        
+        console.log('Response status:', response.status);
+        if (!response.ok) throw new Error('Error fetching scanned Wi-Fi.');
+
         const scannedWifis = await response.text();
 
-        document.getElementById('scanned-wifis').innerHTML = scannedWifis;
+        document.getElementById('loading-svg').style.display = 'none';
+
+        scanned_wifis.innerHTML = scannedWifis;
     } 
     catch (error) {
-        document.getElementById('scanned-wifis').innerHTML = 'Error fetching scanned Wi-Fi.';
+        scanned_wifis.innerHTML = 'Error fetching scanned Wi-Fi.';
+        console.error('Fetch error:', error);
     }
 }

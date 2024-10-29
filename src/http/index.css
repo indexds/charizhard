@@ -17,6 +17,18 @@ body{
     max-width: 400px;
     width: 100%;
     box-sizing: border-box;
+    margin: auto;
+}
+
+.wifi-container{
+    background-color: #2e2e3e;
+    padding: 25px 30px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    max-width: 400px;
+    width: 100%;
+    box-sizing: border-box;
+    margin: auto;
 }
 
 h1{
@@ -108,5 +120,20 @@ button:active{
 }
 
 .scrollable-box::-webkit-scrollbar-thumb:hover {
+    display: block;
     background: #ff4400; 
+    place-items: center;
+    height: 100vh;
 }
+
+.wifi{
+    font-weight: bold;
+
+}
+
+#loading-svg{
+    display: none;
+    width: 80px; 
+    height: 80px
+}
+

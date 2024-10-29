@@ -104,6 +104,73 @@ pub fn start_http_server(
         Ok::<(), Error>(())
     });
 
+    http_server.fn_handler("/spinner.svg", Method::Get, move |mut request| {
+
+        let spinner = include_str!("./assets/spinner.svg");
+
+        let connection = request.connection();
+
+        connection.initiate_response(200, Some("OK"), &[("Content-Type", "image/svg+xml")])?;
+
+        connection.write(spinner.as_bytes())?;
+        
+        Ok::<(), Error>(())
+    });
+
+    http_server.fn_handler("/signal-1.svg", Method::Get, move |mut request| {
+
+        let signal_one = include_str!("./assets/signal-1.svg");
+
+        let connection = request.connection();
+
+        connection.initiate_response(200, Some("OK"), &[("Content-Type", "image/svg+xml")])?;
+
+        connection.write(signal_one.as_bytes())?;
+        
+        Ok::<(), Error>(())
+    });
+
+    http_server.fn_handler("/signal-2.svg", Method::Get, move |mut request| {
+
+        let signal_two = include_str!("./assets/signal-2.svg");
+
+        let connection = request.connection();
+
+        connection.initiate_response(200, Some("OK"), &[("Content-Type", "image/svg+xml")])?;
+
+        connection.write(signal_two.as_bytes())?;
+        
+        Ok::<(), Error>(())
+    });
+
+    http_server.fn_handler("/signal-3.svg", Method::Get, move |mut request| {
+
+        let signal_three = include_str!("./assets/signal-3.svg");
+
+        let connection = request.connection();
+
+        connection.initiate_response(200, Some("OK"), &[("Content-Type", "image/svg+xml")])?;
+
+        connection.write(signal_three.as_bytes())?;
+        
+        Ok::<(), Error>(())
+    });
+
+    http_server.fn_handler("/signal-4.svg", Method::Get, move |mut request| {
+        
+        let signal_four = include_str!("./assets/signal-4.svg");
+
+        let connection = request.connection();
+
+        connection.initiate_response(200, Some("OK"), &[("Content-Type", "image/svg+xml")])?;
+
+        connection.write(signal_four.as_bytes())?;
+        
+        Ok::<(), Error>(())
+    });
+    
+    
+
     let wifi_get = Arc::clone(&wifi);
 
     http_server.fn_handler("/wifi", Method::Get, move |request| {
@@ -124,15 +191,13 @@ pub fn start_http_server(
                         <div class='ssid'>{}</div>
                         <div class='auth-method'>{:?}</div>
                         <div class='signal-strength'>{}</div>
-                        <div class='channel'>{}</div>
                     </div>
                 "###, 
                 
                 &access_point.ssid,
                 &access_point.ssid,
-                &access_point.auth_method,
+                &access_point.auth_method.as_ref().map_or("Open".to_string(), |method| format!("{}", method)),
                 &access_point.signal_strength,
-                &access_point.channel,
             ).as_str());
         }
 
