@@ -108,7 +108,18 @@ async function fetchScannedWifis() {
     catch (error) {
         scanned_wifis.style.fontWeight = 'bold';
         scanned_wifis.innerHTML = 'Error fetching scanned Wi-Fis.';
+        
         document.getElementById('loading-svg').style.display = 'none'; 
         console.error('Fetch error:', error);
     }
+}
+
+function toggleDropdown(event, element) {
+    if (event.target.closest('.wifi-connect')) return;
+
+    const form = element.querySelector('.wifi-connect');
+    const wifiContainer = element.closest('.wifi');
+
+    form.classList.toggle('visible');
+    wifiContainer.classList.toggle('expanded');
 }

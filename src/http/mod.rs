@@ -3,8 +3,11 @@ use esp_idf_svc::nvs::{EspNvs, NvsDefault};
 use esp_idf_svc::mdns::EspMdns;
 use esp_idf_svc::wifi::{BlockingWifi, EspWifi};
 use std::sync::{Arc, Mutex};
+use crate::utils::nvs::NvsWireguard;
+use crate::utils::nvs::NvsWifi;
+
 use esp_idf_hal::io::Write;
-use crate::utils::nvs::Nvs;
+
 use crate::utils::nvs::NvsKeys;
 use serde_urlencoded;
 use anyhow::Error;
@@ -30,7 +33,7 @@ pub fn start_http_server(
     http_server.fn_handler("/", Method::Get, move |request| {
         
         let nvs = nvs_get.lock().map_err(|_| anyhow::anyhow!("Failed to lock NVS Mutex."))?;
-        let nvs_config = Nvs::new(&nvs)?;
+        let nvs_config = NvsWireguard::new(&nvs)?;
 
         let html = index::index_html(&nvs_config)?;
 
@@ -46,7 +49,7 @@ pub fn start_http_server(
     http_server.fn_handler("/save-wg", Method::Post, move |mut request| {
 
         let mut nvs = nvs_post_wg.lock().map_err(|_| anyhow::anyhow!("Failed to lock NVS Mutex."))?;
-        let nvs_config = Nvs::new(&nvs)?;
+        let nvs_config = NvsWireguard::new(&nvs)?;
 
         let html = index::index_html(&nvs_config)?;
 
@@ -62,13 +65,13 @@ pub fn start_http_server(
         }
         
         let form_data = String::from_utf8(body)?;
-        let wg_config: Nvs = serde_urlencoded::from_str(form_data.as_str())?;
+        let wg_config: NvsWireguard = serde_urlencoded::from_str(form_data.as_str())?;
         
-        Nvs::set_field(&mut nvs, NvsKeys::WG_ADDR, wg_config.wg_addr.clean_string().as_str());
-        Nvs::set_field(&mut nvs, NvsKeys::WG_PORT, wg_config.wg_port.clean_string().as_str());
-        Nvs::set_field(&mut nvs, NvsKeys::WG_DNS, wg_config.wg_dns.clean_string().as_str());
-        Nvs::set_field(&mut nvs, NvsKeys::WG_CLIENT_PRIV_KEY, wg_config.wg_client_priv_key.clean_string().as_str());
-        Nvs::set_field(&mut nvs, NvsKeys::WG_SERVER_PUB_KEY, wg_config.wg_server_pub_key.clean_string().as_str());
+        NvsWireguard::set_field(&mut nvs, NvsKeys::WG_ADDR, wg_config.wg_addr.clean_string().as_str())?;
+        NvsWireguard::set_field(&mut nvs, NvsKeys::WG_PORT, wg_config.wg_port.clean_string().as_str())?;
+        NvsWireguard::set_field(&mut nvs, NvsKeys::WG_DNS, wg_config.wg_dns.clean_string().as_str())?;
+        NvsWireguard::set_field(&mut nvs, NvsKeys::WG_CLIENT_PRIV_KEY, wg_config.wg_client_priv_key.clean_string().as_str())?;
+        NvsWireguard::set_field(&mut nvs, NvsKeys::WG_SERVER_PUB_KEY, wg_config.wg_server_pub_key.clean_string().as_str())?;
 
         let mut response = request.into_ok_response()?;
         response.write(html.as_bytes())?;
@@ -81,9 +84,6 @@ pub fn start_http_server(
     http_server.fn_handler("/save-wifi", Method::Post, move |mut request| {
 
         let mut nvs = nvs_post_wifi.lock().map_err(|_| anyhow::anyhow!("Failed to lock NVS Mutex."))?;
-        let nvs_config = Nvs::new(&nvs)?;
-
-        let html = index::index_html(&nvs_config)?;
 
         let mut body = Vec::new();
         let mut buffer = [0_u8; 128];
@@ -97,13 +97,12 @@ pub fn start_http_server(
         }
         
         let form_data = String::from_utf8(body)?;
-        let wifi_config: Nvs = serde_urlencoded::from_str(form_data.as_str())?;
+        let wifi_config: NvsWifi = serde_urlencoded::from_str(form_data.as_str())?;
         
-        Nvs::set_field(&mut nvs, NvsKeys::STA_SSID, wifi_config.sta_ssid.clean_string().as_str());
-        Nvs::set_field(&mut nvs, NvsKeys::STA_PASSWD, wifi_config.sta_passwd.clean_string().as_str());
+        NvsWifi::set_field(&mut nvs, NvsKeys::STA_SSID, wifi_config.sta_ssid.clean_string().as_str())?;
+        NvsWifi::set_field(&mut nvs, NvsKeys::STA_PASSWD, wifi_config.sta_passwd.clean_string().as_str())?;
 
-        let mut response = request.into_ok_response()?;
-        response.write(html.as_bytes())?;
+        request.into_ok_response()?;
         
         Ok::<(), Error>(())
     });
@@ -142,7 +141,6 @@ pub fn start_http_server(
 
         connection.initiate_response(200, Some("OK"), &[
             ("Content-Type", "image/svg+xml"),
-            ("Cache-Control", "public, max-age=86400"), 
         ])?;
 
         connection.write(spinner.as_bytes())?;
@@ -158,7 +156,6 @@ pub fn start_http_server(
 
         connection.initiate_response(200, Some("OK"), &[
             ("Content-Type", "image/svg+xml"),
-            //("Cache-Control", "public, max-age=86400"), 
         ])?;
 
         connection.write(signal_one.as_bytes())?;
@@ -174,7 +171,6 @@ pub fn start_http_server(
 
         connection.initiate_response(200, Some("OK"), &[
             ("Content-Type", "image/svg+xml"),
-            //("Cache-Control", "public, max-age=86400"), 
         ])?;
 
         connection.write(signal_two.as_bytes())?;
@@ -190,7 +186,6 @@ pub fn start_http_server(
 
         connection.initiate_response(200, Some("OK"), &[
             ("Content-Type", "image/svg+xml"),
-            //("Cache-Control", "public, max-age=86400"), 
         ])?;
 
         connection.write(signal_three.as_bytes())?;
@@ -206,7 +201,6 @@ pub fn start_http_server(
 
         connection.initiate_response(200, Some("OK"), &[
             ("Content-Type", "image/svg+xml"),
-            //("Cache-Control", "public, max-age=86400"), 
         ])?;
 
         connection.write(signal_four.as_bytes())?;
@@ -222,7 +216,6 @@ pub fn start_http_server(
 
         connection.initiate_response(200, Some("OK"), &[
             ("Content-Type", "image/svg+xml"),
-            //("Cache-Control", "public, max-age=86400"), 
         ])?;
         
 
@@ -239,7 +232,6 @@ pub fn start_http_server(
 
         connection.initiate_response(200, Some("OK"), &[
             ("Content-Type", "image/svg+xml"),
-            //("Cache-Control", "public, max-age=86400"), 
         ])?;
         
 
@@ -282,17 +274,38 @@ pub fn start_http_server(
                 _ => "/signal-1.svg"
             };
 
+            let password_html = if access_point.auth_method != Some(AuthMethod::None) {
+                format!(
+                    r###"
+                        <label for='passwd'>Password</label>
+                        <input type='password' id='passwd' name='passwd' required>
+                    "###
+                )
+            } 
+            else {
+                String::new()
+            };
+
             html.push_str(format!(
                 r###"
-                    <div class='wifi' id={}>
-                        <div class='ssid'>{}</div>
-                        <div class='signal-auth-container'>
-                            <div class='auth-method'>
-                                <img src='{}'>
+                    <div class='wifi' id={} onclick='toggleDropdown(event, this)'>
+                        <div class='ssid-block'>    
+                            <div class='ssid'>{}</div>
+                            <div class='signal-auth-container'>
+                                <div class='auth-method'>
+                                    <img src='{}'>
+                                </div>
+                                <div class='signal-strength'>
+                                    <img src='{}'>
+                                </div>
                             </div>
-                            <div class='signal-strength'>
-                                <img src='{}'>
-                            </div>
+                        </div>
+                        <div class='wifi-connect'>
+                            <form id='connect-form-{}' method='post' action='/save-wifi'>
+                                <input type='hidden' name='ssid' value='{}'>
+                                {}
+                                <button type="submit">Connect</button>
+                            </form>
                         </div>
                     </div>
                 "###,
@@ -301,6 +314,9 @@ pub fn start_http_server(
                 &access_point.ssid,
                 auth_method,
                 signal_strength,
+                &access_point.ssid,
+                &access_point.ssid,
+                password_html,
 
             ).as_str());
         }

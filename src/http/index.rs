@@ -1,10 +1,10 @@
 use base64::prelude::BASE64_STANDARD;
-use crate::utils::nvs::Nvs;
+use crate::utils::nvs::NvsWireguard;
 use base64::Engine;
 
 const FAVICON_DATA: &'static [u8] = include_bytes!("./assets/favicon.ico");
 
-pub fn index_html(nvs: &Nvs) -> anyhow::Result<String> {
+pub fn index_html(nvs: &NvsWireguard) -> anyhow::Result<String> {
     let favicon = BASE64_STANDARD.encode(FAVICON_DATA);
 
     Ok(format!(
@@ -24,7 +24,7 @@ pub fn index_html(nvs: &Nvs) -> anyhow::Result<String> {
                     <div class="form-container">
                         <h1>Wireguard</h1>
                         
-                        <form id="config" method="post" action="/save">
+                        <form id="config" method="post" action="/save-wg">
                             <label for="address">Address</label>
                             <input type="text" id="address" name="address" value="{}" placeholder="e.g. 0.0.0.0/24" required>
                             <div class="error" id="address-error"></div>

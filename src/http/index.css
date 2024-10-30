@@ -80,7 +80,7 @@ button{
     cursor: pointer;
     transition: background-color 0.3s;
     box-sizing: border-box;
-    margin-top: 20px;
+    margin-top: 10px;
 }
 
 button:hover{
@@ -110,27 +110,6 @@ button:active{
     scrollbar-color: #ff5733 #3a3a4f;
 }
 
-/* .scrollable-box::-webkit-scrollbar {
-    width: 8px !important; 
-}
-
-.scrollable-box::-webkit-scrollbar-track {
-    background: #3a3a4f !important; 
-    border-radius: 8px !important; 
-}
-
-.scrollable-box::-webkit-scrollbar-thumb {
-    background: #ff5733 !important; 
-    border-radius: 8px !important; 
-}
-
-.scrollable-box::-webkit-scrollbar-thumb:hover {
-    display: block !important;
-    background: #ff4400 !important; 
-    place-items: center !important;
-    height: 100vh !important;
-} */
-
 .scanned-wifis{
     display: flex;
     align-items: center;
@@ -148,7 +127,7 @@ button:active{
 }
 
 .wifi {
-    display: flex;
+    display: block;
     align-items: center;
     padding: 10px;
     margin-bottom: 10px;
@@ -160,6 +139,12 @@ button:active{
     font-weight: bold;
     box-sizing: border-box;
     transition: border-color 0.3s;
+    cursor: pointer;
+    max-height: 50px;
+}
+
+.wifi:hover{
+    border: 1px solid #ff5733;
 }
 
 .ssid {
@@ -172,6 +157,7 @@ button:active{
 .signal-auth-container {
     display: flex;
     gap: 10px;
+    justify-content: space-between
 }
 
 .auth-method, .signal-strength {
@@ -179,4 +165,21 @@ button:active{
     align-items: center;
     justify-content: center;
     width: auto;
+}
+
+.wifi-connect {
+    cursor: pointer;
+    opacity: 0;
+    height: 0;
+    transition: opacity 0.3s ease, height 0.3s ease;
+    overflow: hidden;
+}
+
+.wifi-connect.visible {
+    opacity: 1;
+    height: auto;
+}
+
+.wifi.expanded {
+    max-height: 200px;
 }
