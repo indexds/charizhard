@@ -92,12 +92,12 @@ async function fetchScannedWifis() {
     scanned_wifis.innerHTML = "";
 
     try {
-        document.getElementById('loading-svg').style.display = 'block'; 
+        document.getElementById('loading-svg').style.display = 'flex'; 
         
         const response = await fetch('/wifi');
         
         console.log('Response status:', response.status);
-        if (!response.ok) throw new Error('Error fetching scanned Wi-Fi.');
+        if (!response.ok) throw new Error('Error fetching scanned Wi-Fis.');
 
         const scannedWifis = await response.text();
 
@@ -106,7 +106,8 @@ async function fetchScannedWifis() {
         scanned_wifis.innerHTML = scannedWifis;
     } 
     catch (error) {
-        scanned_wifis.innerHTML = 'Error fetching scanned Wi-Fi.';
+        scanned_wifis.innerHTML = 'Error fetching scanned Wi-Fis.';
+        document.getElementById('loading-svg').style.display = 'none'; 
         console.error('Fetch error:', error);
     }
 }

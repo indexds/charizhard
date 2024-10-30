@@ -139,7 +139,10 @@ pub fn start_http_server(
 
         let connection = request.connection();
 
-        connection.initiate_response(200, Some("OK"), &[("Content-Type", "image/svg+xml")])?;
+        connection.initiate_response(200, Some("OK"), &[
+            ("Content-Type", "image/svg+xml"),
+            ("Cache-Control", "public, max-age=86400"), 
+        ])?;
 
         connection.write(spinner.as_bytes())?;
         
@@ -152,7 +155,10 @@ pub fn start_http_server(
 
         let connection = request.connection();
 
-        connection.initiate_response(200, Some("OK"), &[("Content-Type", "image/svg+xml")])?;
+        connection.initiate_response(200, Some("OK"), &[
+            ("Content-Type", "image/svg+xml"),
+            ("Cache-Control", "public, max-age=86400"), 
+        ])?;
 
         connection.write(signal_one.as_bytes())?;
         
@@ -165,7 +171,10 @@ pub fn start_http_server(
 
         let connection = request.connection();
 
-        connection.initiate_response(200, Some("OK"), &[("Content-Type", "image/svg+xml")])?;
+        connection.initiate_response(200, Some("OK"), &[
+            ("Content-Type", "image/svg+xml"),
+            ("Cache-Control", "public, max-age=86400"), 
+        ])?;
 
         connection.write(signal_two.as_bytes())?;
         
@@ -178,7 +187,10 @@ pub fn start_http_server(
 
         let connection = request.connection();
 
-        connection.initiate_response(200, Some("OK"), &[("Content-Type", "image/svg+xml")])?;
+        connection.initiate_response(200, Some("OK"), &[
+            ("Content-Type", "image/svg+xml"),
+            ("Cache-Control", "public, max-age=86400"), 
+        ])?;
 
         connection.write(signal_three.as_bytes())?;
         
@@ -191,7 +203,10 @@ pub fn start_http_server(
 
         let connection = request.connection();
 
-        connection.initiate_response(200, Some("OK"), &[("Content-Type", "image/svg+xml")])?;
+        connection.initiate_response(200, Some("OK"), &[
+            ("Content-Type", "image/svg+xml"),
+            ("Cache-Control", "public, max-age=86400"), 
+        ])?;
 
         connection.write(signal_four.as_bytes())?;
         
@@ -204,9 +219,30 @@ pub fn start_http_server(
 
         let connection = request.connection();
 
-        connection.initiate_response(200, Some("OK"), &[("Content-Type", "image/svg+xml")])?;
+        connection.initiate_response(200, Some("OK"), &[
+            ("Content-Type", "image/svg+xml"),
+            ("Cache-Control", "public, max-age=86400"), 
+        ])?;
+        
 
         connection.write(unlocked.as_bytes())?;
+        
+        Ok::<(), Error>(())
+    });
+
+    http_server.fn_handler("/locked.svg", Method::Get, move |mut request| {
+
+        let locked = include_str!("./assets/locked.svg");
+
+        let connection = request.connection();
+
+        connection.initiate_response(200, Some("OK"), &[
+            ("Content-Type", "image/svg+xml"),
+            ("Cache-Control", "public, max-age=86400"), 
+        ])?;
+        
+
+        connection.write(locked.as_bytes())?;
         
         Ok::<(), Error>(())
     });
@@ -222,8 +258,13 @@ pub fn start_http_server(
         let mut html = String::new();
 
         let mut scanned = wifi.scan()?;
+        
+        //Remove dups
         scanned.sort_by(|a, b| a.ssid.cmp(&b.ssid));
         scanned.dedup_by(|a, b| a.ssid == b.ssid);
+        
+        //Sort by desc sig strength (values are negative, with 0db max, -50db avg)
+        scanned.sort_by(|a, b| b.signal_strength.cmp(&a.signal_strength));
         
 
         for access_point in scanned.iter() {
@@ -244,11 +285,13 @@ pub fn start_http_server(
                 r###"
                     <div class='wifi' id={}>
                         <div class='ssid'>{}</div>
-                        <div class='auth-method'>
-                            <img src='{}' alt=''>
-                        </div>
-                        <div class='signal-strength'>
-                            <img src='{}' alt=''>
+                        <div signal-auth-container>
+                            <div class='auth-method'>
+                                <img src='{}' alt=''>
+                            </div>
+                            <div class='signal-strength'>
+                                <img src='{}' alt=''>
+                            </div>
                         </div>
                     </div>
                 "###, 
