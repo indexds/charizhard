@@ -8,6 +8,7 @@ use crate::utils::nvs::Nvs;
 use crate::utils::nvs::NvsKeys;
 use serde_urlencoded;
 use anyhow::Error;
+use embedded_svc::wifi::AuthMethod;
 
 mod index;
 
@@ -157,7 +158,7 @@ pub fn start_http_server(
 
         connection.initiate_response(200, Some("OK"), &[
             ("Content-Type", "image/svg+xml"),
-            ("Cache-Control", "public, max-age=86400"), 
+            //("Cache-Control", "public, max-age=86400"), 
         ])?;
 
         connection.write(signal_one.as_bytes())?;
@@ -173,7 +174,7 @@ pub fn start_http_server(
 
         connection.initiate_response(200, Some("OK"), &[
             ("Content-Type", "image/svg+xml"),
-            ("Cache-Control", "public, max-age=86400"), 
+            //("Cache-Control", "public, max-age=86400"), 
         ])?;
 
         connection.write(signal_two.as_bytes())?;
@@ -189,7 +190,7 @@ pub fn start_http_server(
 
         connection.initiate_response(200, Some("OK"), &[
             ("Content-Type", "image/svg+xml"),
-            ("Cache-Control", "public, max-age=86400"), 
+            //("Cache-Control", "public, max-age=86400"), 
         ])?;
 
         connection.write(signal_three.as_bytes())?;
@@ -205,7 +206,7 @@ pub fn start_http_server(
 
         connection.initiate_response(200, Some("OK"), &[
             ("Content-Type", "image/svg+xml"),
-            ("Cache-Control", "public, max-age=86400"), 
+            //("Cache-Control", "public, max-age=86400"), 
         ])?;
 
         connection.write(signal_four.as_bytes())?;
@@ -221,7 +222,7 @@ pub fn start_http_server(
 
         connection.initiate_response(200, Some("OK"), &[
             ("Content-Type", "image/svg+xml"),
-            ("Cache-Control", "public, max-age=86400"), 
+            //("Cache-Control", "public, max-age=86400"), 
         ])?;
         
 
@@ -238,7 +239,7 @@ pub fn start_http_server(
 
         connection.initiate_response(200, Some("OK"), &[
             ("Content-Type", "image/svg+xml"),
-            ("Cache-Control", "public, max-age=86400"), 
+            //("Cache-Control", "public, max-age=86400"), 
         ])?;
         
 
@@ -270,11 +271,11 @@ pub fn start_http_server(
         for access_point in scanned.iter() {
 
             let auth_method = match access_point.auth_method {
-                Some(_) => "/locked.svg",
-                None => "/unlocked.svg"
+                Some(AuthMethod::None) => "/unlocked.svg",
+                _ => "/locked.svg",
             };
 
-            let svg_icon = match access_point.signal_strength {
+            let signal_strength = match access_point.signal_strength {
                 -50..=0 => "/signal-4.svg",
                 -60..=-51 => "/signal-3.svg",
                 -70..=-61 => "/signal-2.svg",
@@ -285,21 +286,22 @@ pub fn start_http_server(
                 r###"
                     <div class='wifi' id={}>
                         <div class='ssid'>{}</div>
-                        <div signal-auth-container>
+                        <div class='signal-auth-container'>
                             <div class='auth-method'>
-                                <img src='{}' alt=''>
+                                <img src='{}'>
                             </div>
                             <div class='signal-strength'>
-                                <img src='{}' alt=''>
+                                <img src='{}'>
                             </div>
                         </div>
                     </div>
-                "###, 
-                
+                "###,
+
                 &access_point.ssid,
                 &access_point.ssid,
                 auth_method,
-                svg_icon
+                signal_strength,
+
             ).as_str());
         }
 

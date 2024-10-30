@@ -105,27 +105,31 @@ button:active{
     margin-top: 10px; 
 }
 
+.scrollable-box {
+    scrollbar-width: thin;
+    scrollbar-color: #ff5733 #3a3a4f;
+}
 
-.scrollable-box::-webkit-scrollbar {
-    width: 8px; 
+/* .scrollable-box::-webkit-scrollbar {
+    width: 8px !important; 
 }
 
 .scrollable-box::-webkit-scrollbar-track {
-    background: #3a3a4f; 
-    border-radius: 8px; 
+    background: #3a3a4f !important; 
+    border-radius: 8px !important; 
 }
 
 .scrollable-box::-webkit-scrollbar-thumb {
-    background: #ff5733; 
-    border-radius: 8px; 
+    background: #ff5733 !important; 
+    border-radius: 8px !important; 
 }
 
 .scrollable-box::-webkit-scrollbar-thumb:hover {
-    display: block;
-    background: #ff4400; 
-    place-items: center;
-    height: 100vh;
-}
+    display: block !important;
+    background: #ff4400 !important; 
+    place-items: center !important;
+    height: 100vh !important;
+} */
 
 .scanned-wifis{
     display: flex;
@@ -136,8 +140,16 @@ button:active{
     height: 100%;
 }
 
-.wifi{
-    width: 100%;
+#loading-svg{
+    display: none;
+    width: 25%;
+    height: 25%;
+    margin: auto;
+}
+
+.wifi {
+    display: flex;
+    align-items: center;
     padding: 10px;
     margin-bottom: 10px;
     border: 1px solid #555;
@@ -150,17 +162,15 @@ button:active{
     transition: border-color 0.3s;
 }
 
-#loading-svg{
-    display: none;
-    width: 25%;
-    height: 25%;
-    margin: auto;
+.ssid {
+    flex-grow: 1;
+    display: flex;
+    align-items: center;
+    padding-right: 10px;
 }
 
 .signal-auth-container {
     display: flex;
-    align-items: center;
-    justify-content: space-between;
     gap: 10px;
 }
 

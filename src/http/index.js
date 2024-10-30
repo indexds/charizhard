@@ -106,6 +106,7 @@ async function fetchScannedWifis() {
         scanned_wifis.innerHTML = scannedWifis;
     } 
     catch (error) {
+        scanned_wifis.style.fontWeight = 'bold';
         scanned_wifis.innerHTML = 'Error fetching scanned Wi-Fis.';
         document.getElementById('loading-svg').style.display = 'none'; 
         console.error('Fetch error:', error);
