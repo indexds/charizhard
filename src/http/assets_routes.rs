@@ -141,5 +141,35 @@ pub fn set_routes(mut http_server: EspHttpServer<'static>) -> EspHttpServer<'sta
         Ok::<(), Error>(())
     });
 
+    http_server.fn_handler("/connected.svg", Method::Get, move |mut request| {
+    
+        let connected = include_str!("./assets/connected.svg");
+    
+        let connection = request.connection();
+    
+        connection.initiate_response(200, Some("OK"), &[
+            ("Content-Type", "image/svg+xml"),
+        ])?;
+    
+        connection.write(connected.as_bytes())?;
+        
+        Ok::<(), Error>(())
+    });
+
+    http_server.fn_handler("/disconnected.svg", Method::Get, move |mut request| {
+    
+        let disconnected = include_str!("./assets/disconnected.svg");
+    
+        let connection = request.connection();
+    
+        connection.initiate_response(200, Some("OK"), &[
+            ("Content-Type", "image/svg+xml"),
+        ])?;
+    
+        connection.write(disconnected.as_bytes())?;
+        
+        Ok::<(), Error>(())
+    });
+
     http_server
 }
