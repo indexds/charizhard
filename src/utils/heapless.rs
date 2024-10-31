@@ -11,6 +11,10 @@ impl<const N: usize> HeaplessString<N> {
     pub fn new() -> Self {
         Self(String::<N>::new())
     }
+    
+    pub fn inner(&self) -> String<N> {
+        self.0.clone()
+    }
 
     pub fn push_str(&mut self, s: &str) -> anyhow::Result<()> {
         

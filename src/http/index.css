@@ -18,6 +18,10 @@ body{
     width: 100%;
     box-sizing: border-box;
     margin: auto;
+
+    opacity: 0; 
+    transform: translateY(-20px); 
+    transition: opacity 0.3s, transform 0.3s;
 }
 
 .wifi-container{
@@ -29,6 +33,16 @@ body{
     width: 100%;
     box-sizing: border-box;
     margin: auto;
+
+    opacity: 0; 
+    transform: translateY(-20px); 
+    transition: opacity 0.3s, transform 0.3s;
+}
+
+.container-show{
+    opacity: 1;
+    transform: translateY(0);
+    transition: opacity 0.3s, transform 0.3s;
 }
 
 h1{
@@ -140,7 +154,6 @@ button:active{
     box-sizing: border-box;
     transition: border-color 0.3s;
     cursor: pointer;
-    max-height: 50px;
 }
 
 .wifi:hover{
@@ -156,7 +169,6 @@ button:active{
 
 .signal-auth-container {
     display: flex;
-    gap: 10px;
     justify-content: space-between
 }
 
@@ -169,17 +181,16 @@ button:active{
 
 .wifi-connect {
     cursor: pointer;
-    opacity: 0;
     height: 0;
-    transition: opacity 0.3s ease, height 0.3s ease;
+    opacity: 0;
     overflow: hidden;
 }
 
 .wifi-connect.visible {
     opacity: 1;
-    height: auto;
+    height: fit-content;
 }
 
 .wifi.expanded {
-    max-height: 200px;
+    height: fit-content;
 }

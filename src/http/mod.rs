@@ -5,7 +5,7 @@ use esp_idf_svc::wifi::{BlockingWifi, EspWifi};
 use std::sync::{Arc, Mutex};
 use crate::utils::nvs::NvsWireguard;
 use crate::utils::nvs::NvsWifi;
-
+use crate::utils::heapless::HeaplessString;
 use esp_idf_hal::io::Write;
 
 use crate::utils::nvs::NvsKeys;
@@ -14,6 +14,7 @@ use anyhow::Error;
 use embedded_svc::wifi::AuthMethod;
 
 mod index;
+mod assets_routes;
 
 #[allow(unused_must_use)]
 pub fn start_http_server(
@@ -28,30 +29,31 @@ pub fn start_http_server(
 
     let mut http_server = EspHttpServer::new(&http_config)?;
 
-    let nvs_get = Arc::clone(&nvs);
+    http_server = assets_routes::set_routes(http_server);
 
-    http_server.fn_handler("/", Method::Get, move |request| {
+    let nvs_root = Arc::clone(&nvs);
+    http_server.fn_handler("/", Method::Get, move |mut request| {
         
-        let nvs = nvs_get.lock().map_err(|_| anyhow::anyhow!("Failed to lock NVS Mutex."))?;
+        let nvs = nvs_root.lock().map_err(|_| anyhow::anyhow!("Failed to lock NVS Mutex."))?;
         let nvs_config = NvsWireguard::new(&nvs)?;
 
         let html = index::index_html(&nvs_config)?;
 
-        let mut response = request.into_ok_response()?;
+        let connection = request.connection();
 
-        response.write(html.as_bytes())?;
+        connection.initiate_response(200, Some("OK"), &[
+            ("Content-Type", "text/html")
+        ])?;
+
+        connection.write(html.as_bytes())?;
 
         Ok::<(), Error>(())
     });
 
-    let nvs_post_wg = Arc::clone(&nvs);
-
+    let nvs_save_wireguard = Arc::clone(&nvs);
     http_server.fn_handler("/save-wg", Method::Post, move |mut request| {
 
-        let mut nvs = nvs_post_wg.lock().map_err(|_| anyhow::anyhow!("Failed to lock NVS Mutex."))?;
-        let nvs_config = NvsWireguard::new(&nvs)?;
-
-        let html = index::index_html(&nvs_config)?;
+        let mut nvs = nvs_save_wireguard.lock().map_err(|_| anyhow::anyhow!("Failed to lock NVS Mutex."))?;
 
         let mut body = Vec::new();
         let mut buffer = [0_u8; 128];
@@ -73,17 +75,19 @@ pub fn start_http_server(
         NvsWireguard::set_field(&mut nvs, NvsKeys::WG_CLIENT_PRIV_KEY, wg_config.wg_client_priv_key.clean_string().as_str())?;
         NvsWireguard::set_field(&mut nvs, NvsKeys::WG_SERVER_PUB_KEY, wg_config.wg_server_pub_key.clean_string().as_str())?;
 
-        let mut response = request.into_ok_response()?;
-        response.write(html.as_bytes())?;
+        let connection = request.connection();
+
+        connection.initiate_response(204, Some("OK"), &[
+            ("Content-Type", "text/html")
+        ])?;
         
         Ok::<(), Error>(())
     });
 
-    let nvs_post_wifi = Arc::clone(&nvs);
-
+    let nvs_save_wifi = Arc::clone(&nvs);
     http_server.fn_handler("/save-wifi", Method::Post, move |mut request| {
 
-        let mut nvs = nvs_post_wifi.lock().map_err(|_| anyhow::anyhow!("Failed to lock NVS Mutex."))?;
+        let mut nvs = nvs_save_wifi.lock().map_err(|_| anyhow::anyhow!("Failed to lock NVS Mutex."))?;
 
         let mut body = Vec::new();
         let mut buffer = [0_u8; 128];
@@ -102,144 +106,51 @@ pub fn start_http_server(
         NvsWifi::set_field(&mut nvs, NvsKeys::STA_SSID, wifi_config.sta_ssid.clean_string().as_str())?;
         NvsWifi::set_field(&mut nvs, NvsKeys::STA_PASSWD, wifi_config.sta_passwd.clean_string().as_str())?;
 
-        request.into_ok_response()?;
-        
-        Ok::<(), Error>(())
-    });
-
-    http_server.fn_handler("/index.js", Method::Get, move |mut request| {
-
-        let javascript = include_str!("./index.js");
-        
-        let connection = request.connection();
-        
-        connection.initiate_response(200, Some("OK"), &[("Content-Type", "application/javascript")])?;
-        
-        connection.write(javascript.as_bytes())?;
-
-        Ok::<(), Error>(())
-    });
-
-    http_server.fn_handler("/index.css", Method::Get, move |mut request| {
-
-        let css = include_str!("./index.css");
-
         let connection = request.connection();
 
-        connection.initiate_response(200, Some("OK"), &[("Content-Type", "text/css")])?;
-        
-        connection.write(css.as_bytes())?;
-
-        Ok::<(), Error>(())
-    });
-
-    http_server.fn_handler("/spinner.svg", Method::Get, move |mut request| {
-
-        let spinner = include_str!("./assets/spinner.svg");
-
-        let connection = request.connection();
-
-        connection.initiate_response(200, Some("OK"), &[
-            ("Content-Type", "image/svg+xml"),
-        ])?;
-
-        connection.write(spinner.as_bytes())?;
-        
-        Ok::<(), Error>(())
-    });
-
-    http_server.fn_handler("/signal-1.svg", Method::Get, move |mut request| {
-
-        let signal_one = include_str!("./assets/signal-1.svg");
-
-        let connection = request.connection();
-
-        connection.initiate_response(200, Some("OK"), &[
-            ("Content-Type", "image/svg+xml"),
-        ])?;
-
-        connection.write(signal_one.as_bytes())?;
-        
-        Ok::<(), Error>(())
-    });
-
-    http_server.fn_handler("/signal-2.svg", Method::Get, move |mut request| {
-
-        let signal_two = include_str!("./assets/signal-2.svg");
-
-        let connection = request.connection();
-
-        connection.initiate_response(200, Some("OK"), &[
-            ("Content-Type", "image/svg+xml"),
-        ])?;
-
-        connection.write(signal_two.as_bytes())?;
-        
-        Ok::<(), Error>(())
-    });
-
-    http_server.fn_handler("/signal-3.svg", Method::Get, move |mut request| {
-
-        let signal_three = include_str!("./assets/signal-3.svg");
-
-        let connection = request.connection();
-
-        connection.initiate_response(200, Some("OK"), &[
-            ("Content-Type", "image/svg+xml"),
-        ])?;
-
-        connection.write(signal_three.as_bytes())?;
-        
-        Ok::<(), Error>(())
-    });
-
-    http_server.fn_handler("/signal-4.svg", Method::Get, move |mut request| {
-
-        let signal_four = include_str!("./assets/signal-4.svg");
-
-        let connection = request.connection();
-
-        connection.initiate_response(200, Some("OK"), &[
-            ("Content-Type", "image/svg+xml"),
-        ])?;
-
-        connection.write(signal_four.as_bytes())?;
-        
-        Ok::<(), Error>(())
-    });
-
-    http_server.fn_handler("/unlocked.svg", Method::Get, move |mut request| {
-
-        let unlocked = include_str!("./assets/unlocked.svg");
-
-        let connection = request.connection();
-
-        connection.initiate_response(200, Some("OK"), &[
-            ("Content-Type", "image/svg+xml"),
+        connection.initiate_response(204, Some("OK"), &[
+            ("Content-Type", "text/html")
         ])?;
         
-
-        connection.write(unlocked.as_bytes())?;
-        
         Ok::<(), Error>(())
     });
 
-    http_server.fn_handler("/locked.svg", Method::Get, move |mut request| {
-
-        let locked = include_str!("./assets/locked.svg");
-
-        let connection = request.connection();
-
-        connection.initiate_response(200, Some("OK"), &[
-            ("Content-Type", "image/svg+xml"),
-        ])?;
-        
-
-        connection.write(locked.as_bytes())?;
-        
-        Ok::<(), Error>(())
-    });
     
+    let nvs_wifi_connected = Arc::clone(&wifi);
+    http_server.fn_handler("/wifi-connected", Method::Get, move |mut request| {
+
+        let wifi = nvs_wifi_connected.lock().map_err(|_| anyhow::anyhow!("Failed to lock NVS Mutex."))?;
+
+        let binding = wifi.get_configuration()?;
+
+        let connected_ssid = match binding.as_client_conf_ref(){
+            Some(config) => &config.ssid,
+            None => &HeaplessString::<32>::new().inner(),
+        };
+
+        
+        let connection = request.connection();
+
+        connection.initiate_response(200, Some("OK"), &[
+            ("Content-Type", "text/html"),
+        ])?;
+
+        connection.write(connected_ssid.as_bytes());
+        
+        Ok::<(), Error>(())
+    });
+
+    //todo
+    http_server.fn_handler("/wg-connected", Method::Get, move |mut request| {
+        
+        let connection = request.connection();
+
+        connection.initiate_response(200, Some("OK"), &[
+            ("Content-Type", "text/html"),
+        ])?;
+        
+        Ok::<(), Error>(())
+    });
     
 
     let wifi_get = Arc::clone(&wifi);
@@ -247,10 +158,11 @@ pub fn start_http_server(
     http_server.fn_handler("/wifi", Method::Get, move |request| {
 
         let mut wifi = wifi_get.lock().map_err(|_| anyhow::anyhow!("Failed to lock Wifi Mutex."))?;
-        
+
         let mut html = String::new();
 
         let mut scanned = wifi.scan()?;
+        
         
         //Remove dups
         scanned.sort_by(|a, b| a.ssid.cmp(&b.ssid));
@@ -278,12 +190,21 @@ pub fn start_http_server(
                 format!(
                     r###"
                         <label for='passwd'>Password</label>
-                        <input type='password' id='passwd' name='passwd' required>
-                    "###
+                        <input type='password' id='passwd-{}' name='passwd' required>
+                    "###,
+
+                    &access_point.ssid,
                 )
+
             } 
             else {
-                String::new()
+                format!(
+                    r###"
+                        <input type='hidden' id='passwd-{}' name='passwd' value=''>
+                    "###,
+                    
+                    &access_point.ssid,
+                )
             };
 
             html.push_str(format!(

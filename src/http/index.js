@@ -1,3 +1,11 @@
+document.addEventListener('DOMContentLoaded', () => {
+    const wifiContainer = document.querySelector('.wifi-container');
+    const formContainer = document.querySelector('.form-container');
+    
+    wifiContainer.classList.add('container-show');
+    formContainer.classList.add('container-show');
+});
+
 document.getElementById('config').addEventListener('submit', function(event) {
     let isValid = true;
 
@@ -10,33 +18,6 @@ document.getElementById('config').addEventListener('submit', function(event) {
     function clearError(id) {
         const errorDiv = document.getElementById(id);
         errorDiv.textContent = '';
-    }
-
-    // Validate Wi-Fi SSID
-    const ssid = document.getElementById('ssid').value;
-
-    const forbiddenChars = /[+\]\/"\t\s$]/; 
-    const forbiddenFirstChars = /^[!#;]/;  
-    
-    if (ssid.length > 32) {
-        setError('ssid-error', "WIFI SSID must be 32 characters or less.");
-    } else if (forbiddenChars.test(ssid)) {
-        setError('ssid-error', "WIFI SSID contains forbidden characters: +, ], /, \", TAB, or trailing spaces.");
-    } else if (forbiddenFirstChars.test(ssid)) {
-        setError('ssid-error', "WIFI SSID cannot start with any of these characters: !, #, ;");
-    } else if (/\s$/.test(ssid)) {
-        setError('ssid-error', "WIFI SSID cannot end with a space.");
-    } else {
-        clearError('ssid-error');
-    }
-    
-
-    // Validate Wi-Fi Password
-    const password = document.getElementById('passwd').value;
-    if (password.length > 64) {
-        setError('passwd-error', "WIFI Password must be 64 characters or less.");
-    } else {
-        clearError('passwd-error');
     }
 
     // Validate WireGuard Address
@@ -123,3 +104,4 @@ function toggleDropdown(event, element) {
     form.classList.toggle('visible');
     wifiContainer.classList.toggle('expanded');
 }
+

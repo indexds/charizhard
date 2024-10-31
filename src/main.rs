@@ -6,7 +6,7 @@ use esp_idf_svc::nvs::{EspNvs, EspDefaultNvsPartition};
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
-// use esp_idf_svc::sys::esp_get_free_heap_size;
+use esp_idf_svc::sys::esp_get_free_heap_size;
 use log::info;
 
 mod wifi;
@@ -45,9 +45,10 @@ fn main() -> anyhow::Result<()> {
     
     let (http_server, mdns) = http::start_http_server(guarded_nvs, guarded_wifi)?;
 
-    // let free_heap_size = unsafe {esp_get_free_heap_size()};
-    // info!("free heap: {}", free_heap_size);
+    let free_heap_size = unsafe {esp_get_free_heap_size()};
+    info!("free heap: {}", free_heap_size);
 
+    
     loop {
         std::thread::sleep(Duration::from_millis(100));
     }
