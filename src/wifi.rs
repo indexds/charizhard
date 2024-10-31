@@ -1,7 +1,7 @@
+use embedded_svc::wifi::ClientConfiguration;
 use embedded_svc::wifi::{AuthMethod, Configuration};
 use esp_idf_svc::wifi::{AccessPointConfiguration, BlockingWifi, EspWifi};
 use log::info;
-use embedded_svc::wifi::ClientConfiguration;
 use std::sync::{Arc, Mutex};
 // use crate::utils::nvs::Nvs;
 
@@ -9,8 +9,9 @@ use std::sync::{Arc, Mutex};
 use crate::utils::heapless::HeaplessString;
 
 pub fn start_wifi(wifi: &mut Arc<Mutex<BlockingWifi<EspWifi<'static>>>>) -> anyhow::Result<()> {
-
-    let mut wifi = wifi.lock().map_err(|_| anyhow::anyhow!("Failed to lock Wifi Mutex."))?;
+    let mut wifi = wifi
+        .lock()
+        .map_err(|_| anyhow::anyhow!("Failed to lock Wifi Mutex."))?;
 
     let mut sta_ssid = HeaplessString::<32>::new();
     let mut sta_passwd = HeaplessString::<64>::new();
@@ -27,7 +28,6 @@ pub fn start_wifi(wifi: &mut Arc<Mutex<BlockingWifi<EspWifi<'static>>>>) -> anyh
         ..Default::default()
     };
 
-
     //temp
     let mut ap_ssid = HeaplessString::<32>::new();
     let mut ap_passwd = HeaplessString::<64>::new();
@@ -42,7 +42,6 @@ pub fn start_wifi(wifi: &mut Arc<Mutex<BlockingWifi<EspWifi<'static>>>>) -> anyh
         max_connections: 4,
         auth_method: AuthMethod::WPA2Personal,
         ..Default::default()
-    
     };
 
     let mixed_config = Configuration::Mixed(sta_configuration, ap_configuration);

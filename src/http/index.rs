@@ -1,5 +1,5 @@
-use base64::prelude::BASE64_STANDARD;
 use crate::utils::nvs::NvsWireguard;
+use base64::prelude::BASE64_STANDARD;
 use base64::Engine;
 
 const FAVICON_DATA: &'static [u8] = include_bytes!("./assets/favicon.ico");
@@ -51,8 +51,16 @@ pub fn index_html(nvs: &NvsWireguard) -> anyhow::Result<String> {
                     
                     <div class="top-container">
                         <h1>Status</h1>
-                        <div class="status" id="wireguard-status"></div>
-                        <div class="status" id="wifi-status"></div>
+                        
+                        <div class="wireguard-status-block">
+                            <div class="subtitle">Wireguard</div>
+                            <div class="status" id="wireguard-status"></div>
+                        </div>
+                        
+                        <div class="wifi-status-block">
+                            <div class="subtitle">Wi-Fi</div>
+                            <div class="status" id="wifi-status"></div>
+                        </div>
                     </div>
                     
                     <div class="top-container">
@@ -66,11 +74,11 @@ pub fn index_html(nvs: &NvsWireguard) -> anyhow::Result<String> {
                 </body>
                 <script src="index.js"></script>
             </html>
-        "###, 
-        nvs.wg_addr.clean_string().as_str(), 
-        nvs.wg_port.clean_string().as_str(), 
-        nvs.wg_dns.clean_string().as_str(), 
-        nvs.wg_client_priv_key.clean_string().as_str(), 
-        nvs.wg_server_pub_key.clean_string().as_str()
+        "###,
+        nvs.wg_addr.clean_string().as_str(),
+        nvs.wg_port.clean_string().as_str(),
+        nvs.wg_dns.clean_string().as_str(),
+        nvs.wg_client_priv_key.clean_string().as_str(),
+        nvs.wg_server_pub_key.clean_string().as_str(),
     ))
 }

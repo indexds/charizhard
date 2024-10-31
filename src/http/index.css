@@ -177,3 +177,21 @@ button:active{
 .wifi.expanded {
     height: fit-content;
 }
+
+.status{
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding-top: 10px;
+}
+
+.wireguard-status-block {
+    font-weight: bold;
+}
+
+.wifi-status-block {
+    padding-top: 25px;
+    font-weight: bold;
+}
+

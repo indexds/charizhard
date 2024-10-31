@@ -1,9 +1,18 @@
 document.addEventListener('DOMContentLoaded', () => {
+    
     const topContainer = document.querySelectorAll('.top-container');
 
     topContainer.forEach(container => {
         container.classList.add('top-container-show');
     })
+});
+
+document.addEventListener("DOMContentLoaded", function() {
+    fetchWifiStatus();
+    fetchWireguardStatus();
+    setInterval(fetchWifiStatus, 4000);
+    
+    setInterval(fetchWireguardStatus, 5000);
 });
 
 document.getElementById('config').addEventListener('submit', function(event) {
@@ -124,3 +133,48 @@ function toggleDropdown(event, element) {
     wifiContainer.classList.toggle('expanded');
 }
 
+async function fetchWireguardStatus() {
+    try {
+        const response = await fetch("/wg-status");
+
+        if (!response.ok) {
+            console.error("Failed to fetch Wireguard status:", response.statusText);
+            return;
+        }
+
+        const htmlContent = await response.text();
+        const statusElement = document.getElementById("wireguard-status");
+
+        if (htmlContent === statusElement.innerHTML){
+            return;
+        }
+
+        statusElement.innerHTML = htmlContent;
+
+    } catch (error) {
+        console.error("Error fetching Wireguard status:", error);
+    }
+}
+
+async function fetchWifiStatus() {
+    try {
+        const response = await fetch("/wifi-status");
+
+        if (!response.ok) {
+            console.error("Failed to fetch Wi-Fi status:", response.statusText);
+            return;
+        }
+
+        const htmlContent = await response.text();
+        const statusElement = document.getElementById("wifi-status");
+
+        if (htmlContent === statusElement.innerHTML){
+            return;
+        }
+
+        statusElement.innerHTML = htmlContent;
+
+    } catch (error) {
+        console.error("Error fetching Wi-Fi status:", error);
+    }
+}

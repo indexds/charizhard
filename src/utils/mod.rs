@@ -1,2 +1,2 @@
-pub mod nvs;
 pub mod heapless;
+pub mod nvs;
