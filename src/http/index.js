@@ -8,12 +8,17 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 document.addEventListener("DOMContentLoaded", function() {
+
     fetchWifiStatus();
     fetchWireguardStatus();
-    setInterval(fetchWifiStatus, 4000);
-    
+
+    setInterval(fetchWifiStatus, 5000);
     setInterval(fetchWireguardStatus, 5000);
 });
+
+async function sleep(time) {
+    await new Promise(resolve => setTimeout(resolve, time))
+}
 
 document.getElementById('config').addEventListener('submit', function(event) {
     let isValid = true;
@@ -72,6 +77,9 @@ document.getElementById('config').addEventListener('submit', function(event) {
     if (!isValid) {
         event.preventDefault();
     }
+
+    document.getElementById('config').textContent = 'Saved.'
+
 });
 
 function connectWifi(event) {
