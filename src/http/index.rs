@@ -21,7 +21,7 @@ pub fn index_html(nvs: &NvsWireguard) -> anyhow::Result<String> {
                 </head>
                 
                 <body>
-                    <div class="form-container">
+                    <div class="top-container">
                         <h1>Wireguard</h1>
                         
                         <form id="config" method="post" action="/save-wg">
@@ -49,7 +49,13 @@ pub fn index_html(nvs: &NvsWireguard) -> anyhow::Result<String> {
                         </form>
                     </div>
                     
-                    <div class="wifi-container">
+                    <div class="top-container">
+                        <h1>Status</h1>
+                        <div class="status" id="wireguard-status"></div>
+                        <div class="status" id="wifi-status"></div>
+                    </div>
+                    
+                    <div class="top-container">
                         <h1>Wi-Fi</h1>
                         <div id="scanned-wifis" class="scrollable-box">
                             <div id="inner-scanned-wifis"></div>

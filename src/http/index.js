@@ -1,9 +1,9 @@
 document.addEventListener('DOMContentLoaded', () => {
-    const wifiContainer = document.querySelector('.wifi-container');
-    const formContainer = document.querySelector('.form-container');
-    
-    wifiContainer.classList.add('container-show');
-    formContainer.classList.add('container-show');
+    const topContainer = document.querySelectorAll('.top-container');
+
+    topContainer.forEach(container => {
+        container.classList.add('top-container-show');
+    })
 });
 
 document.getElementById('config').addEventListener('submit', function(event) {
@@ -22,10 +22,8 @@ document.getElementById('config').addEventListener('submit', function(event) {
 
     // Validate WireGuard Address
     const address = document.getElementById('address').value;
-    if (address.length > 32) {
-        setError('address-error', "WireGuard Address must be 32 characters or less.");
-    } else if (address && !/^(?:\d{1,3}\.){3}\d{1,3}\/(?:[0-9]|[1-2][0-9]|3[0-2])$/.test(address)) {
-        setError('address-error', "WireGuard Address must be a valid CIDR address (e.g., 0.0.0.0/24).");
+    if (address && !/^(?:\d{1,3}\.){3}\d{1,3}\/(?:[0-9]|[1-2][0-9]|3[0-2])$/.test(address)) {
+        setError('address-error', "Must be a valid CIDR address.");
     } else {
         clearError('address-error');
     }
@@ -33,7 +31,7 @@ document.getElementById('config').addEventListener('submit', function(event) {
     // Validate WireGuard Port
     const port = document.getElementById('port').value;
     if (port && (!/^\d{1,5}$/.test(port) || parseInt(port) > 65535)) {
-        setError('port-error', "WireGuard Port must be a valid port between 0 and 65535.");
+        setError('port-error', "Must be a valid port between 0 and 65535.");
     } else {
         clearError('port-error');
     }
@@ -41,7 +39,7 @@ document.getElementById('config').addEventListener('submit', function(event) {
     // Validate WireGuard DNS
     const dns = document.getElementById('dns').value;
     if (dns && !/^(\d{1,3}\.){3}\d{1,3}$/.test(dns)) {
-        setError('dns-error', "WireGuard DNS must be a valid IP address (e.g., 192.168.1.1).");
+        setError('dns-error', "Must be a valid IP address.");
     } else {
         clearError('dns-error');
     }
@@ -49,7 +47,7 @@ document.getElementById('config').addEventListener('submit', function(event) {
     // Validate Client Private Key
     const privKey = document.getElementById('privkey').value;
     if (privKey.length > 32) {
-        setError('privkey-error', "WireGuard Client Private Key must be 32 characters or less.");
+        setError('privkey-error', "Must be 32 characters or less.");
     } else {
         clearError('privkey-error');
     }
@@ -57,7 +55,7 @@ document.getElementById('config').addEventListener('submit', function(event) {
     // Validate Remote Host Public Key
     const pubKey = document.getElementById('pubkey').value;
     if (pubKey.length > 32) {
-        setError('pubkey-error', "WireGuard Server Public Key must be 32 characters or less.");
+        setError('pubkey-error', "Must be 32 characters or less.");
     } else {
         clearError('pubkey-error');
     }
@@ -66,6 +64,25 @@ document.getElementById('config').addEventListener('submit', function(event) {
         event.preventDefault();
     }
 });
+
+function connectWifi(event) {
+    event.preventDefault();
+
+    const form = event.target.closest('form');
+    const passwordInput = form.querySelector('input[type="password"]');
+
+    const wifiContainer = form.closest('.wifi');
+    const errorDiv = wifiContainer.querySelector('.error');
+
+    if (passwordInput.value.length > 64) {
+        errorDiv.textContent = "Password must be 64 characters or less.";
+        return;
+    }
+
+    errorDiv.textContent = "";
+
+    form.submit();
+}
 
 async function fetchScannedWifis() {
 
@@ -77,7 +94,6 @@ async function fetchScannedWifis() {
         
         const response = await fetch('/wifi');
         
-        console.log('Response status:', response.status);
         if (!response.ok) throw new Error('Error fetching scanned Wi-Fis.');
 
         const scannedWifis = await response.text();
@@ -85,13 +101,16 @@ async function fetchScannedWifis() {
         document.getElementById('loading-svg').style.display = 'none';
 
         scanned_wifis.innerHTML = scannedWifis;
+
+        document.querySelectorAll('.wifi-connect button[type="submit"]').forEach(button => {
+            button.addEventListener('click', connectWifi);
+        });
     } 
     catch (error) {
         scanned_wifis.style.fontWeight = 'bold';
         scanned_wifis.innerHTML = 'Error fetching scanned Wi-Fis.';
         
-        document.getElementById('loading-svg').style.display = 'none'; 
-        console.error('Fetch error:', error);
+        document.getElementById('loading-svg').style.display = 'none';
     }
 }
 

@@ -9,42 +9,6 @@ body{
     color: white;
 }
 
-.form-container{
-    background-color: #2e2e3e;
-    padding: 25px 30px;
-    border-radius: 8px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-    max-width: 400px;
-    width: 100%;
-    box-sizing: border-box;
-    margin: auto;
-
-    opacity: 0; 
-    transform: translateY(-20px); 
-    transition: opacity 0.3s, transform 0.3s;
-}
-
-.wifi-container{
-    background-color: #2e2e3e;
-    padding: 25px 30px;
-    border-radius: 8px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-    max-width: 400px;
-    width: 100%;
-    box-sizing: border-box;
-    margin: auto;
-
-    opacity: 0; 
-    transform: translateY(-20px); 
-    transition: opacity 0.3s, transform 0.3s;
-}
-
-.container-show{
-    opacity: 1;
-    transform: translateY(0);
-    transition: opacity 0.3s, transform 0.3s;
-}
-
 h1{
     text-align: center;
     font-size: 1.8em;
@@ -105,6 +69,27 @@ button:active{
     background-color: #cf3700;
 }
 
+.top-container{
+    background-color: #2e2e3e;
+    padding: 25px 30px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    max-width: 400px;
+    width: 100%;
+    box-sizing: border-box;
+    margin: auto;
+
+    opacity: 0; 
+    transform: translateY(-20px); 
+    transition: opacity 0.3s, transform 0.3s;
+}
+
+.top-container-show{
+    opacity: 1;
+    transform: translateY(0);
+    transition: opacity 0.3s, transform 0.3s;
+}
+
 .error{
     font-weight: bold;
     color: red;
@@ -117,9 +102,7 @@ button:active{
     border-radius: 8px; 
     padding: 10px; 
     margin-top: 10px; 
-}
 
-.scrollable-box {
     scrollbar-width: thin;
     scrollbar-color: #ff5733 #3a3a4f;
 }

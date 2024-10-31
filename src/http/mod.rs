@@ -191,8 +191,10 @@ pub fn start_http_server(
                     r###"
                         <label for='passwd'>Password</label>
                         <input type='password' id='passwd-{}' name='passwd' required>
+                        <div class='error' id='passwd-{}-error'></div>
                     "###,
 
+                    &access_point.ssid,
                     &access_point.ssid,
                 )
 
