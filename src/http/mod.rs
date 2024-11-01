@@ -100,7 +100,7 @@ pub fn start_http_server(
     let nvs_save_wifi = Arc::clone(&nvs);
     let nvs_connect_wifi = Arc::clone(&nvs);
     let wifi_connect = Arc::clone(&wifi);
-    http_server.fn_handler("/save-wifi", Method::Post, move |mut request| {
+    http_server.fn_handler("/connect-wifi", Method::Post, move |mut request| {
         let mut nvs_save = nvs_save_wifi
             .lock()
             .map_err(|_| anyhow::anyhow!("Failed to lock NVS Mutex."))?;
@@ -279,7 +279,7 @@ pub fn start_http_server(
                             </div>
                         </div>
                         <div class='wifi-connect'>
-                            <form id='connect-form-{}' method='post' action='/save-wifi'>
+                            <form id='connect-form-{}' method='post' action='/connect-wifi'>
                                 <input type='hidden' name='ssid' value='{}'>
                                 {}
                                 <button type="submit">Connect</button>
