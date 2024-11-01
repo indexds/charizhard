@@ -147,17 +147,12 @@ pub fn start_http_server(
             .lock()
             .map_err(|_| anyhow::anyhow!("Failed to lock NVS Mutex."))?;
 
+        let is_connected = wifi.is_connected()?;
+
         let binding = wifi.get_configuration()?;
-
-        let connection = request.connection();
-
-        connection.initiate_response(200, Some("OK"), &[("Content-Type", "text/html")])?;
-
-        let mut html = String::new();
-
         let ssid = match binding.as_client_conf_ref() {
             Some(config) => {
-                if wifi.is_connected()? {
+                if is_connected {
                     &config.ssid.as_str()
                 } else {
                     "Disconnected"
@@ -166,21 +161,37 @@ pub fn start_http_server(
             None => "Disconnected",
         };
 
-        let svg_status = match wifi.is_connected()? {
+        let svg_status = match is_connected {
             true => "connected",
             false => "disconnected",
         };
 
+        let mut html = String::new();
+
         html.push_str(
             format!(
                 r###"
-                <img id="{}-svg-wifi" src="{}.svg">
-                <div id="wifi-status-text">{}</div>
+                <div class=svg-status-text-container>
+                    <img id="{}-svg-wifi" src="{}.svg">
+                    <div id="wifi-status-text">{}</div>
+                </div>
             "###,
                 svg_status, svg_status, ssid,
             )
             .as_str(),
         );
+
+        if is_connected {
+            html.push_str(
+                r###"
+                <button id="disconnect-wifi-button" onclick="disconnectWifi()">Disconnect</button>
+                "###,
+            );
+        }
+
+        let connection = request.connection();
+
+        connection.initiate_response(200, Some("OK"), &[("Content-Type", "text/html")])?;
 
         connection.write(html.as_bytes());
 
@@ -203,8 +214,10 @@ pub fn start_http_server(
         html.push_str(
             format!(
                 r###"
-                <img id="{}-svg-wg" src="{}.svg">
-                <div id="wg-status-text">{}</div>
+                <div class=svg-status-text-container>
+                    <img id="{}-svg-wg" src="{}.svg">
+                    <div id="wg-status-text">{}</div>
+                </div>                
             "###,
                 svg_status, svg_status, connected_server,
             )
@@ -212,6 +225,17 @@ pub fn start_http_server(
         );
 
         connection.write(html.as_bytes());
+        Ok::<(), Error>(())
+    });
+
+    let disconnect_wifi = Arc::clone(&wifi);
+    http_server.fn_handler("/disconnect-wifi", Method::Get, move |mut request| {
+        let connection = request.connection();
+
+        crate::wifi::disconnect_wifi(&disconnect_wifi);
+
+        connection.initiate_response(204, Some("OK"), &[("Content-Type", "text/html")])?;
+
         Ok::<(), Error>(())
     });
 
@@ -257,7 +281,7 @@ pub fn start_http_server(
             } else {
                 format!(
                     r###"
-                        <input type='hidden' id='passwd-{}' name='passwd' value=''>
+                        <input type='hidden' id='passwd-{}' name='passwd' value="">
                     "###,
                     &access_point.ssid,
                 )

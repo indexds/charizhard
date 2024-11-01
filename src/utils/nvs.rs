@@ -121,10 +121,6 @@ impl NvsWifi {
         let mut value = HeaplessString::<N>::new();
         value.push_str(&raw_value)?;
 
-        if value.clean_string().trim()?.is_empty() {
-            return Err(anyhow::anyhow!("String is empty!"));
-        }
-
         Ok(value)
     }
 

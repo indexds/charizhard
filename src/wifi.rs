@@ -37,7 +37,6 @@ pub fn start_ap(wifi: Arc<Mutex<BlockingWifi<EspWifi<'static>>>>) -> anyhow::Res
     Ok(())
 }
 
-#[allow(unused)]
 pub fn connect_wifi(
     wifi: &Arc<Mutex<BlockingWifi<EspWifi<'static>>>>,
     nvs: &Arc<Mutex<EspNvs<NvsDefault>>>,
@@ -48,29 +47,32 @@ pub fn connect_wifi(
     let mut wifi = wifi
         .lock()
         .map_err(|_| anyhow::anyhow!("Failed to lock WIFI Mutex."))?;
-    
 
     if wifi.is_connected()? {
         wifi.disconnect()?;
     }
 
-    wifi.stop()?;
-
     let ssid = NvsWifi::get_field::<32>(&nvs, NvsKeys::STA_SSID)?.inner();
     let password = NvsWifi::get_field::<64>(&nvs, NvsKeys::STA_PASSWD)?.inner();
-    let auth_method = match password.as_str() {
-        "" => AuthMethod::None,
-        _ => AuthMethod::WPA2Personal,
+
+    info!("ssid:{}", ssid);
+    info!("password:{}", password);
+
+    let sta_config = if password.trim().is_empty() {
+        ClientConfiguration {
+            ssid,
+            password,
+            ..Default::default()
+        }
+    } else {
+        ClientConfiguration {
+            ssid,
+            auth_method: AuthMethod::None,
+            ..Default::default()
+        }
     };
 
-    let sta_config = ClientConfiguration {
-        ssid,
-        password,
-        auth_method,
-        ..Default::default()
-    };
-
-    //TEMPORARY! TO BE DELETED ONCE THE BRIDGE IS UP
+    //TEMPORARY! TO BE DELETED ONCE THE ETHERNET BRIDGE IS UP--------------
     let mut ap_ssid = HeaplessString::<32>::new();
     let mut ap_passwd = HeaplessString::<64>::new();
     ap_ssid.push_str("charizhard")?;
@@ -84,27 +86,22 @@ pub fn connect_wifi(
         channel: 1,
         ..Default::default()
     };
-    //END TEMPORARY
+    wifi.set_configuration(&Configuration::Mixed(sta_config, ap_config))?;
+    //END TEMPORARY--------------------------------------------------------
 
     // wifi.set_configuration(&Configuration::Client(sta_configuration))?;
-    wifi.set_configuration(&Configuration::Mixed(sta_config, ap_config))?;
-
-    wifi.start()?;
     wifi.connect()?;
 
     Ok(())
 }
 
-#[allow(unused)]
-pub fn disconnect_wifi(
-    wifi: &Arc<Mutex<BlockingWifi<EspWifi<'static>>>>,
-) -> anyhow::Result<()> {
+pub fn disconnect_wifi(wifi: &Arc<Mutex<BlockingWifi<EspWifi<'static>>>>) -> anyhow::Result<()> {
     let mut wifi = wifi
         .lock()
         .map_err(|_| anyhow::anyhow!("Failed to lock WIFI Mutex."))?;
 
-    if !wifi.is_started()?{
-        return Ok(())
+    if !wifi.is_started()? {
+        return Ok(());
     }
 
     if wifi.is_connected()? {

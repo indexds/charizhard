@@ -85,10 +85,15 @@ function connectWifi(event) {
     const form = event.target.closest('form');
     const passwordInput = form.querySelector('input[type="password"]');
 
+    if (!passwordInput) {
+        form.submit();
+        return;
+    }
+
     const wifiContainer = form.closest('.wifi');
     const errorDiv = wifiContainer.querySelector('.error');
 
-    if (passwordInput.value.length > 64) {
+    if (passwordInput != null && passwordInput.value.length > 64) {
         errorDiv.textContent = "Password must be 64 characters or less.";
         return;
     }
@@ -181,5 +186,19 @@ async function fetchWifiStatus() {
 
     } catch (error) {
         console.error("Error fetching Wi-Fi status:", error);
+    }
+}
+
+async function disconnectWifi() {
+    try {
+        const response = await fetch("/disconnect-wifi");
+
+        if (!response.ok) {
+            console.error("Failed to disconnect from wifi:", response.statusText);
+            return;
+        }
+
+    } catch (error) {
+        console.error("Failed to disconnect from wifi:", error);
     }
 }

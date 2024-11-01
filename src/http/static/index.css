@@ -185,10 +185,8 @@ button:active{
 
 .status{
     font-weight: bold;
-    display: flex;
+    display: inline;
     align-items: center;
-    gap: 15px;
-    padding-top: 10px;
 }
 
 .wireguard-status-block {
@@ -200,3 +198,10 @@ button:active{
     font-weight: bold;
 }
 
+.svg-status-text-container {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-top: 10px;
+    margin-bottom: 10px;
+}
