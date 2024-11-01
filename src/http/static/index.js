@@ -77,9 +77,6 @@ document.getElementById('config').addEventListener('submit', function(event) {
     if (!isValid) {
         event.preventDefault();
     }
-
-    document.getElementById('config').textContent = 'Saved.'
-
 });
 
 function connectWifi(event) {

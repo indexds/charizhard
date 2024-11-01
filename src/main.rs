@@ -4,16 +4,11 @@ use esp_idf_svc::log::EspLogger;
 use esp_idf_svc::nvs::{EspDefaultNvsPartition, EspNvs};
 use esp_idf_svc::wifi::{BlockingWifi, EspWifi};
 use std::sync::{Arc, Mutex};
-use std::time::Duration;
-
-use esp_idf_svc::sys::esp_get_free_heap_size;
-use log::info;
 
 mod http;
 mod utils;
 mod wifi;
 
-#[allow(unused_variables)]
 fn main() -> anyhow::Result<()> {
     esp_idf_svc::sys::link_patches();
     EspLogger::initialize_default();
@@ -32,22 +27,10 @@ fn main() -> anyhow::Result<()> {
 
     let mut guarded_wifi = Arc::new(Mutex::new(wifi));
 
-    loop {
-        match wifi::start_wifi_temp(&mut guarded_wifi) {
-            Ok(_) => break,
-            Err(e) => {
-                info!("Failed to connect to wifi. Retrying..");
-                std::thread::sleep(Duration::from_millis(100));
-            }
-        }
-    }
-
-    let (http_server, mdns) = http::start_http_server(guarded_nvs, guarded_wifi)?;
-
-    let free_heap_size = unsafe { esp_get_free_heap_size() };
-    info!("free heap: {}", free_heap_size);
+    wifi::start_ap(&mut guarded_wifi)?;
+    let (_http_server, _mdns) = http::start_http_server(guarded_nvs, guarded_wifi)?;
 
     loop {
-        std::thread::sleep(Duration::from_millis(100));
+        std::thread::park();
     }
 }

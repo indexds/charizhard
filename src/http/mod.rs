@@ -99,7 +99,7 @@ pub fn start_http_server(
 
     let nvs_save_wifi = Arc::clone(&nvs);
     http_server.fn_handler("/save-wifi", Method::Post, move |mut request| {
-        let mut nvs = nvs_save_wifi
+        let mut nvs_save = nvs_save_wifi
             .lock()
             .map_err(|_| anyhow::anyhow!("Failed to lock NVS Mutex."))?;
 
@@ -118,12 +118,12 @@ pub fn start_http_server(
         let wifi_config: NvsWifi = serde_urlencoded::from_str(form_data.as_str())?;
 
         NvsWifi::set_field(
-            &mut nvs,
+            &mut nvs_save,
             NvsKeys::STA_SSID,
             wifi_config.sta_ssid.clean_string().as_str(),
         )?;
         NvsWifi::set_field(
-            &mut nvs,
+            &mut nvs_save,
             NvsKeys::STA_PASSWD,
             wifi_config.sta_passwd.clean_string().as_str(),
         )?;
@@ -205,7 +205,6 @@ pub fn start_http_server(
     });
 
     let wifi_get = Arc::clone(&wifi);
-
     http_server.fn_handler("/wifi", Method::Get, move |request| {
         let mut wifi = wifi_get
             .lock()

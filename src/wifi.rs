@@ -2,7 +2,7 @@ use crate::utils::heapless::HeaplessString;
 use crate::utils::nvs::{NvsKeys, NvsWifi};
 use embedded_svc::wifi::{ClientConfiguration, Configuration};
 use esp_idf_svc::nvs::{EspNvs, NvsDefault};
-use esp_idf_svc::wifi::{AccessPointConfiguration, BlockingWifi, EspWifi};
+use esp_idf_svc::wifi::{AccessPointConfiguration, AuthMethod, BlockingWifi, EspWifi};
 use log::info;
 use std::sync::{Arc, Mutex};
 
@@ -16,23 +16,28 @@ pub fn start_ap(wifi: &mut Arc<Mutex<BlockingWifi<EspWifi<'static>>>>) -> anyhow
     ap_ssid.push_str("charizhard")?;
     ap_passwd.push_str("testpassword")?;
 
-    let ap_configuration = AccessPointConfiguration {
+    let ap_config = AccessPointConfiguration {
         ssid: ap_ssid.try_into()?,
         password: ap_passwd.try_into()?,
+        auth_method: AuthMethod::WPA2Personal,
+        ssid_hidden: false,
+        channel: 1,
         ..Default::default()
     };
 
-    wifi.set_configuration(&Configuration::AccessPoint(ap_configuration))?;
+    let dummy_sta_config = ClientConfiguration {
+        ..Default::default()
+    };
+
+    wifi.set_configuration(&Configuration::Mixed(dummy_sta_config, ap_config))?;
 
     wifi.start()?;
     info!("WIFI STARTED..");
 
-    wifi.wait_netif_up()?;
-    info!("WIFI NETIF UP.");
-
     Ok(())
 }
 
+#[allow(unused)]
 pub fn connect_wifi(
     wifi: &mut Arc<Mutex<BlockingWifi<EspWifi<'static>>>>,
     nvs: Arc<Mutex<EspNvs<NvsDefault>>>,
@@ -66,10 +71,12 @@ pub fn connect_wifi(
     wifi.set_configuration(&Configuration::Client(sta_configuration))?;
 
     wifi.connect()?;
+    wifi.wait_netif_up()?;
 
     Ok(())
 }
 
+#[allow(unused)]
 pub fn disconnect_wifi(
     wifi: &mut Arc<Mutex<BlockingWifi<EspWifi<'static>>>>,
 ) -> anyhow::Result<()> {
