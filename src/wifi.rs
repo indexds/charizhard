@@ -97,7 +97,7 @@ pub fn connect_wifi(
 
 #[allow(unused)]
 pub fn disconnect_wifi(
-    wifi: Arc<Mutex<BlockingWifi<EspWifi<'static>>>>,
+    wifi: &Arc<Mutex<BlockingWifi<EspWifi<'static>>>>,
 ) -> anyhow::Result<()> {
     let mut wifi = wifi
         .lock()
