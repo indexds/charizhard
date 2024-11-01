@@ -180,10 +180,10 @@ pub fn start_http_server(
         let connection = request.connection();
 
         connection.initiate_response(200, Some("OK"), &[("Content-Type", "text/html")])?;
-        
+
         let mut html = String::new();
         let connected_server = "Disconnected"; //temp
-        
+
         let svg_status = match connected_server {
             "Disconnected" => "disconnected",
             _ => "connected",

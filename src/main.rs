@@ -33,7 +33,7 @@ fn main() -> anyhow::Result<()> {
     let mut guarded_wifi = Arc::new(Mutex::new(wifi));
 
     loop {
-        match wifi::start_wifi(&mut guarded_wifi) {
+        match wifi::start_wifi_temp(&mut guarded_wifi) {
             Ok(_) => break,
             Err(e) => {
                 info!("Failed to connect to wifi. Retrying..");
