@@ -98,6 +98,8 @@ pub fn start_http_server(
     });
 
     let nvs_save_wifi = Arc::clone(&nvs);
+    let nvs_connect_wifi = Arc::clone(&nvs);
+    let wifi_connect = Arc::clone(&wifi);
     http_server.fn_handler("/save-wifi", Method::Post, move |mut request| {
         let mut nvs_save = nvs_save_wifi
             .lock()
@@ -127,6 +129,10 @@ pub fn start_http_server(
             NvsKeys::STA_PASSWD,
             wifi_config.sta_passwd.clean_string().as_str(),
         )?;
+
+        drop(nvs_save);
+
+        crate::wifi::connect_wifi(&wifi_connect, &nvs_connect_wifi)?;
 
         let connection = request.connection();
 

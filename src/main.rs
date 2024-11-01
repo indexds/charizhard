@@ -25,10 +25,10 @@ fn main() -> anyhow::Result<()> {
         event_loop,
     )?;
 
-    let mut guarded_wifi = Arc::new(Mutex::new(wifi));
+    let guarded_wifi = Arc::new(Mutex::new(wifi));
 
-    wifi::start_ap(&mut guarded_wifi)?;
-    let (_http_server, _mdns) = http::start_http_server(guarded_nvs, guarded_wifi)?;
+    wifi::start_ap(Arc::clone(&guarded_wifi))?;
+    let (_http_server, _mdns) = http::start_http_server(Arc::clone(&guarded_nvs), Arc::clone(&guarded_wifi))?;
 
     loop {
         std::thread::park();

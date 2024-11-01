@@ -150,6 +150,11 @@ button:active{
     padding-right: 10px;
 }
 
+.ssid-block {
+    display: flex;
+    justify-content: center;
+}
+
 .signal-auth-container {
     display: flex;
     justify-content: space-between
