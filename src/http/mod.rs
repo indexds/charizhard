@@ -150,14 +150,19 @@ pub fn start_http_server(
         let mut html = String::new();
 
         let ssid = match binding.as_client_conf_ref() {
-            Some(config) => &config.ssid.as_str(),
+            Some(config) => {
+                if wifi.is_connected()? {
+                    &config.ssid.as_str()
+                } else {
+                    "Disconnected"
+                }
+            }
             None => "Disconnected",
         };
 
-        let svg_status = match wifi.is_connected() {
-            Ok(true) => "connected",
-            Ok(false) => "disconnected",
-            Err(_) => panic!("Failed to get wifi connection status!"),
+        let svg_status = match wifi.is_connected()? {
+            true => "connected",
+            false => "disconnected",
         };
 
         html.push_str(
