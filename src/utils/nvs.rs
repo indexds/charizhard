@@ -1,6 +1,6 @@
 use crate::utils::heapless::HeaplessString;
-use serde::Deserialize;
 use esp_idf_svc::nvs::{EspNvs, NvsDefault};
+use serde::Deserialize;
 use std::sync::MutexGuard;
 
 const DEFAULT_STA_SSID: &str = "";

@@ -22,17 +22,22 @@ pub fn connect_wifi(
         wifi.disconnect()?;
     }
 
-    let ssid = NvsWifi::get_field::<32>(&nvs, NvsKeys::STA_SSID)?.clean_string().inner();
-    let password = NvsWifi::get_field::<64>(&nvs, NvsKeys::STA_PASSWD)?.clean_string().inner();
-    let auth_method = NvsWifi::get_field::<32>(&nvs, NvsKeys::STA_AUTH_METHOD)?.clean_string().inner();
-    
+    let ssid = NvsWifi::get_field::<32>(&nvs, NvsKeys::STA_SSID)?
+        .clean_string()
+        .inner();
+    let password = NvsWifi::get_field::<64>(&nvs, NvsKeys::STA_PASSWD)?
+        .clean_string()
+        .inner();
+    let auth_method = NvsWifi::get_field::<32>(&nvs, NvsKeys::STA_AUTH_METHOD)?
+        .clean_string()
+        .inner();
+
     let sta_config = if password.trim().is_empty() {
         ClientConfiguration {
             ssid,
             auth_method: AuthMethod::None,
             ..Default::default()
         }
-
     } else {
         ClientConfiguration {
             ssid,
