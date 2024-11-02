@@ -6,7 +6,6 @@ use esp_idf_svc::http::server::{Configuration as HttpServerConfig, EspHttpServer
 use esp_idf_svc::mdns::EspMdns;
 use esp_idf_svc::nvs::{EspNvs, NvsDefault};
 use esp_idf_svc::wifi::{BlockingWifi, EspWifi};
-use log::info;
 use serde_urlencoded;
 use std::sync::{Arc, Mutex};
 
