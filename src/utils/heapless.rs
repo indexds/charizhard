@@ -1,5 +1,4 @@
 use heapless::String;
-use esp_idf_svc::wifi::AuthMethod;
 use serde::Deserialize;
 use std::fmt;
 
@@ -121,19 +120,5 @@ impl<const N: usize> TryInto<heapless::String<N>> for HeaplessString<N> {
 impl<const N: usize> fmt::Display for HeaplessString<N> {
     fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
         write!(f, "{}", self.0.as_str())
-    }
-}
-
-impl<const N: usize> TryFrom<AuthMethod> for HeaplessString<N> {
-    type Error = anyhow::Error;
-
-    fn try_from(auth_method: AuthMethod) -> anyhow::Result<HeaplessString<N>> {
-        let mut heapless_string = HeaplessString::new();
-        
-        let num = auth_method as u8;
-
-        heapless_string.push_str(&num.to_string())?;
-        
-        Ok(heapless_string)
     }
 }

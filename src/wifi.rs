@@ -7,37 +7,6 @@ use log::info;
 use std::str::FromStr;
 use std::sync::{Arc, Mutex};
 
-pub fn start_ap(wifi: Arc<Mutex<BlockingWifi<EspWifi<'static>>>>) -> anyhow::Result<()> {
-    let mut wifi = wifi
-        .lock()
-        .map_err(|_| anyhow::anyhow!("Failed to lock Wifi Mutex."))?;
-
-    let mut ap_ssid = HeaplessString::<32>::new();
-    let mut ap_passwd = HeaplessString::<64>::new();
-    ap_ssid.push_str("charizhard")?;
-    ap_passwd.push_str("testpassword")?;
-
-    let ap_config = AccessPointConfiguration {
-        ssid: ap_ssid.try_into()?,
-        password: ap_passwd.try_into()?,
-        auth_method: AuthMethod::WPA2Personal,
-        ssid_hidden: false,
-        channel: 1,
-        ..Default::default()
-    };
-
-    let dummy_sta_config = ClientConfiguration {
-        ..Default::default()
-    };
-
-    wifi.set_configuration(&Configuration::Mixed(dummy_sta_config, ap_config))?;
-
-    wifi.start()?;
-    info!("WIFI STARTED..");
-
-    Ok(())
-}
-
 pub fn connect_wifi(
     wifi: &Arc<Mutex<BlockingWifi<EspWifi<'static>>>>,
     nvs: &Arc<Mutex<EspNvs<NvsDefault>>>,
@@ -53,16 +22,17 @@ pub fn connect_wifi(
         wifi.disconnect()?;
     }
 
-    let ssid = NvsWifi::get_field::<32>(&nvs, NvsKeys::STA_SSID)?.inner();
-    let password = NvsWifi::get_field::<64>(&nvs, NvsKeys::STA_PASSWD)?.inner();
-    let auth_method = NvsWifi::get_field::<8>(&nvs, NvsKeys::STA_AUTH_METHOD)?.inner();
-
+    let ssid = NvsWifi::get_field::<32>(&nvs, NvsKeys::STA_SSID)?.clean_string().inner();
+    let password = NvsWifi::get_field::<64>(&nvs, NvsKeys::STA_PASSWD)?.clean_string().inner();
+    let auth_method = NvsWifi::get_field::<32>(&nvs, NvsKeys::STA_AUTH_METHOD)?.clean_string().inner();
+    
     let sta_config = if password.trim().is_empty() {
         ClientConfiguration {
             ssid,
             auth_method: AuthMethod::None,
             ..Default::default()
         }
+
     } else {
         ClientConfiguration {
             ssid,
@@ -107,6 +77,37 @@ pub fn disconnect_wifi(wifi: &Arc<Mutex<BlockingWifi<EspWifi<'static>>>>) -> any
     if wifi.is_connected()? {
         wifi.disconnect()?;
     }
+
+    Ok(())
+}
+
+pub fn start_ap(wifi: Arc<Mutex<BlockingWifi<EspWifi<'static>>>>) -> anyhow::Result<()> {
+    let mut wifi = wifi
+        .lock()
+        .map_err(|_| anyhow::anyhow!("Failed to lock Wifi Mutex."))?;
+
+    let mut ap_ssid = HeaplessString::<32>::new();
+    let mut ap_passwd = HeaplessString::<64>::new();
+    ap_ssid.push_str("charizhard")?;
+    ap_passwd.push_str("testpassword")?;
+
+    let ap_config = AccessPointConfiguration {
+        ssid: ap_ssid.try_into()?,
+        password: ap_passwd.try_into()?,
+        auth_method: AuthMethod::WPA2Personal,
+        ssid_hidden: false,
+        channel: 1,
+        ..Default::default()
+    };
+
+    let dummy_sta_config = ClientConfiguration {
+        ..Default::default()
+    };
+
+    wifi.set_configuration(&Configuration::Mixed(dummy_sta_config, ap_config))?;
+
+    wifi.start()?;
+    info!("WIFI STARTED..");
 
     Ok(())
 }

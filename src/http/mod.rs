@@ -119,7 +119,7 @@ pub fn start_http_server(
 
         let form_data = String::from_utf8(body)?;
         let wifi_config: NvsWifi = serde_urlencoded::from_str(form_data.as_str())?;
-        info!("{:?}", wifi_config);
+
         NvsWifi::set_field(
             &mut nvs_save,
             NvsKeys::STA_SSID,
