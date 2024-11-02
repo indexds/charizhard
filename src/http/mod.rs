@@ -24,7 +24,7 @@ pub fn start_http_server(
 
     let mut http_server = EspHttpServer::new(&http_config)?;
 
-    http_server = assets_routes::set_routes(http_server);
+    assets_routes::set_routes(&mut http_server);
 
     let nvs_root = Arc::clone(&nvs);
     http_server.fn_handler("/", Method::Get, move |mut request| {
