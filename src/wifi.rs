@@ -4,6 +4,7 @@ use embedded_svc::wifi::{ClientConfiguration, Configuration};
 use esp_idf_svc::nvs::{EspNvs, NvsDefault};
 use esp_idf_svc::wifi::{AccessPointConfiguration, AuthMethod, BlockingWifi, EspWifi};
 use log::info;
+use std::str::FromStr;
 use std::sync::{Arc, Mutex};
 
 pub fn start_ap(wifi: Arc<Mutex<BlockingWifi<EspWifi<'static>>>>) -> anyhow::Result<()> {
@@ -54,20 +55,19 @@ pub fn connect_wifi(
 
     let ssid = NvsWifi::get_field::<32>(&nvs, NvsKeys::STA_SSID)?.inner();
     let password = NvsWifi::get_field::<64>(&nvs, NvsKeys::STA_PASSWD)?.inner();
-
-    info!("ssid:{}", ssid);
-    info!("password:{}", password);
+    let auth_method = NvsWifi::get_field::<8>(&nvs, NvsKeys::STA_AUTH_METHOD)?.inner();
 
     let sta_config = if password.trim().is_empty() {
         ClientConfiguration {
             ssid,
-            password,
+            auth_method: AuthMethod::None,
             ..Default::default()
         }
     } else {
         ClientConfiguration {
             ssid,
-            auth_method: AuthMethod::None,
+            password,
+            auth_method: AuthMethod::from_str(auth_method.as_str())?,
             ..Default::default()
         }
     };

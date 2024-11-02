@@ -1,9 +1,11 @@
 use crate::utils::heapless::HeaplessString;
+use serde::Deserialize;
 use esp_idf_svc::nvs::{EspNvs, NvsDefault};
 use std::sync::MutexGuard;
 
 const DEFAULT_STA_SSID: &str = "";
 const DEFAULT_STA_PASSWD: &str = "";
+const DEFAULT_STA_AUTH_METHOD: &str = "wpa2personal";
 
 const DEFAULT_WG_ADDR: &str = "";
 const DEFAULT_WG_PORT: &str = "";
@@ -17,6 +19,7 @@ pub struct NvsKeys;
 impl NvsKeys {
     pub const STA_SSID: &'static str = "SSID";
     pub const STA_PASSWD: &'static str = "PASSWD";
+    pub const STA_AUTH_METHOD: &'static str = "AUTH";
 
     pub const WG_ADDR: &'static str = "ADDR";
     pub const WG_PORT: &'static str = "PORT";
@@ -96,13 +99,16 @@ impl NvsWireguard {
     }
 }
 
-#[derive(serde::Deserialize, Debug)]
+#[derive(Deserialize, Debug)]
 pub struct NvsWifi {
     #[serde(rename = "ssid")]
     pub sta_ssid: HeaplessString<32>,
 
     #[serde(rename = "passwd")]
     pub sta_passwd: HeaplessString<64>,
+
+    #[serde(rename = "authmethod")]
+    pub sta_auth_method: HeaplessString<32>,
 }
 
 #[allow(dead_code)]
@@ -141,6 +147,9 @@ impl NvsWifi {
 
             sta_passwd: NvsWifi::get_field::<64>(&nvs, NvsKeys::STA_PASSWD)
                 .unwrap_or(DEFAULT_STA_PASSWD.try_into()?),
+
+            sta_auth_method: NvsWifi::get_field::<32>(&nvs, NvsKeys::STA_AUTH_METHOD)
+                .unwrap_or(DEFAULT_STA_AUTH_METHOD.try_into()?),
         })
     }
 }

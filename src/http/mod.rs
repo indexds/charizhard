@@ -6,6 +6,7 @@ use esp_idf_svc::http::server::{Configuration as HttpServerConfig, EspHttpServer
 use esp_idf_svc::mdns::EspMdns;
 use esp_idf_svc::nvs::{EspNvs, NvsDefault};
 use esp_idf_svc::wifi::{BlockingWifi, EspWifi};
+use log::info;
 use serde_urlencoded;
 use std::sync::{Arc, Mutex};
 
@@ -118,16 +119,23 @@ pub fn start_http_server(
 
         let form_data = String::from_utf8(body)?;
         let wifi_config: NvsWifi = serde_urlencoded::from_str(form_data.as_str())?;
-
+        info!("{:?}", wifi_config);
         NvsWifi::set_field(
             &mut nvs_save,
             NvsKeys::STA_SSID,
             wifi_config.sta_ssid.clean_string().as_str(),
         )?;
+
         NvsWifi::set_field(
             &mut nvs_save,
             NvsKeys::STA_PASSWD,
             wifi_config.sta_passwd.clean_string().as_str(),
+        )?;
+
+        NvsWifi::set_field(
+            &mut nvs_save,
+            NvsKeys::STA_AUTH_METHOD,
+            &wifi_config.sta_auth_method.clean_string().as_str(),
         )?;
 
         drop(nvs_save);
@@ -304,6 +312,7 @@ pub fn start_http_server(
                         </div>
                         <div class='wifi-connect'>
                             <form id='connect-form-{}' method='post' action='/connect-wifi'>
+                                <input type='hidden' name='authmethod' value='{}'>
                                 <input type='hidden' name='ssid' value='{}'>
                                 {}
                                 <button type="submit">Connect</button>
@@ -316,6 +325,7 @@ pub fn start_http_server(
                     auth_method,
                     signal_strength,
                     &access_point.ssid,
+                    access_point.auth_method.unwrap_or_default(),
                     &access_point.ssid,
                     password_html,
                 )
