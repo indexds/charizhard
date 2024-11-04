@@ -69,6 +69,12 @@ impl<const N: usize> HeaplessString<N> {
     }
 }
 
+impl<const N: usize> fmt::Display for HeaplessString<N> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
+        write!(f, "{}", self.0.as_str())
+    }
+}
+
 impl<const N: usize> FromIterator<char> for HeaplessString<N> {
     fn from_iter<T: IntoIterator<Item = char>>(iter: T) -> Self {
         let mut heapless_string = HeaplessString::<N>::new();
@@ -114,11 +120,5 @@ impl<const N: usize> TryInto<heapless::String<N>> for HeaplessString<N> {
 
     fn try_into(self) -> anyhow::Result<heapless::String<N>> {
         Ok(self.0)
-    }
-}
-
-impl<const N: usize> fmt::Display for HeaplessString<N> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
-        write!(f, "{}", self.0.as_str())
     }
 }

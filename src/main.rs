@@ -8,6 +8,7 @@ use std::sync::{Arc, Mutex};
 mod http;
 mod utils;
 mod wifi;
+mod bridge;
 
 fn main() -> anyhow::Result<()> {
     esp_idf_svc::sys::link_patches();
