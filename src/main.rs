@@ -32,6 +32,11 @@ fn main() -> anyhow::Result<()> {
     let (_http_server, _mdns) =
         http::start_http_server(Arc::clone(&guarded_nvs), Arc::clone(&guarded_wifi))?;
 
+    // let idle = Bridge::new();   
+    // let ethup = Bridge::<EthReady>::from(idle);
+    // let wifiup = Bridge::<WifiReady>::from(ethup);
+    // let _running = Bridge::<Running>::from(wifiup);
+
     loop {
         std::thread::park();
     }

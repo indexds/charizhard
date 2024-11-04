@@ -1,4 +1,4 @@
-//! Wi-Fi to Ethernet Bridge State Machine
+// https://github.com/owenthewizard/esp32-wifi-bridge
 
 extern crate alloc;
 use alloc::sync::Arc;
@@ -20,8 +20,9 @@ use esp_idf_svc::wifi::{AuthMethod, ClientConfiguration, Configuration, WifiDevi
 
 use once_cell::sync::OnceCell;
 
-const SSID: &str = env!("WIFI_SSID");
-const PASS: &str = env!("WIFI_PASS");
+use crate::utils::nvs::{NvsWifi, NvsKeys};
+use std::str::FromStr;
+
 const AUTH: AuthMethod = AuthMethod::WPA2Personal;
 
 /// `eth2wifi_task` priority.
@@ -221,9 +222,9 @@ impl From<Bridge<EthReady>> for Bridge<WifiReady> {
 impl From<Bridge<WifiReady>> for Bridge<Running> {
     fn from(val: Bridge<WifiReady>) -> Self {
         let wifi_config = Configuration::Client(ClientConfiguration {
-            ssid: SSID.try_into().unwrap(),
-            auth_method: AUTH,
-            password: PASS.try_into().unwrap(),
+            ssid: NvsWifi::get_field::<32>(&nvs, NvsKeys::STA_SSID)?.inner(),
+            auth_method: fromNvsWifi::get_field::<32>(&nvs, NvsKeys::STA_PASSWD)?.inner(),
+            password: NvsWifi::get_field::<64>(&nvs, NvsKeys::STA_PASSWD)?.inner(),
             ..Default::default()
         });
 
