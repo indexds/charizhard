@@ -1,7 +1,6 @@
-// https://github.com/owenthewizard/esp32-wifi-bridge
-
 extern crate alloc;
 use alloc::sync::Arc;
+use std::sync::Mutex;
 
 use core::ptr;
 
@@ -20,36 +19,24 @@ use esp_idf_svc::wifi::{AuthMethod, ClientConfiguration, Configuration, WifiDevi
 
 use once_cell::sync::OnceCell;
 
-use crate::utils::nvs::{NvsWifi, NvsKeys};
+use crate::utils::nvs::{NvsKeys, NvsWifi};
+use esp_idf_svc::nvs::{EspNvs, NvsDefault};
 use std::str::FromStr;
 
-const AUTH: AuthMethod = AuthMethod::WPA2Personal;
-
 /// `eth2wifi_task` priority.
-///
 /// <https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/performance/speed.html#task-priorities>
 const ETH_TASK_PRIORITY: u8 = 19;
-
-/// `eth2wifi_task` stack size.
 const ETH_TASK_STACK_SIZE: usize = 512;
 
 /// `wifi2eth_task` priority.
-///
 /// <https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/performance/speed.html#task-priorities>
 const WIFI_TASK_PRIORITY: u8 = 19;
-
-/// `wifi2eth_task` stack size.
 const WIFI_TASK_STACK_SIZE: usize = 512;
 
-/// Wi-Fi to Ethernet Bridge State Machine
-pub struct Bridge<S> {
-    state: S,
+pub struct Bridge<State> {
+    state: State,
 }
 
-/// Idle State
-///
-/// In this state, `peripherals`, `sysloop`, and `nvs` are initialized,
-/// but no action is being performed.
 pub struct Idle {
     peripherals: Peripherals,
     sysloop: EspSystemEventLoop,
@@ -73,58 +60,44 @@ pub struct EthReady {
 }
 
 /// Wi-Fi Ready State
-///
 /// In this state, Wi-Fi is ready to be transitioned into the [`Running`] state.
 /// Notably, the Wi-Fi `Sta` MAC has been set to `client_mac`.
 pub struct WifiReady {
     eth: EthDriver<'static, RmiiEth>,
     wifi: WifiDriver<'static>,
+    nvs: Arc<Mutex<EspNvs<NvsDefault>>>,
 }
 
 /// Running State
-///
 /// In this state, the bridge is connected to Wi-Fi and Ethernet, and is forwarding frames between
 /// them. No further changes to Wi-Fi or Ethernet can be made in this state.
+#[allow(dead_code)]
 pub struct Running {
-    pub eth2wifi_handle: JoinHandle<!>,
-    pub wifi2eth_handle: JoinHandle<!>,
+    pub eth2wifi_handle: JoinHandle<()>,
+    pub wifi2eth_handle: JoinHandle<()>,
 }
 
 impl Bridge<Idle> {
-    /// Construct a `Bridge` in the `Idle` state.
-    ///
-    /// # Examples
-    ///
-    /// ```rust
-    /// # use sm::*;
-    ///
-    /// let idle_bridge = Bridge::new();
-    /// ```
-    ///
-    /// # Panics
-    ///
-    /// This function calls `take()` on
-    /// [`Peripherals`], [`EspSystemEventLoop`], and [`EspDefaultNvsPartition`], and will panic if
-    /// any of them return `Err`. Therefore, only one instance of `Bridge` should exist at any given
-    /// time, and you shouldn't be using them elsewhere.
-    pub fn new() -> Self {
-        let peripherals = Peripherals::take().expect("Failed to take peripherals!");
-        let sysloop = EspSystemEventLoop::take().expect("Failed to take sysloop!");
-        let nvs = EspDefaultNvsPartition::take().ok();
+    pub fn new() -> anyhow::Result<Self> {
+        let peripherals = Peripherals::take()?;
+        let sysloop = EspSystemEventLoop::take()?;
+        let nvs = EspDefaultNvsPartition::take()?;
 
-        Self {
+        Ok(Self {
             state: Idle {
                 peripherals,
                 sysloop,
-                nvs,
+                nvs: Some(nvs),
             },
-        }
+        })
     }
 }
 
-/// Transition from [`Idle`] to [`EthReady`].
-impl From<Bridge<Idle>> for Bridge<EthReady> {
-    fn from(val: Bridge<Idle>) -> Self {
+impl TryFrom<Bridge<Idle>> for Bridge<EthReady> {
+    
+    type Error = anyhow::Error;
+
+    fn try_from(val: Bridge<Idle>) -> anyhow::Result<Self> {
         let pins = val.state.peripherals.pins;
         let mut eth = EthDriver::new_rmii(
             val.state.peripherals.mac,
@@ -143,35 +116,30 @@ impl From<Bridge<Idle>> for Bridge<EthReady> {
             RmiiEthChipset::LAN87XX,
             Some(1), // WT32-ETH01 PHY address
             val.state.sysloop.clone(),
-        )
-        .expect("Failed to init EthDriver!");
-
-        // could emulate the following logic with mpsc::channel, but this is more efficient
-        // at least in terms of binary size...
+        )?;
 
         let client_mac: Arc<OnceCell<[u8; 6]>> = Arc::new(OnceCell::new());
         let client_mac2 = Arc::clone(&client_mac);
 
         eth.set_rx_callback(move |frame| match frame.as_slice().get(6..12) {
             Some(mac_bytes) => {
-                let src_mac = mac_bytes.try_into().unwrap();
+                let src_mac = mac_bytes.try_into().expect("Failed to retrieve mac bytes.");
                 if client_mac2.set(src_mac).is_ok() {
-                    log::warn!("Sniffed client MAC: {}", mac2str(src_mac));
+                    log::info!("Sniffed client MAC: {}", mac2str(src_mac));
                 }
             }
             None => unreachable!("Failed to read source MAC from Ethernet frame!"),
-        })
-        .expect("Failed to set Ethernet callback! (macsniff)");
+        })?;
 
-        log::warn!("Waiting to sniff client MAC...");
-        eth.start().expect("Failed to start Ethernet!");
+        log::info!("Waiting to sniff client MAC...");
+
+        eth.start()?;
         let client_mac = *client_mac.wait();
 
-        // maybe this should be non-fatal?
-        eth.set_rx_callback(|_| {})
-            .expect("Failed to unset Ethernet callback! (macsniff)");
+        eth.set_rx_callback(|_| {})?;
 
-        log::warn!("Setting Ethernet promiscuous...");
+        log::info!("Setting Ethernet promiscuous...");
+
         esp!(unsafe {
             use esp_idf_svc::handle::RawHandle;
             use esp_idf_svc::sys::{esp_eth_io_cmd_t_ETH_CMD_S_PROMISCUOUS, esp_eth_ioctl};
@@ -182,11 +150,11 @@ impl From<Bridge<Idle>> for Bridge<EthReady> {
                 esp_eth_io_cmd_t_ETH_CMD_S_PROMISCUOUS,
                 ptr::addr_of_mut!(t).cast(),
             )
-        })
-        .expect("Failed to set Ethernet promiscuous!");
-        log::warn!("Ethernet promiscuous success!");
+        })?;
 
-        Self {
+        log::info!("Ethernet promiscuous success!");
+
+        Ok(Self {
             state: EthReady {
                 modem: val.state.peripherals.modem,
                 sysloop: val.state.sysloop,
@@ -194,37 +162,63 @@ impl From<Bridge<Idle>> for Bridge<EthReady> {
                 eth,
                 client_mac,
             },
-        }
+        })
     }
 }
 
 /// Transition from [`EthReady`] to [`WifiReady`].
-impl From<Bridge<EthReady>> for Bridge<WifiReady> {
-    fn from(val: Bridge<EthReady>) -> Self {
-        let mut wifi = WifiDriver::new(val.state.modem, val.state.sysloop.clone(), val.state.nvs)
-            .expect("Failed to init WifiDriver!");
+impl TryFrom<Bridge<EthReady>> for Bridge<WifiReady> {
+    type Error = anyhow::Error;
+    
+    fn try_from(val: Bridge<EthReady>) -> anyhow::Result<Self> {
+        let mut wifi = WifiDriver::new(val.state.modem, val.state.sysloop.clone(), val.state.nvs.clone())?;
 
-        wifi.set_mac(WifiDeviceId::Sta, val.state.client_mac)
-            .expect("Failed to set Wi-Fi MAC!");
+        wifi.set_mac(WifiDeviceId::Sta, val.state.client_mac)?;
 
-        Self {
+        let nvs_clone = match val.state.nvs {
+            Some(nvs) => nvs,
+            None => panic!("Failed to get NVS partition!"),
+        };
+
+        let nvs = EspNvs::new(nvs_clone, "config", true)?;
+        let nvs = Arc::new(Mutex::new(nvs));
+
+        Ok(Self {
             state: WifiReady {
                 eth: val.state.eth,
                 wifi,
+                nvs,
             },
-        }
+        })
     }
 }
 
-/// Transition from [`WifiReady`] to [`Running`].
-// don't care about panic due to try_from().unwrap()
 #[allow(clippy::fallible_impl_from)]
-impl From<Bridge<WifiReady>> for Bridge<Running> {
-    fn from(val: Bridge<WifiReady>) -> Self {
+impl TryFrom<Bridge<WifiReady>> for Bridge<Running> {
+    type Error = anyhow::Error;
+    
+    fn try_from(val: Bridge<WifiReady>) -> anyhow::Result<Self> {
+        let nvs = Arc::clone(&val.state.nvs);
+        let nvs = nvs.lock().map_err(|_| anyhow::anyhow!("Failed to lock NVS Mutex."))?;
+
+        let ssid = NvsWifi::get_field::<32>(&nvs, NvsKeys::STA_SSID)
+            .expect("Failed to get STA_SSID from NVS partition.")
+            .clean_string()
+            .inner();
+        let password = NvsWifi::get_field::<64>(&nvs, NvsKeys::STA_PASSWD)
+            .expect("Failed to get STA_PASSWD from NVS partition.")
+            .clean_string()
+            .inner();
+        let auth_method = NvsWifi::get_field::<32>(&nvs, NvsKeys::STA_AUTH_METHOD)
+            .expect("Failed to get STA_AUTH_METHOD from NVS partition")
+            .clean_string()
+            .inner();
+        let auth_method = AuthMethod::from_str(auth_method.as_str()).expect("Failed to parse AUTH_METHOD from NVS partition.");
+
         let wifi_config = Configuration::Client(ClientConfiguration {
-            ssid: NvsWifi::get_field::<32>(&nvs, NvsKeys::STA_SSID)?.inner(),
-            auth_method: fromNvsWifi::get_field::<32>(&nvs, NvsKeys::STA_PASSWD)?.inner(),
-            password: NvsWifi::get_field::<64>(&nvs, NvsKeys::STA_PASSWD)?.inner(),
+            ssid,
+            auth_method,
+            password,
             ..Default::default()
         });
 
@@ -247,31 +241,28 @@ impl From<Bridge<WifiReady>> for Bridge<Running> {
                 Ok(())
             },
             |_, _, _| {},
-        )
-        .expect("Failed to set Wi-Fi callback (wifi_tx)!");
+        )?;
 
         eth.set_rx_callback(move |frame| {
             if eth_tx.send(frame).is_err() {
                 log::error!("Failed to send Ethernet frame to queue! Did the receiver hangup?");
                 unreachable!();
             }
-        })
-        .expect("Failed to set Ethernet callback (eth_tx)!");
+        })?;
 
-        wifi.start().expect("Failed to start Wi-Fi!");
-        eth.start().expect("Failed to start Ethernet!");
+        wifi.start()?;
+        eth.start()?;
 
         ThreadSpawnConfiguration {
             name: Some(c"eth2wifi_task".to_bytes_with_nul()),
             stack_size: ETH_TASK_STACK_SIZE,
             priority: ETH_TASK_PRIORITY,
             ..Default::default()
-        }
-        .set()
-        .expect("Failed to set ThreadSpawnConfiguration (eth2wifi)!");
-        let eth2wifi_handle = thread::spawn(move || -> ! {
+        }.set()?;
+
+        let eth2wifi_handle = thread::spawn(move || {
             for frame in &eth_rx {
-                if wifi.is_connected().unwrap() {
+                if wifi.is_connected().expect("Failed to check wifi connectivity!") {
                     if let Err(e) = wifi.send(WifiDeviceId::Sta, frame.as_slice()) {
                         log::error!("Failed to send frame out Wi-Fi: {}", e);
                     }
@@ -286,7 +277,6 @@ impl From<Bridge<WifiReady>> for Bridge<Running> {
                 }
             }
             log::error!("Failed to consume frame from Ethernet queue! Did the sender hangup?");
-            unreachable!();
         });
 
         ThreadSpawnConfiguration {
@@ -298,7 +288,7 @@ impl From<Bridge<WifiReady>> for Bridge<Running> {
         .set()
         .expect("Failed to set ThreadSpawnConfiguration (wifi2eth)!");
 
-        let wifi2eth_handle = thread::spawn(move || -> ! {
+        let wifi2eth_handle = thread::spawn(move || {
             for frame in &wifi_rx {
                 if eth.is_connected().unwrap() {
                     if let Err(e) = eth.send(frame.as_slice()) {
@@ -309,15 +299,14 @@ impl From<Bridge<WifiReady>> for Bridge<Running> {
                 }
             }
             log::error!("Failed to consume frame from Ethernet queue! Did the sender hangup?");
-            unreachable!();
         });
 
-        Self {
+        Ok(Self {
             state: Running {
                 eth2wifi_handle,
                 wifi2eth_handle,
             },
-        }
+        })
     }
 }
 

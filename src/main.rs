@@ -8,7 +8,6 @@ use std::sync::{Arc, Mutex};
 mod http;
 mod utils;
 mod wifi;
-mod bridge;
 
 fn main() -> anyhow::Result<()> {
     esp_idf_svc::sys::link_patches();
@@ -32,10 +31,7 @@ fn main() -> anyhow::Result<()> {
     let (_http_server, _mdns) =
         http::start_http_server(Arc::clone(&guarded_nvs), Arc::clone(&guarded_wifi))?;
 
-    // let idle = Bridge::new();   
-    // let ethup = Bridge::<EthReady>::from(idle);
-    // let wifiup = Bridge::<WifiReady>::from(ethup);
-    // let _running = Bridge::<Running>::from(wifiup);
+
 
     loop {
         std::thread::park();
