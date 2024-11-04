@@ -1,81 +1,27 @@
-extern crate alloc;
-use alloc::sync::Arc;
-use std::sync::Mutex;
-
+use esp_idf_svc::wifi::{AuthMethod, ClientConfiguration, Configuration, WifiDeviceId, WifiDriver};
+use esp_idf_svc::eth::{EthDriver, RmiiClockConfig, RmiiEthChipset};
+use esp_idf_svc::hal::task::thread::ThreadSpawnConfiguration;
+use esp_idf_svc::eventloop::EspSystemEventLoop;
+use esp_idf_svc::nvs::EspDefaultNvsPartition;
+use esp_idf_svc::hal::prelude::Peripherals;
+use crate::utils::nvs::{NvsKeys, NvsWifi};
+use once_cell::sync::OnceCell;
+use esp_idf_svc::nvs::EspNvs;
+use std::sync::{Arc, Mutex};
+use crate::bridge::state::*;
+use esp_idf_svc::hal::gpio;
+use esp_idf_svc::sys::esp;
+use std::str::FromStr;
+use std::sync::mpsc;
+use std::thread;
 use core::ptr;
 
-use std::sync::mpsc;
-use std::thread::{self, JoinHandle};
-
-use esp_idf_svc::eth::{EthDriver, RmiiClockConfig, RmiiEth, RmiiEthChipset};
-use esp_idf_svc::eventloop::EspSystemEventLoop;
-use esp_idf_svc::hal::gpio;
-use esp_idf_svc::hal::modem::Modem;
-use esp_idf_svc::hal::prelude::Peripherals;
-use esp_idf_svc::hal::task::thread::ThreadSpawnConfiguration;
-use esp_idf_svc::nvs::EspDefaultNvsPartition;
-use esp_idf_svc::sys::esp;
-use esp_idf_svc::wifi::{AuthMethod, ClientConfiguration, Configuration, WifiDeviceId, WifiDriver};
-
-use once_cell::sync::OnceCell;
-
-use crate::utils::nvs::{NvsKeys, NvsWifi};
-use esp_idf_svc::nvs::{EspNvs, NvsDefault};
-use std::str::FromStr;
-
-/// `eth2wifi_task` priority.
 /// <https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/performance/speed.html#task-priorities>
 const ETH_TASK_PRIORITY: u8 = 19;
 const ETH_TASK_STACK_SIZE: usize = 512;
 
-/// `wifi2eth_task` priority.
-/// <https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/performance/speed.html#task-priorities>
 const WIFI_TASK_PRIORITY: u8 = 19;
 const WIFI_TASK_STACK_SIZE: usize = 512;
-
-pub struct Bridge<State> {
-    state: State,
-}
-
-pub struct Idle {
-    peripherals: Peripherals,
-    sysloop: EspSystemEventLoop,
-    nvs: Option<EspDefaultNvsPartition>,
-}
-
-/// Ethernet Ready State
-///
-/// In this state, [Ethernet](esp_idf_svc::eth::EthDriver) is ready to be transitioned into the
-/// [`Running`] state. Additionally, `nvs`, `modem`, and `client_mac` have been initialized and are
-/// ready to be used to bring Wi-Fi up.
-/// Notably, `client_mac` is sniffed from the source MAC of the first Ethernet frame we catch.
-/// At some point after we have sniffed `client_mac` (not necessarily immediately), we stop
-/// sniffing future frames.
-pub struct EthReady {
-    modem: Modem,
-    sysloop: EspSystemEventLoop,
-    nvs: Option<EspDefaultNvsPartition>,
-    eth: EthDriver<'static, RmiiEth>,
-    client_mac: [u8; 6],
-}
-
-/// Wi-Fi Ready State
-/// In this state, Wi-Fi is ready to be transitioned into the [`Running`] state.
-/// Notably, the Wi-Fi `Sta` MAC has been set to `client_mac`.
-pub struct WifiReady {
-    eth: EthDriver<'static, RmiiEth>,
-    wifi: WifiDriver<'static>,
-    nvs: Arc<Mutex<EspNvs<NvsDefault>>>,
-}
-
-/// Running State
-/// In this state, the bridge is connected to Wi-Fi and Ethernet, and is forwarding frames between
-/// them. No further changes to Wi-Fi or Ethernet can be made in this state.
-#[allow(dead_code)]
-pub struct Running {
-    pub eth2wifi_handle: JoinHandle<()>,
-    pub wifi2eth_handle: JoinHandle<()>,
-}
 
 #[allow(dead_code)]
 impl Bridge<Idle> {
