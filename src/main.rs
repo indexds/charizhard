@@ -5,6 +5,7 @@ use esp_idf_svc::nvs::{EspDefaultNvsPartition, EspNvs};
 use esp_idf_svc::wifi::{BlockingWifi, EspWifi};
 use std::sync::{Arc, Mutex};
 
+mod bridge;
 mod http;
 mod utils;
 mod wifi;
@@ -30,8 +31,6 @@ fn main() -> anyhow::Result<()> {
     wifi::start_ap(Arc::clone(&guarded_wifi))?;
     let (_http_server, _mdns) =
         http::start_http_server(Arc::clone(&guarded_nvs), Arc::clone(&guarded_wifi))?;
-
-
 
     loop {
         std::thread::park();
