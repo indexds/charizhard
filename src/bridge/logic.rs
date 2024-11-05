@@ -1,20 +1,20 @@
-use esp_idf_svc::wifi::{AuthMethod, ClientConfiguration, Configuration, WifiDeviceId, WifiDriver};
-use esp_idf_svc::eth::{EthDriver, RmiiClockConfig, RmiiEthChipset};
-use esp_idf_svc::hal::task::thread::ThreadSpawnConfiguration;
-use esp_idf_svc::eventloop::EspSystemEventLoop;
-use esp_idf_svc::nvs::EspDefaultNvsPartition;
-use esp_idf_svc::hal::prelude::Peripherals;
-use crate::utils::nvs::{NvsKeys, NvsWifi};
-use once_cell::sync::OnceCell;
-use esp_idf_svc::nvs::EspNvs;
-use std::sync::{Arc, Mutex};
 use crate::bridge::state::*;
+use crate::utils::nvs::{NvsKeys, NvsWifi};
+use core::ptr;
+use esp_idf_svc::eth::{EthDriver, RmiiClockConfig, RmiiEthChipset};
+use esp_idf_svc::eventloop::EspSystemEventLoop;
 use esp_idf_svc::hal::gpio;
+use esp_idf_svc::hal::prelude::Peripherals;
+use esp_idf_svc::hal::task::thread::ThreadSpawnConfiguration;
+use esp_idf_svc::nvs::EspDefaultNvsPartition;
+use esp_idf_svc::nvs::EspNvs;
 use esp_idf_svc::sys::esp;
+use esp_idf_svc::wifi::{AuthMethod, ClientConfiguration, Configuration, WifiDeviceId, WifiDriver};
+use once_cell::sync::OnceCell;
 use std::str::FromStr;
 use std::sync::mpsc;
+use std::sync::{Arc, Mutex};
 use std::thread;
-use core::ptr;
 
 /// <https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/performance/speed.html#task-priorities>
 const ETH_TASK_PRIORITY: u8 = 19;
@@ -34,7 +34,7 @@ impl Bridge<Idle> {
             state: Idle {
                 peripherals,
                 sysloop,
-                nvs: Some(nvs),
+                nvs,
             },
         })
     }
@@ -67,9 +67,11 @@ impl TryFrom<Bridge<Idle>> for Bridge<EthReady> {
         let client_mac: Arc<OnceCell<[u8; 6]>> = Arc::new(OnceCell::new());
         let client_mac2 = Arc::clone(&client_mac);
 
+        //temporary callback to sniff the client's mac
         eth.set_rx_callback(move |frame| match frame.as_slice().get(6..12) {
             Some(mac_bytes) => {
                 let src_mac = mac_bytes.try_into().expect("Failed to retrieve mac bytes.");
+
                 if client_mac2.set(src_mac).is_ok() {
                     log::info!("Sniffed client MAC: {}", mac2str(src_mac));
                 }
@@ -82,10 +84,12 @@ impl TryFrom<Bridge<Idle>> for Bridge<EthReady> {
         eth.start()?;
         let client_mac = *client_mac.wait();
 
+        //reset the callback, now unneeded
         eth.set_rx_callback(|_| {})?;
 
         log::info!("Setting Ethernet promiscuous...");
 
+        //black magic sets ethernet driver in promiscuous mode
         esp!(unsafe {
             use esp_idf_svc::handle::RawHandle;
             use esp_idf_svc::sys::{esp_eth_io_cmd_t_ETH_CMD_S_PROMISCUOUS, esp_eth_ioctl};
@@ -112,7 +116,6 @@ impl TryFrom<Bridge<Idle>> for Bridge<EthReady> {
     }
 }
 
-/// Transition from [`EthReady`] to [`WifiReady`].
 impl TryFrom<Bridge<EthReady>> for Bridge<WifiReady> {
     type Error = anyhow::Error;
 
@@ -120,17 +123,12 @@ impl TryFrom<Bridge<EthReady>> for Bridge<WifiReady> {
         let mut wifi = WifiDriver::new(
             val.state.modem,
             val.state.sysloop.clone(),
-            val.state.nvs.clone(),
+            Some(val.state.nvs.clone()),
         )?;
 
         wifi.set_mac(WifiDeviceId::Sta, val.state.client_mac)?;
 
-        let nvs_clone = match val.state.nvs {
-            Some(nvs) => nvs,
-            None => panic!("Failed to get NVS partition!"),
-        };
-
-        let nvs = EspNvs::new(nvs_clone, "config", true)?;
+        let nvs = EspNvs::new(val.state.nvs, "config", true)?;
         let nvs = Arc::new(Mutex::new(nvs));
 
         Ok(Self {
@@ -143,7 +141,6 @@ impl TryFrom<Bridge<EthReady>> for Bridge<WifiReady> {
     }
 }
 
-#[allow(clippy::fallible_impl_from)]
 impl TryFrom<Bridge<WifiReady>> for Bridge<Running> {
     type Error = anyhow::Error;
 
@@ -162,6 +159,7 @@ impl TryFrom<Bridge<WifiReady>> for Bridge<Running> {
         let auth_method = NvsWifi::get_field::<32>(&nvs, NvsKeys::STA_AUTH_METHOD)?
             .clean_string()
             .inner();
+
         let auth_method = AuthMethod::from_str(auth_method.as_str())?;
 
         let wifi_config = Configuration::Client(ClientConfiguration {
@@ -179,6 +177,8 @@ impl TryFrom<Bridge<WifiReady>> for Bridge<Running> {
         let (eth_tx, eth_rx) = mpsc::channel();
         let (wifi_tx, wifi_rx) = mpsc::channel();
 
+        //frames received on wifi are sent to the channel
+        //frames transferred on wifi are dropped
         wifi.set_callbacks(
             move |_, frame| {
                 if wifi_tx.send(frame).is_err() {
@@ -189,9 +189,10 @@ impl TryFrom<Bridge<WifiReady>> for Bridge<Running> {
             |_, _, _| {},
         )?;
 
+        //frames received on ethernet are sent to the channel
         eth.set_rx_callback(move |frame| {
             if eth_tx.send(frame).is_err() {
-                log::warn!("Failed to send Ethernet frame to queue! Did the receiver hangup?");
+                log::warn!("Failed to send Ethernet frame to queue, did the receiver hangup?");
             }
         })?;
 
@@ -206,6 +207,7 @@ impl TryFrom<Bridge<WifiReady>> for Bridge<Running> {
         }
         .set()?;
 
+        //handle every frame in the channel received from the eth
         let eth2wifi_handle = thread::spawn(move || {
             for frame in &eth_rx {
                 if wifi
@@ -236,6 +238,7 @@ impl TryFrom<Bridge<WifiReady>> for Bridge<Running> {
         }
         .set()?;
 
+        //handle every frame in the channel received from the wifi
         let wifi2eth_handle = thread::spawn(move || {
             for frame in &wifi_rx {
                 if eth.is_connected().unwrap() {
