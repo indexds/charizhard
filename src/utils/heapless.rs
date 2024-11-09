@@ -2,9 +2,11 @@ use heapless::String;
 use serde::Deserialize;
 use std::fmt;
 
+
 #[derive(Debug, Deserialize, Default)]
 pub struct HeaplessString<const N: usize>(String<N>);
 
+#[allow(unused_must_use)]
 impl<const N: usize> HeaplessString<N> {
     pub fn new() -> Self {
         Self(String::<N>::new())
@@ -19,7 +21,7 @@ impl<const N: usize> HeaplessString<N> {
             return Err(anyhow::anyhow!("String too long."));
         }
 
-        _ = self.0.push_str(s);
+        self.0.push_str(s);
 
         Ok(())
     }
@@ -27,7 +29,7 @@ impl<const N: usize> HeaplessString<N> {
     pub fn from_utf8(s: &[u8]) -> anyhow::Result<Self> {
         let mut heapless_string = HeaplessString::<N>::new();
 
-        _ = heapless_string.0.push_str(core::str::from_utf8(s)?);
+        heapless_string.0.push_str(core::str::from_utf8(s)?);
 
         Ok(heapless_string)
     }
@@ -35,7 +37,7 @@ impl<const N: usize> HeaplessString<N> {
     pub fn from_str(s: &str) -> Self {
         let mut heapless_string = HeaplessString::new();
 
-        _ = heapless_string.push_str(s);
+        heapless_string.push_str(s);
 
         heapless_string
     }

@@ -1,6 +1,6 @@
 [tasks.build-release]
 command = "cargo"
-args = ["build", "--release"]
+args = ["build", "--release", "-vv"]
 
 [tasks.convert-to-bin]
 command = "esptool"

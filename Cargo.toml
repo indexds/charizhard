@@ -30,9 +30,13 @@ embassy = ["esp-idf-svc/embassy-sync", "esp-idf-svc/critical-section", "esp-idf-
 [[package.metadata.esp-idf-sys.extra_components]]
 remote_component = { name = "espressif/mdns", version = "1.4" }
 
+[[package.metadata.esp-idf-sys.extra_components]]
+remote_component = { name = "trombik/esp_wireguard", version = "0.9" }
+bindings_module = "wireguard"
+
 [dependencies]
 log = { version = "0.4.22", default-features = false }
-esp-idf-svc = { version = "0.49.1", default-features = true }
+esp-idf-svc = { version = "0.49.1", default-features = false, features = ["alloc", "std"] }
 esp-idf-hal = "0.44.1"
 embedded-hal = "1.0.0"
 embedded-svc = "0.28.0"
