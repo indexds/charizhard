@@ -16,7 +16,7 @@ use std::sync::mpsc;
 use std::sync::{Arc, Mutex};
 use std::thread;
 
-/// <https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/performance/speed.html#task-priorities>
+//https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/performance/speed.html#task-priorities
 const ETH_TASK_PRIORITY: u8 = 19;
 const ETH_TASK_STACK_SIZE: usize = 512;
 
@@ -64,6 +64,7 @@ impl TryFrom<Bridge<Idle>> for Bridge<EthReady> {
             val.state.sysloop.clone(),
         )?;
 
+        //optimizes calls, inits the mac config only once
         let client_mac: Arc<OnceCell<[u8; 6]>> = Arc::new(OnceCell::new());
         let client_mac2 = Arc::clone(&client_mac);
 
@@ -261,6 +262,7 @@ impl TryFrom<Bridge<WifiReady>> for Bridge<Running> {
     }
 }
 
+#[inline]
 fn mac2str(mac: [u8; 6]) -> String {
     format!(
         "{:02x}:{:02x}:{:02x}:{:02x}:{:02x}:{:02x}",

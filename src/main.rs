@@ -9,7 +9,7 @@ mod bridge;
 mod http;
 mod utils;
 mod wifi;
-mod wireguard;
+// mod wireguard;
 
 fn main() -> anyhow::Result<()> {
     esp_idf_svc::sys::link_patches();
