@@ -9,6 +9,7 @@ use esp_idf_svc::hal::task::thread::ThreadSpawnConfiguration;
 use esp_idf_svc::nvs::EspDefaultNvsPartition;
 use esp_idf_svc::nvs::EspNvs;
 use esp_idf_svc::sys::esp;
+use esp_idf_svc::sntp::EspSntp;
 use esp_idf_svc::wifi::{AuthMethod, ClientConfiguration, Configuration, WifiDeviceId, WifiDriver};
 use once_cell::sync::OnceCell;
 use std::str::FromStr;
@@ -253,10 +254,13 @@ impl TryFrom<Bridge<WifiReady>> for Bridge<Running> {
             log::warn!("Failed to consume frame from Ethernet queue! Did the sender hangup?");
         });
 
+        let sntp = EspSntp::new_default()?;
+
         Ok(Self {
             state: Running {
                 eth2wifi_handle,
                 wifi2eth_handle,
+                sntp,
             },
         })
     }

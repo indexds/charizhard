@@ -6,6 +6,7 @@ use esp_idf_svc::nvs::{EspDefaultNvsPartition, EspNvs, NvsDefault};
 use esp_idf_svc::wifi::WifiDriver;
 use std::sync::{Arc, Mutex};
 use std::thread::JoinHandle;
+use esp_idf_svc::sntp::EspSntp;
 
 pub struct Bridge<State> {
     pub state: State,
@@ -40,4 +41,5 @@ pub struct WifiReady {
 pub struct Running {
     pub eth2wifi_handle: JoinHandle<()>,
     pub wifi2eth_handle: JoinHandle<()>,
+    pub sntp: EspSntp<'static>,
 }
