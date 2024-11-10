@@ -32,6 +32,7 @@ remote_component = { name = "espressif/mdns", version = "1.4" }
 
 [[package.metadata.esp-idf-sys.extra_components]]
 remote_component = { name = "trombik/esp_wireguard", version = "0.9" }
+bindings_header = "src/wireguard/bindings.h"
 bindings_module = "wireguard"
 
 [dependencies]
