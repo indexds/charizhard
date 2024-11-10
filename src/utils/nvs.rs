@@ -9,7 +9,6 @@ const DEFAULT_STA_AUTH_METHOD: &str = "wpa2personal";
 
 const DEFAULT_WG_ADDR: &str = "";
 const DEFAULT_WG_PORT: &str = "";
-const DEFAULT_WG_DNS: &str = "";
 
 const DEFAULT_WG_CLIENT_PRIV_KEY: &str = "";
 const DEFAULT_WG_SERVER_PUB_KEY: &str = "";
@@ -23,7 +22,6 @@ impl NvsKeys {
 
     pub const WG_ADDR: &'static str = "ADDR";
     pub const WG_PORT: &'static str = "PORT";
-    pub const WG_DNS: &'static str = "DNS";
 
     pub const WG_CLIENT_PRIV_KEY: &'static str = "PRIVKEY";
     pub const WG_SERVER_PUB_KEY: &'static str = "PUBKEY";
@@ -36,9 +34,6 @@ pub struct NvsWireguard {
 
     #[serde(rename = "port")]
     pub wg_port: HeaplessString<16>,
-
-    #[serde(rename = "dns")]
-    pub wg_dns: HeaplessString<32>,
 
     #[serde(rename = "privkey")]
     pub wg_client_priv_key: HeaplessString<32>,
@@ -86,9 +81,6 @@ impl NvsWireguard {
 
             wg_port: NvsWireguard::get_field::<16>(&nvs, NvsKeys::WG_PORT)
                 .unwrap_or(DEFAULT_WG_PORT.try_into()?),
-
-            wg_dns: NvsWireguard::get_field::<32>(&nvs, NvsKeys::WG_DNS)
-                .unwrap_or(DEFAULT_WG_DNS.try_into()?),
 
             wg_client_priv_key: NvsWireguard::get_field::<32>(&nvs, NvsKeys::WG_CLIENT_PRIV_KEY)
                 .unwrap_or(DEFAULT_WG_CLIENT_PRIV_KEY.try_into()?),

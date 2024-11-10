@@ -1,7 +1,7 @@
 use heapless::String;
 use serde::Deserialize;
+use std::ffi::CString;
 use std::fmt;
-
 
 #[derive(Debug, Deserialize, Default)]
 pub struct HeaplessString<const N: usize>(String<N>);
@@ -122,5 +122,13 @@ impl<const N: usize> TryInto<heapless::String<N>> for HeaplessString<N> {
 
     fn try_into(self) -> anyhow::Result<heapless::String<N>> {
         Ok(self.0)
+    }
+}
+
+impl<const N: usize> TryInto<CString> for HeaplessString<N> {
+    type Error = anyhow::Error;
+
+    fn try_into(self) -> anyhow::Result<CString> {
+        Ok(CString::new(self.as_str())?)
     }
 }

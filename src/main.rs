@@ -19,19 +19,21 @@ fn main() -> anyhow::Result<()> {
     let event_loop = EspSystemEventLoop::take()?;
     let nvs = EspDefaultNvsPartition::take()?;
 
-    let nvs_instance = EspNvs::new(nvs.clone(), "config", true)?;
-    let guarded_nvs = Arc::new(Mutex::new(nvs_instance));
-
     let wifi = BlockingWifi::wrap(
         EspWifi::new(peripherals.modem, event_loop.clone(), Some(nvs.clone()))?,
         event_loop,
     )?;
 
     let guarded_wifi = Arc::new(Mutex::new(wifi));
+    let nvs_instance = EspNvs::new(nvs.clone(), "config", true)?;
+    let guarded_nvs = Arc::new(Mutex::new(nvs_instance));
 
     wifi::start_ap(Arc::clone(&guarded_wifi))?;
+
     let (_http_server, _mdns) =
         http::start_http_server(Arc::clone(&guarded_nvs), Arc::clone(&guarded_wifi))?;
+
+    let _wg_tunnel_ctx = wireguard::start_wg_tunnel(Arc::clone(&guarded_nvs))?;
 
     loop {
         std::thread::park();

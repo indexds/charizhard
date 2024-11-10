@@ -45,7 +45,7 @@ pub fn start_http_server(
     });
 
     let nvs_save_wireguard = Arc::clone(&nvs);
-    http_server.fn_handler("/save-wg", Method::Post, move |mut request| {
+    http_server.fn_handler("/connect-wg", Method::Post, move |mut request| {
         let mut nvs = nvs_save_wireguard
             .lock()
             .map_err(|_| anyhow::anyhow!("Failed to lock NVS Mutex."))?;
@@ -73,11 +73,6 @@ pub fn start_http_server(
             &mut nvs,
             NvsKeys::WG_PORT,
             wg_config.wg_port.clean_string().as_str(),
-        )?;
-        NvsWireguard::set_field(
-            &mut nvs,
-            NvsKeys::WG_DNS,
-            wg_config.wg_dns.clean_string().as_str(),
         )?;
         NvsWireguard::set_field(
             &mut nvs,
