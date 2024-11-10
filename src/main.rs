@@ -30,8 +30,7 @@ fn main() -> anyhow::Result<()> {
 
     wifi::start_ap(Arc::clone(&guarded_wifi))?;
 
-    let (_http_server, _mdns) =
-        http::start_http_server(Arc::clone(&guarded_nvs), Arc::clone(&guarded_wifi))?;
+    let (_http_server, _mdns) = http::start_http_server(Arc::clone(&guarded_nvs), Arc::clone(&guarded_wifi))?;
 
     let _wg_tunnel_ctx = wireguard::start_wg_tunnel(Arc::clone(&guarded_nvs))?;
 

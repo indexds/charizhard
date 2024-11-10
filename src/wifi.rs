@@ -11,12 +11,8 @@ pub fn connect_wifi(
     wifi: &Arc<Mutex<BlockingWifi<EspWifi<'static>>>>,
     nvs: &Arc<Mutex<EspNvs<NvsDefault>>>,
 ) -> anyhow::Result<()> {
-    let nvs = nvs
-        .lock()
-        .map_err(|_| anyhow::anyhow!("Failed to lock NVS Mutex."))?;
-    let mut wifi = wifi
-        .lock()
-        .map_err(|_| anyhow::anyhow!("Failed to lock WIFI Mutex."))?;
+    let nvs = nvs.lock().map_err(|_| anyhow::anyhow!("Failed to lock NVS Mutex."))?;
+    let mut wifi = wifi.lock().map_err(|_| anyhow::anyhow!("Failed to lock WIFI Mutex."))?;
 
     if wifi.is_connected()? {
         wifi.disconnect()?;
@@ -47,7 +43,7 @@ pub fn connect_wifi(
         }
     };
 
-    //TEMPORARY! TO BE DELETED ONCE THE ETHERNET BRIDGE IS UP--------------
+    // TEMPORARY! TO BE DELETED ONCE THE ETHERNET BRIDGE IS UP--------------
     let mut ap_ssid = HeaplessString::<32>::new();
     let mut ap_passwd = HeaplessString::<64>::new();
     ap_ssid.push_str("charizhard")?;
@@ -62,7 +58,7 @@ pub fn connect_wifi(
         ..Default::default()
     };
     wifi.set_configuration(&Configuration::Mixed(sta_config, ap_config))?;
-    //END TEMPORARY--------------------------------------------------------
+    // END TEMPORARY--------------------------------------------------------
 
     // wifi.set_configuration(&Configuration::Client(sta_configuration))?;
     wifi.connect()?;
@@ -71,9 +67,7 @@ pub fn connect_wifi(
 }
 
 pub fn disconnect_wifi(wifi: &Arc<Mutex<BlockingWifi<EspWifi<'static>>>>) -> anyhow::Result<()> {
-    let mut wifi = wifi
-        .lock()
-        .map_err(|_| anyhow::anyhow!("Failed to lock WIFI Mutex."))?;
+    let mut wifi = wifi.lock().map_err(|_| anyhow::anyhow!("Failed to lock WIFI Mutex."))?;
 
     if !wifi.is_started()? {
         return Ok(());
@@ -87,9 +81,7 @@ pub fn disconnect_wifi(wifi: &Arc<Mutex<BlockingWifi<EspWifi<'static>>>>) -> any
 }
 
 pub fn start_ap(wifi: Arc<Mutex<BlockingWifi<EspWifi<'static>>>>) -> anyhow::Result<()> {
-    let mut wifi = wifi
-        .lock()
-        .map_err(|_| anyhow::anyhow!("Failed to lock Wifi Mutex."))?;
+    let mut wifi = wifi.lock().map_err(|_| anyhow::anyhow!("Failed to lock Wifi Mutex."))?;
 
     let mut ap_ssid = HeaplessString::<32>::new();
     let mut ap_passwd = HeaplessString::<64>::new();

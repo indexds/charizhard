@@ -9,11 +9,7 @@ pub fn set_routes(http_server: &mut EspHttpServer<'static>) {
 
         let connection = request.connection();
 
-        connection.initiate_response(
-            200,
-            Some("OK"),
-            &[("Content-Type", "application/javascript")],
-        )?;
+        connection.initiate_response(200, Some("OK"), &[("Content-Type", "application/javascript")])?;
 
         connection.write(javascript.as_bytes())?;
 
@@ -37,14 +33,10 @@ pub fn set_routes(http_server: &mut EspHttpServer<'static>) {
 
         let connection = request.connection();
 
-        connection.initiate_response(
-            200,
-            Some("OK"),
-            &[
-                ("Content-Type", "image/svg+xml"),
-                ("Cache-Control", "public, max-age=3600"),
-            ],
-        )?;
+        connection.initiate_response(200, Some("OK"), &[
+            ("Content-Type", "image/svg+xml"),
+            ("Cache-Control", "public, max-age=3600"),
+        ])?;
 
         connection.write(spinner.as_bytes())?;
 
@@ -56,14 +48,10 @@ pub fn set_routes(http_server: &mut EspHttpServer<'static>) {
 
         let connection = request.connection();
 
-        connection.initiate_response(
-            200,
-            Some("OK"),
-            &[
-                ("Content-Type", "image/svg+xml"),
-                ("Cache-Control", "public, max-age=3600"),
-            ],
-        )?;
+        connection.initiate_response(200, Some("OK"), &[
+            ("Content-Type", "image/svg+xml"),
+            ("Cache-Control", "public, max-age=3600"),
+        ])?;
 
         connection.write(signal_one.as_bytes())?;
 
@@ -75,14 +63,10 @@ pub fn set_routes(http_server: &mut EspHttpServer<'static>) {
 
         let connection = request.connection();
 
-        connection.initiate_response(
-            200,
-            Some("OK"),
-            &[
-                ("Content-Type", "image/svg+xml"),
-                ("Cache-Control", "public, max-age=3600"),
-            ],
-        )?;
+        connection.initiate_response(200, Some("OK"), &[
+            ("Content-Type", "image/svg+xml"),
+            ("Cache-Control", "public, max-age=3600"),
+        ])?;
 
         connection.write(signal_two.as_bytes())?;
 
@@ -94,14 +78,10 @@ pub fn set_routes(http_server: &mut EspHttpServer<'static>) {
 
         let connection = request.connection();
 
-        connection.initiate_response(
-            200,
-            Some("OK"),
-            &[
-                ("Content-Type", "image/svg+xml"),
-                ("Cache-Control", "public, max-age=3600"),
-            ],
-        )?;
+        connection.initiate_response(200, Some("OK"), &[
+            ("Content-Type", "image/svg+xml"),
+            ("Cache-Control", "public, max-age=3600"),
+        ])?;
 
         connection.write(signal_three.as_bytes())?;
 
@@ -113,14 +93,10 @@ pub fn set_routes(http_server: &mut EspHttpServer<'static>) {
 
         let connection = request.connection();
 
-        connection.initiate_response(
-            200,
-            Some("OK"),
-            &[
-                ("Content-Type", "image/svg+xml"),
-                ("Cache-Control", "public, max-age=3600"),
-            ],
-        )?;
+        connection.initiate_response(200, Some("OK"), &[
+            ("Content-Type", "image/svg+xml"),
+            ("Cache-Control", "public, max-age=3600"),
+        ])?;
 
         connection.write(signal_four.as_bytes())?;
 
@@ -132,14 +108,10 @@ pub fn set_routes(http_server: &mut EspHttpServer<'static>) {
 
         let connection = request.connection();
 
-        connection.initiate_response(
-            200,
-            Some("OK"),
-            &[
-                ("Content-Type", "image/svg+xml"),
-                ("Cache-Control", "public, max-age=3600"),
-            ],
-        )?;
+        connection.initiate_response(200, Some("OK"), &[
+            ("Content-Type", "image/svg+xml"),
+            ("Cache-Control", "public, max-age=3600"),
+        ])?;
 
         connection.write(unlocked.as_bytes())?;
 
@@ -151,14 +123,10 @@ pub fn set_routes(http_server: &mut EspHttpServer<'static>) {
 
         let connection = request.connection();
 
-        connection.initiate_response(
-            200,
-            Some("OK"),
-            &[
-                ("Content-Type", "image/svg+xml"),
-                ("Cache-Control", "public, max-age=3600"),
-            ],
-        )?;
+        connection.initiate_response(200, Some("OK"), &[
+            ("Content-Type", "image/svg+xml"),
+            ("Cache-Control", "public, max-age=3600"),
+        ])?;
 
         connection.write(locked.as_bytes())?;
 
@@ -170,14 +138,10 @@ pub fn set_routes(http_server: &mut EspHttpServer<'static>) {
 
         let connection = request.connection();
 
-        connection.initiate_response(
-            200,
-            Some("OK"),
-            &[
-                ("Content-Type", "image/svg+xml"),
-                ("Cache-Control", "public, max-age=3600"),
-            ],
-        )?;
+        connection.initiate_response(200, Some("OK"), &[
+            ("Content-Type", "image/svg+xml"),
+            ("Cache-Control", "public, max-age=3600"),
+        ])?;
 
         connection.write(connected.as_bytes())?;
 
@@ -189,14 +153,10 @@ pub fn set_routes(http_server: &mut EspHttpServer<'static>) {
 
         let connection = request.connection();
 
-        connection.initiate_response(
-            200,
-            Some("OK"),
-            &[
-                ("Content-Type", "image/svg+xml"),
-                ("Cache-Control", "public, max-age=3600"),
-            ],
-        )?;
+        connection.initiate_response(200, Some("OK"), &[
+            ("Content-Type", "image/svg+xml"),
+            ("Cache-Control", "public, max-age=3600"),
+        ])?;
 
         connection.write(disconnected.as_bytes())?;
 

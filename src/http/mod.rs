@@ -64,16 +64,8 @@ pub fn start_http_server(
         let form_data = String::from_utf8(body)?;
         let wg_config: NvsWireguard = serde_urlencoded::from_str(form_data.as_str())?;
 
-        NvsWireguard::set_field(
-            &mut nvs,
-            NvsKeys::WG_ADDR,
-            wg_config.wg_addr.clean_string().as_str(),
-        )?;
-        NvsWireguard::set_field(
-            &mut nvs,
-            NvsKeys::WG_PORT,
-            wg_config.wg_port.clean_string().as_str(),
-        )?;
+        NvsWireguard::set_field(&mut nvs, NvsKeys::WG_ADDR, wg_config.wg_addr.clean_string().as_str())?;
+        NvsWireguard::set_field(&mut nvs, NvsKeys::WG_PORT, wg_config.wg_port.clean_string().as_str())?;
         NvsWireguard::set_field(
             &mut nvs,
             NvsKeys::WG_CLIENT_PRIV_KEY,
@@ -206,7 +198,7 @@ pub fn start_http_server(
         connection.initiate_response(200, Some("OK"), &[("Content-Type", "text/html")])?;
 
         let mut html = String::new();
-        let connected_server = "Disconnected"; //temp
+        let connected_server = "Disconnected"; // temp
 
         let svg_status = match connected_server {
             "Disconnected" => "disconnected",
@@ -251,11 +243,11 @@ pub fn start_http_server(
 
         let mut scanned = wifi.scan()?;
 
-        //Remove dups
+        // Remove dups
         scanned.sort_by(|a, b| a.ssid.cmp(&b.ssid));
         scanned.dedup_by(|a, b| a.ssid == b.ssid);
 
-        //Sort by desc sig strength (values are negative, with 0db max, -50db avg)
+        // Sort by desc sig strength (values are negative, with 0db max, -50db avg)
         scanned.sort_by(|a, b| b.signal_strength.cmp(&a.signal_strength));
 
         for access_point in scanned.iter() {

@@ -16,14 +16,12 @@ const DEFAULT_WG_SERVER_PUB_KEY: &str = "";
 pub struct NvsKeys;
 
 impl NvsKeys {
-    pub const STA_SSID: &'static str = "SSID";
-    pub const STA_PASSWD: &'static str = "PASSWD";
     pub const STA_AUTH_METHOD: &'static str = "AUTH";
-
+    pub const STA_PASSWD: &'static str = "PASSWD";
+    pub const STA_SSID: &'static str = "SSID";
     pub const WG_ADDR: &'static str = "ADDR";
-    pub const WG_PORT: &'static str = "PORT";
-
     pub const WG_CLIENT_PRIV_KEY: &'static str = "PRIVKEY";
+    pub const WG_PORT: &'static str = "PORT";
     pub const WG_SERVER_PUB_KEY: &'static str = "PUBKEY";
 }
 
@@ -64,11 +62,7 @@ impl NvsWireguard {
         Ok(value)
     }
 
-    pub fn set_field(
-        nvs: &mut MutexGuard<'_, EspNvs<NvsDefault>>,
-        key: &str,
-        value: &str,
-    ) -> anyhow::Result<()> {
+    pub fn set_field(nvs: &mut MutexGuard<'_, EspNvs<NvsDefault>>, key: &str, value: &str) -> anyhow::Result<()> {
         nvs.set_str(key, value.trim())?;
 
         Ok(())
@@ -76,11 +70,9 @@ impl NvsWireguard {
 
     pub fn new(nvs: &MutexGuard<'_, EspNvs<NvsDefault>>) -> anyhow::Result<Self> {
         Ok(Self {
-            wg_addr: NvsWireguard::get_field::<32>(&nvs, NvsKeys::WG_ADDR)
-                .unwrap_or(DEFAULT_WG_ADDR.try_into()?),
+            wg_addr: NvsWireguard::get_field::<32>(&nvs, NvsKeys::WG_ADDR).unwrap_or(DEFAULT_WG_ADDR.try_into()?),
 
-            wg_port: NvsWireguard::get_field::<16>(&nvs, NvsKeys::WG_PORT)
-                .unwrap_or(DEFAULT_WG_PORT.try_into()?),
+            wg_port: NvsWireguard::get_field::<16>(&nvs, NvsKeys::WG_PORT).unwrap_or(DEFAULT_WG_PORT.try_into()?),
 
             wg_client_priv_key: NvsWireguard::get_field::<32>(&nvs, NvsKeys::WG_CLIENT_PRIV_KEY)
                 .unwrap_or(DEFAULT_WG_CLIENT_PRIV_KEY.try_into()?),
@@ -122,11 +114,7 @@ impl NvsWifi {
         Ok(value)
     }
 
-    pub fn set_field(
-        nvs: &mut MutexGuard<'_, EspNvs<NvsDefault>>,
-        key: &str,
-        value: &str,
-    ) -> anyhow::Result<()> {
+    pub fn set_field(nvs: &mut MutexGuard<'_, EspNvs<NvsDefault>>, key: &str, value: &str) -> anyhow::Result<()> {
         nvs.set_str(key, value.trim())?;
 
         Ok(())
@@ -134,11 +122,9 @@ impl NvsWifi {
 
     pub fn new(nvs: &MutexGuard<'_, EspNvs<NvsDefault>>) -> anyhow::Result<Self> {
         Ok(Self {
-            sta_ssid: NvsWifi::get_field::<32>(&nvs, NvsKeys::STA_SSID)
-                .unwrap_or(DEFAULT_STA_SSID.try_into()?),
+            sta_ssid: NvsWifi::get_field::<32>(&nvs, NvsKeys::STA_SSID).unwrap_or(DEFAULT_STA_SSID.try_into()?),
 
-            sta_passwd: NvsWifi::get_field::<64>(&nvs, NvsKeys::STA_PASSWD)
-                .unwrap_or(DEFAULT_STA_PASSWD.try_into()?),
+            sta_passwd: NvsWifi::get_field::<64>(&nvs, NvsKeys::STA_PASSWD).unwrap_or(DEFAULT_STA_PASSWD.try_into()?),
 
             sta_auth_method: NvsWifi::get_field::<32>(&nvs, NvsKeys::STA_AUTH_METHOD)
                 .unwrap_or(DEFAULT_STA_AUTH_METHOD.try_into()?),
