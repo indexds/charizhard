@@ -36,7 +36,7 @@ document.getElementById('config').addEventListener('submit', function(event) {
 
     // Validate WireGuard Address
     const address = document.getElementById('address').value;
-    if (address && !/^(?:\d{1,3}\.){3}\d{1,3}\/(?:[0-9]|[1-2][0-9]|3[0-2])$/.test(address)) {
+    if (address && !/^(\d{1,3}\.){3}\d{1,3}$/.test(address)) {
         setError('address-error', "Must be a valid CIDR address.");
     } else {
         clearError('address-error');
@@ -48,14 +48,6 @@ document.getElementById('config').addEventListener('submit', function(event) {
         setError('port-error', "Must be a valid port between 0 and 65535.");
     } else {
         clearError('port-error');
-    }
-
-    // Validate WireGuard DNS
-    const dns = document.getElementById('dns').value;
-    if (dns && !/^(\d{1,3}\.){3}\d{1,3}$/.test(dns)) {
-        setError('dns-error', "Must be a valid IP address.");
-    } else {
-        clearError('dns-error');
     }
 
     // Validate Client Private Key

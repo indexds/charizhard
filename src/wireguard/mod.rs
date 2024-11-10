@@ -1,4 +1,6 @@
 use crate::utils::nvs::NvsWireguard;
+use esp_idf_hal::sys::ESP_OK;
+use esp_idf_svc::nvs::{EspNvs, NvsDefault};
 use esp_idf_svc::sys::wireguard::{
     esp_wireguard_connect,
     esp_wireguard_init,
@@ -8,8 +10,6 @@ use esp_idf_svc::sys::wireguard::{
     wireguard_config_t,
     wireguard_ctx_t,
 };
-use esp_idf_hal::sys::ESP_OK;
-use esp_idf_svc::nvs::{EspNvs, NvsDefault};
 use log::info;
 use std::ffi::CString;
 use std::sync::{Arc, Mutex};
