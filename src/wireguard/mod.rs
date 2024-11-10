@@ -1,5 +1,5 @@
 use crate::utils::nvs::NvsWireguard;
-use esp_idf_hal::sys::wireguard::{
+use esp_idf_svc::sys::wireguard::{
     esp_wireguard_connect,
     esp_wireguard_init,
     // esp_wireguard_disconnect,
