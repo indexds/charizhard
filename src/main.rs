@@ -4,12 +4,18 @@ use esp_idf_svc::log::EspLogger;
 use esp_idf_svc::nvs::{EspDefaultNvsPartition, EspNvs};
 use esp_idf_svc::wifi::{BlockingWifi, EspWifi};
 use std::sync::{Arc, Mutex};
+use lazy_static::lazy_static;
+use wireguard::context::WireguardContext;
 
 mod bridge;
 mod http;
 mod utils;
 mod wifi;
 mod wireguard;
+
+lazy_static! {
+    static ref WG_CONTEXT: Arc<Mutex<Option<WireguardContext>>> = Arc::new(Mutex::new(None));
+}
 
 fn main() -> anyhow::Result<()> {
     esp_idf_svc::sys::link_patches();
@@ -31,8 +37,6 @@ fn main() -> anyhow::Result<()> {
     wifi::start_ap(Arc::clone(&guarded_wifi))?;
 
     let (_http_server, _mdns) = http::start_http_server(Arc::clone(&guarded_nvs), Arc::clone(&guarded_wifi))?;
-
-    let _wg_tunnel_ctx = wireguard::start_wg_tunnel(Arc::clone(&guarded_nvs))?;
 
     loop {
         std::thread::park();

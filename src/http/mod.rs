@@ -1,4 +1,5 @@
 use crate::utils::nvs::{NvsKeys, NvsWifi, NvsWireguard};
+use crate::wireguard::context::WireguardContext;
 use anyhow::Error;
 use embedded_svc::wifi::AuthMethod;
 use esp_idf_hal::io::Write;
@@ -8,6 +9,7 @@ use esp_idf_svc::nvs::{EspNvs, NvsDefault};
 use esp_idf_svc::wifi::{BlockingWifi, EspWifi};
 use serde_urlencoded;
 use std::sync::{Arc, Mutex};
+use crate::{wireguard, WG_CONTEXT};
 
 mod assets_routes;
 mod index;
@@ -45,6 +47,7 @@ pub fn start_http_server(
     });
 
     let nvs_save_wireguard = Arc::clone(&nvs);
+    let nvs_connect_wg = Arc::clone(&nvs);
     http_server.fn_handler("/connect-wg", Method::Post, move |mut request| {
         let mut nvs = nvs_save_wireguard
             .lock()
@@ -76,6 +79,12 @@ pub fn start_http_server(
             NvsKeys::WG_SERVER_PUB_KEY,
             wg_config.wg_server_pub_key.clean_string().as_str(),
         )?;
+
+        let ctx_ptr = wireguard::tunnel::start_wg_tunnel(&nvs_connect_wg)?;
+        let wg_ctx = WireguardContext::new(ctx_ptr);
+        
+        let mut global_ctx_lock = WG_CONTEXT.lock().map_err(|_| anyhow::anyhow!("Failed to lock WG_CONTEXT Mutex"))?;
+        *global_ctx_lock = Some(wg_ctx);
 
         let connection = request.connection();
 
