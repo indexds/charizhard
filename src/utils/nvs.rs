@@ -34,10 +34,10 @@ pub struct NvsWireguard {
     pub wg_port: HeaplessString<16>,
 
     #[serde(rename = "privkey")]
-    pub wg_client_priv_key: HeaplessString<32>,
+    pub wg_client_priv_key: HeaplessString<44>,
 
     #[serde(rename = "pubkey")]
-    pub wg_server_pub_key: HeaplessString<32>,
+    pub wg_server_pub_key: HeaplessString<44>,
 }
 
 impl NvsWireguard {
@@ -74,10 +74,10 @@ impl NvsWireguard {
 
             wg_port: NvsWireguard::get_field::<16>(&nvs, NvsKeys::WG_PORT).unwrap_or(DEFAULT_WG_PORT.try_into()?),
 
-            wg_client_priv_key: NvsWireguard::get_field::<32>(&nvs, NvsKeys::WG_CLIENT_PRIV_KEY)
+            wg_client_priv_key: NvsWireguard::get_field::<44>(&nvs, NvsKeys::WG_CLIENT_PRIV_KEY)
                 .unwrap_or(DEFAULT_WG_CLIENT_PRIV_KEY.try_into()?),
 
-            wg_server_pub_key: NvsWireguard::get_field::<32>(&nvs, NvsKeys::WG_SERVER_PUB_KEY)
+            wg_server_pub_key: NvsWireguard::get_field::<44>(&nvs, NvsKeys::WG_SERVER_PUB_KEY)
                 .unwrap_or(DEFAULT_WG_SERVER_PUB_KEY.try_into()?),
         })
     }

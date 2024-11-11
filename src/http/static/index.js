@@ -52,16 +52,16 @@ document.getElementById('config').addEventListener('submit', function(event) {
 
     // Validate Client Private Key
     const privKey = document.getElementById('privkey').value;
-    if (privKey.length > 32) {
-        setError('privkey-error', "Must be 32 characters or less.");
+    if (privKey.length != 44) {
+        setError('privkey-error', "Must be 44 characters long.");
     } else {
         clearError('privkey-error');
     }
 
     // Validate Remote Host Public Key
     const pubKey = document.getElementById('pubkey').value;
-    if (pubKey.length > 32) {
-        setError('pubkey-error', "Must be 32 characters or less.");
+    if (pubKey.length != 44) {
+        setError('pubkey-error', "Must be 44 characters long.");
     } else {
         clearError('pubkey-error');
     }
