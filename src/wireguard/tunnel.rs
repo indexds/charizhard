@@ -1,5 +1,6 @@
 use crate::utils::nvs::NvsWireguard;
 use esp_idf_hal::sys::ESP_OK;
+use esp_idf_svc::handle::RawHandle;
 use esp_idf_svc::nvs::{EspNvs, NvsDefault};
 use esp_idf_svc::sys::wireguard::{
     esp_wireguard_connect,
@@ -10,12 +11,17 @@ use esp_idf_svc::sys::wireguard::{
     wireguard_config_t,
     wireguard_ctx_t,
 };
+use esp_idf_svc::wifi::{BlockingWifi, EspWifi};
 use log::info;
 use std::ffi::CString;
 use std::ptr::null_mut;
 use std::sync::{Arc, Mutex};
 
-pub fn start_wg_tunnel(nvs: &Arc<Mutex<EspNvs<NvsDefault>>>) -> anyhow::Result<*mut wireguard_ctx_t> {
+pub fn start_wg_tunnel(
+    nvs: &Arc<Mutex<EspNvs<NvsDefault>>>,
+    wifi: &Arc<Mutex<BlockingWifi<EspWifi<'static>>>>,
+) -> anyhow::Result<*mut wireguard_ctx_t> {
+    let mut wifi = wifi.lock().map_err(|_| anyhow::anyhow!("Failed to lock Wifi Mutex."))?;
     let nvs = nvs.lock().map_err(|_| anyhow::anyhow!("Failed to lock NVS Mutex."))?;
     let wg_config = NvsWireguard::new(&nvs)?;
 
@@ -40,10 +46,12 @@ pub fn start_wg_tunnel(nvs: &Arc<Mutex<EspNvs<NvsDefault>>>) -> anyhow::Result<*
 
     let wg_conf_ptr: *mut wireguard_config_t = &mut wg_conf_t;
 
+    let wifi_netif_handle = wifi.wifi_mut().sta_netif_mut().handle();
+
     let mut ctx_t = wireguard_ctx_t {
         config: wg_conf_ptr,
-        netif: null_mut(),
-        netif_default: null_mut(),
+        netif: wifi_netif_handle as *mut _,
+        netif_default: wifi_netif_handle as *mut _,
     };
 
     let ctx_ptr: *mut wireguard_ctx_t = &mut ctx_t;

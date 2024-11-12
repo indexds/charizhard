@@ -3,8 +3,8 @@ use esp_idf_svc::hal::prelude::Peripherals;
 use esp_idf_svc::log::EspLogger;
 use esp_idf_svc::nvs::{EspDefaultNvsPartition, EspNvs};
 use esp_idf_svc::wifi::{BlockingWifi, EspWifi};
-use std::sync::{Arc, Mutex};
 use lazy_static::lazy_static;
+use std::sync::{Arc, Mutex};
 use wireguard::context::WireguardContext;
 
 mod bridge;

@@ -17,7 +17,6 @@ pub fn connect_wifi(
     if wifi.is_connected()? {
         wifi.disconnect()?;
     }
-
     let ssid = NvsWifi::get_field::<32>(&nvs, NvsKeys::STA_SSID)?
         .clean_string()
         .inner();
