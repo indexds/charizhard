@@ -24,9 +24,9 @@ pub fn start_http_server(
 
     let mut http_server = EspHttpServer::new(&http_config)?;
 
-    assets_routes::set_routes(&mut http_server);
-    wifi_routes::set_routes(&mut http_server, &nvs, &wifi);
-    wg_routes::set_routes(&mut http_server, &nvs, &wifi);
+    assets_routes::set_routes(&mut http_server)?;
+    wifi_routes::set_routes(&mut http_server, &nvs, &wifi)?;
+    wg_routes::set_routes(&mut http_server, &nvs, &wifi)?;
 
     let nvs_root = Arc::clone(&nvs);
     http_server.fn_handler("/", Method::Get, move |mut request| {

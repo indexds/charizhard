@@ -12,7 +12,7 @@ pub fn set_routes(
     http_server: &mut EspHttpServer<'static>,
     nvs: &Arc<Mutex<EspNvs<NvsDefault>>>,
     wifi: &Arc<Mutex<BlockingWifi<EspWifi<'static>>>>,
-) {
+) -> anyhow::Result<()>{
     let disconnect_wifi = Arc::clone(&wifi);
 
     http_server.fn_handler("/disconnect-wifi", Method::Get, move |mut request| {
@@ -228,4 +228,6 @@ pub fn set_routes(
 
         Ok::<(), Error>(())
     });
+
+    Ok(())
 }

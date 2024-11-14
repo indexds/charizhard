@@ -1,23 +1,23 @@
 use crate::utils::nvs::{NvsKeys, NvsWireguard};
+use crate::wireguard::context::{WgCtx, WG_CTX};
+use crate::wireguard::tunnel;
+use esp_idf_svc::wifi::{BlockingWifi, EspWifi};
 use anyhow::Error;
 use esp_idf_hal::io::Write;
 use esp_idf_svc::http::server::{EspHttpServer, Method};
 use esp_idf_svc::nvs::{EspNvs, NvsDefault};
-use esp_idf_svc::wifi::{BlockingWifi, EspWifi};
 use std::sync::{Arc, Mutex};
-use crate::wireguard::context::WireguardContext;
-use crate::wireguard::tunnel;
-use crate::WG_CONTEXT;
 
 #[allow(unused_must_use)]
 pub fn set_routes(
     http_server: &mut EspHttpServer<'static>,
     nvs: &Arc<Mutex<EspNvs<NvsDefault>>>,
     wifi: &Arc<Mutex<BlockingWifi<EspWifi<'static>>>>,
-) {
+) -> anyhow::Result<()> {
+
+    let wg_nvs_connect = Arc::clone(&nvs);
+    let wg_wifi_connect = Arc::clone(&wifi);
     let nvs_save_wireguard = Arc::clone(&nvs);
-    let nvs_connect_wg = Arc::clone(&nvs);
-    let wifi_connect_wg = Arc::clone(&wifi);
     http_server.fn_handler("/connect-wg", Method::Post, move |mut request| {
         let mut nvs = nvs_save_wireguard
             .lock()
@@ -50,13 +50,14 @@ pub fn set_routes(
             wg_config.wg_server_pub_key.clean_string().as_str(),
         )?;
 
-        let ctx_ptr = tunnel::start_wg_tunnel(&nvs_connect_wg, &wifi_connect_wg)?;
-        let wg_ctx = WireguardContext::new(ctx_ptr);
+        //WIREGUARD BULLSHITTERY
+        //let ctx = tunnel::start_wg_tunnel(&Arc::clone(&wg_nvs_connect), &Arc::clone(&wg_wifi_connect))?;
+        // unsafe {
+        //     let mut wg_ctx = WG_CTX.lock().map_err(|_| anyhow::anyhow!("Failed to lock WG_CTX Mutex!"))?;
+        //     *wg_ctx = Some(WgCtx::new(ctx));
+        // }
+        //END WIREGUARD BULLSHITTERY
 
-        let mut global_ctx_lock = WG_CONTEXT
-            .lock()
-            .map_err(|_| anyhow::anyhow!("Failed to lock WG_CONTEXT Mutex"))?;
-        *global_ctx_lock = Some(wg_ctx);
 
         let connection = request.connection();
 
@@ -94,4 +95,6 @@ pub fn set_routes(
         connection.write(html.as_bytes());
         Ok::<(), Error>(())
     });
+
+    Ok(())
 }

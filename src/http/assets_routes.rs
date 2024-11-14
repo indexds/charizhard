@@ -3,7 +3,7 @@ use esp_idf_hal::io::Write;
 use esp_idf_svc::http::server::{EspHttpServer, Method};
 
 #[allow(unused_must_use)]
-pub fn set_routes(http_server: &mut EspHttpServer<'static>) {
+pub fn set_routes(http_server: &mut EspHttpServer<'static>) -> anyhow::Result<()>{
     http_server.fn_handler("/index.js", Method::Get, move |mut request| {
         let javascript = include_str!("./static/index.js");
 
@@ -162,4 +162,6 @@ pub fn set_routes(http_server: &mut EspHttpServer<'static>) {
 
         Ok::<(), Error>(())
     });
+
+    Ok(())
 }

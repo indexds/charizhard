@@ -119,7 +119,7 @@ async function fetchScannedWifis() {
     } 
     catch (error) {
         scanned_wifis.style.fontWeight = 'bold';
-        scanned_wifis.innerHTML = 'Error fetching scanned Wi-Fis.';
+        scanned_wifis.innerHTML = 'Failed to scan WI-Fis.';
         
         document.getElementById('loading-svg').style.display = 'none';
     }
