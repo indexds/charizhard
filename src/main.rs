@@ -5,15 +5,10 @@ use esp_idf_svc::nvs::{EspDefaultNvsPartition, EspNvs};
 use esp_idf_svc::wifi::{BlockingWifi, EspWifi};
 use std::sync::{Arc, Mutex};
 
-#[cfg(feature = "wireguard")]
-use wireguard::context::WireguardContext;
-
 mod bridge;
 mod http;
 mod utils;
 mod wifi;
-
-#[cfg(feature = "wireguard")]
 mod wireguard;
 
 fn main() -> anyhow::Result<()> {

@@ -1,9 +1,4 @@
 use crate::utils::nvs::{NvsKeys, NvsWireguard};
-
-#[cfg(feature = "wireguard")]
-use crate::wireguard::context::{WgCtx, WG_CTX};
-#[cfg(feature = "wireguard")]
-use crate::wireguard::tunnel;
 use esp_idf_svc::wifi::{BlockingWifi, EspWifi};
 use anyhow::Error;
 use esp_idf_hal::io::Write;
@@ -18,8 +13,6 @@ pub fn set_routes(
     wifi: &Arc<Mutex<BlockingWifi<EspWifi<'static>>>>,
 ) -> anyhow::Result<()> {
 
-    let wg_nvs_connect = Arc::clone(&nvs);
-    let wg_wifi_connect = Arc::clone(&wifi);
     let nvs_save_wireguard = Arc::clone(&nvs);
     http_server.fn_handler("/connect-wg", Method::Post, move |mut request| {
         let mut nvs = nvs_save_wireguard
@@ -54,11 +47,7 @@ pub fn set_routes(
         )?;
 
         //WIREGUARD BULLSHITTERY
-        //let ctx = tunnel::start_wg_tunnel(&Arc::clone(&wg_nvs_connect), &Arc::clone(&wg_wifi_connect))?;
-        // unsafe {
-        //     let mut wg_ctx = WG_CTX.lock().map_err(|_| anyhow::anyhow!("Failed to lock WG_CTX Mutex!"))?;
-        //     *wg_ctx = Some(WgCtx::new(ctx));
-        // }
+
         //END WIREGUARD BULLSHITTERY
 
 
