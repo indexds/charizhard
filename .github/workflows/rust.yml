@@ -1,27 +1,43 @@
-name: Rust
+name: Continuous Integration for ESP32
+
 on:
   push:
-    branches: [ "main" ]
+    paths-ignore:
+      - "**/README.md"
+      - "**/logo"
+      - "**/schematic"
+      - "LICENCE"
+      - "logo.png"
+      - ".gitignore"
   pull_request:
-    branches: [ "main" ]
+  workflow_dispatch:
 
 jobs:
-  build:
-
+  rust-checks:
+    name: Rust Checks
     runs-on: ubuntu-latest
-
+    timeout-minutes: 120
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v2
-      with:
-        submodules: 'recursive'
-    - name: esp-idf build
-      run: |
-        cd /
-        sudo curl -L https://github.com/esp-rs/espup/releases/latest/download/espup-x86_64-unknown-linux-gnu -o espup
-        sudo chmod a+x espup
-        /espup install
-        cd $GITHUB_WORKSPACE
-        git clone https://github.com/indexds/charizhard chhard
-        cd $GITHUB_WORKSPACE/chhard
-        cargo build --release
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Install ESP32 Toolchain with espup
+        run: |
+          curl -L https://github.com/esp-rs/espup/releases/latest/download/espup-x86_64-unknown-linux-gnu -o espup
+          chmod a+x espup
+          ./espup install
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+      - name: Set ESP32 Environment Variables
+        run: |
+          source $HOME/export-esp.sh  # Source environment variables
+          export ESP_IDF_PATH=$HOME/.espressif/esp-idf
+          echo "ESP_IDF_PATH set to $ESP_IDF_PATH"
+
+      - name: List Files for Debugging
+        run: ls -la /home/runner/work/charizhard/charizhard/
+
+      - name: Enable Caching
+        uses: Swatinem/rust-cache@v2
+
+      - name: Build Project for ESP32
+        run: RUST_BACKTRACE=full cargo build --release --target xtensa-esp32-espidf
