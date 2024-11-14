@@ -28,7 +28,11 @@ experimental = ["esp-idf-svc/experimental"]
 embassy = ["esp-idf-svc/embassy-sync", "esp-idf-svc/critical-section", "esp-idf-svc/embassy-time-driver"]
 
 [[package.metadata.esp-idf-sys.extra_components]]
-remote_component = { name = "espressif/mdns", version = "1.4" }
+remote_component = { name = "espressif/mdns", version = "1.4.2" }
+
+[package.metadata.esp-idf-sys]
+esp_idf_sdkconfig="sdkconfig"
+
 
 [dependencies]
 log = { version = "0.4.22", default-features = false }
