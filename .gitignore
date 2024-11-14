@@ -1,10 +1,9 @@
-/.vscode
-/.embuild**
-**/**.lock
-**/target/
-**/debug/
+**/.vscode
+**/.embuild
+**/target
+**/*.lock
 **/*.rs.bk
-*.pdb
+**/*.pdb
 **/*.bin
-*.exe
+**/*.exe
 **/sdkconfig.debug
