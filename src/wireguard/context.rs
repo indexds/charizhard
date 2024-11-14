@@ -1,15 +1,17 @@
 use esp_idf_svc::sys::wireguard::wireguard_ctx_t;
+use std::sync::Mutex;
 
-#[allow(dead_code)]
-pub struct WireguardContext {
-    ctx_ptr: *mut wireguard_ctx_t,
+pub static mut WG_CTX: Mutex<Option<WgCtx>> = Mutex::new(None);
+
+pub struct WgCtx {
+    pub ctx_ptr: *mut wireguard_ctx_t,
 }
 
-unsafe impl Send for WireguardContext {}
-unsafe impl Sync for WireguardContext {}
+unsafe impl Send for WgCtx {}
+unsafe impl Sync for WgCtx {}
 
 #[allow(dead_code)]
-impl WireguardContext {
+impl WgCtx {
     pub fn new(ctx_ptr: *mut wireguard_ctx_t) -> Self {
         Self {
             ctx_ptr,

@@ -1,5 +1,8 @@
 use crate::utils::nvs::{NvsKeys, NvsWireguard};
+
+#[cfg(feature = "wireguard")]
 use crate::wireguard::context::{WgCtx, WG_CTX};
+#[cfg(feature = "wireguard")]
 use crate::wireguard::tunnel;
 use esp_idf_svc::wifi::{BlockingWifi, EspWifi};
 use anyhow::Error;

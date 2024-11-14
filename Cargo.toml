@@ -17,9 +17,6 @@ opt-level = "s"
 debug = true    # Symbols are nice and they don't increase the size on Flash
 opt-level = "z"
 
-[build]
-exclude = ["src/wireguard/**"]
-
 [features]
 default = ["std", "embassy", "esp-idf-svc/native"]
 
@@ -33,10 +30,10 @@ embassy = ["esp-idf-svc/embassy-sync", "esp-idf-svc/critical-section", "esp-idf-
 [[package.metadata.esp-idf-sys.extra_components]]
 remote_component = { name = "espressif/mdns", version = "1.4" }
 
-# [[package.metadata.esp-idf-sys.extra_components]]
-# remote_component = { name = "trombik/esp_wireguard", version = "0.9" }
-# bindings_header = "src/wireguard/bindings.h"
-# bindings_module = "wireguard"
+[[package.metadata.esp-idf-sys.extra_components]]
+remote_component = { name = "trombik/esp_wireguard", version = "0.9" }
+bindings_header = "src/wireguard/bindings.h"
+bindings_module = "wireguard"
 
 [dependencies]
 log = { version = "0.4.22", default-features = false }

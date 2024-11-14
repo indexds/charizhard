@@ -3,19 +3,18 @@ use esp_idf_svc::hal::prelude::Peripherals;
 use esp_idf_svc::log::EspLogger;
 use esp_idf_svc::nvs::{EspDefaultNvsPartition, EspNvs};
 use esp_idf_svc::wifi::{BlockingWifi, EspWifi};
-use lazy_static::lazy_static;
 use std::sync::{Arc, Mutex};
+
+#[cfg(feature = "wireguard")]
 use wireguard::context::WireguardContext;
 
 mod bridge;
 mod http;
 mod utils;
 mod wifi;
-mod wireguard;
 
-lazy_static! {
-    static ref WG_CONTEXT: Arc<Mutex<Option<WireguardContext>>> = Arc::new(Mutex::new(None));
-}
+#[cfg(feature = "wireguard")]
+mod wireguard;
 
 fn main() -> anyhow::Result<()> {
     esp_idf_svc::sys::link_patches();
