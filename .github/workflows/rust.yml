@@ -23,10 +23,12 @@ jobs:
 
       - name: Install ESP32 Toolchain with espup
         run: |
+          curl -L https://github.com/esp-rs/embuild/releases/latest/download/ldproxy-x86_64-unknown-linux-gnu.zip -o $HOME/.cargo/bin/ldproxy.zip
+          unzip "$HOME/.cargo/bin/ldproxy.zip" -d "$HOME/.cargo/bin/"
+          chmod a+x $HOME/.cargo/bin/ldproxy
           curl -L https://github.com/esp-rs/espup/releases/latest/download/espup-x86_64-unknown-linux-gnu -o espup
           chmod a+x espup
           ./espup install
-          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
       - name: Set ESP32 Environment Variables
         run: |
           source $HOME/export-esp.sh  # Source environment variables
