@@ -19,7 +19,7 @@ jobs:
     timeout-minutes: 120
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Install ESP32 Toolchain with espup
         run: |
@@ -34,9 +34,6 @@ jobs:
           source $HOME/export-esp.sh  # Source environment variables
           export ESP_IDF_PATH=$HOME/.espressif/esp-idf
           echo "ESP_IDF_PATH set to $ESP_IDF_PATH"
-
-      - name: List Files for Debugging
-        run: ls -la /home/runner/work/charizhard/charizhard/
 
       - name: Enable Caching
         uses: Swatinem/rust-cache@v2
