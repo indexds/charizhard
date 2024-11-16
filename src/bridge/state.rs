@@ -3,7 +3,6 @@ use esp_idf_svc::eventloop::EspSystemEventLoop;
 use esp_idf_svc::hal::modem::Modem;
 use esp_idf_svc::hal::prelude::Peripherals;
 use esp_idf_svc::nvs::{EspDefaultNvsPartition, EspNvs, NvsDefault};
-use esp_idf_svc::sntp::EspSntp;
 use esp_idf_svc::wifi::WifiDriver;
 use std::sync::{Arc, Mutex};
 use std::thread::JoinHandle;
@@ -41,5 +40,4 @@ pub struct WifiReady {
 pub struct Running {
     pub eth2wifi_handle: JoinHandle<()>,
     pub wifi2eth_handle: JoinHandle<()>,
-    pub sntp: EspSntp<'static>,
 }

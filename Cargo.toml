@@ -18,8 +18,9 @@ debug = true    # Symbols are nice and they don't increase the size on Flash
 opt-level = "z"
 
 [features]
-default = ["std", "embassy", "esp-idf-svc/native"]
+default = ["std", "embassy", "esp-idf-svc/native", "wireguard"]
 
+wireguard = ["std", "embassy"]
 pio = ["esp-idf-svc/pio"]
 std = ["alloc", "esp-idf-svc/binstart", "esp-idf-svc/std"]
 alloc = ["esp-idf-svc/alloc"]
@@ -29,6 +30,11 @@ embassy = ["esp-idf-svc/embassy-sync", "esp-idf-svc/critical-section", "esp-idf-
 
 [[package.metadata.esp-idf-sys.extra_components]]
 remote_component = { name = "espressif/mdns", version = "1.4.2" }
+
+[[package.metadata.esp-idf-sys.extra_components]]
+remote_component = { name = "trombik/esp_wireguard", version = "0.9" }
+bindings_header = "src/wireguard/bindings.h"
+bindings_module = "wg"
 
 [package.metadata.esp-idf-sys]
 esp_idf_sdkconfig="sdkconfig"

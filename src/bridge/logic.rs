@@ -8,7 +8,6 @@ use esp_idf_svc::hal::prelude::Peripherals;
 use esp_idf_svc::hal::task::thread::ThreadSpawnConfiguration;
 use esp_idf_svc::nvs::EspDefaultNvsPartition;
 use esp_idf_svc::nvs::EspNvs;
-use esp_idf_svc::sntp::EspSntp;
 use esp_idf_svc::sys::esp;
 use esp_idf_svc::wifi::{AuthMethod, ClientConfiguration, Configuration, WifiDeviceId, WifiDriver};
 use once_cell::sync::OnceCell;
@@ -97,11 +96,7 @@ impl TryFrom<Bridge<Idle>> for Bridge<EthReady> {
             use esp_idf_svc::sys::{esp_eth_io_cmd_t_ETH_CMD_S_PROMISCUOUS, esp_eth_ioctl};
             let handle = eth.handle();
             let mut t = true;
-            esp_eth_ioctl(
-                handle,
-                esp_eth_io_cmd_t_ETH_CMD_S_PROMISCUOUS,
-                ptr::addr_of_mut!(t).cast(),
-            )
+            esp_eth_ioctl(handle, esp_eth_io_cmd_t_ETH_CMD_S_PROMISCUOUS, ptr::addr_of_mut!(t).cast())
         })?;
 
         log::info!("Ethernet promiscuous success!");
@@ -245,13 +240,10 @@ impl TryFrom<Bridge<WifiReady>> for Bridge<Running> {
             log::warn!("Failed to consume frame from Ethernet queue! Did the sender hangup?");
         });
 
-        let sntp = EspSntp::new_default()?;
-
         Ok(Self {
             state: Running {
                 eth2wifi_handle,
                 wifi2eth_handle,
-                sntp,
             },
         })
     }

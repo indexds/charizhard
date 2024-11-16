@@ -1,18 +1,17 @@
 use crate::utils::nvs::{NvsKeys, NvsWireguard};
-use esp_idf_svc::wifi::{BlockingWifi, EspWifi};
 use anyhow::Error;
 use esp_idf_hal::io::Write;
 use esp_idf_svc::http::server::{EspHttpServer, Method};
 use esp_idf_svc::nvs::{EspNvs, NvsDefault};
+// use esp_idf_svc::wifi::{BlockingWifi, EspWifi};
 use std::sync::{Arc, Mutex};
 
 #[allow(unused_must_use)]
 pub fn set_routes(
     http_server: &mut EspHttpServer<'static>,
     nvs: &Arc<Mutex<EspNvs<NvsDefault>>>,
-    wifi: &Arc<Mutex<BlockingWifi<EspWifi<'static>>>>,
+    // wifi: &Arc<Mutex<BlockingWifi<EspWifi<'static>>>>,
 ) -> anyhow::Result<()> {
-
     let nvs_save_wireguard = Arc::clone(&nvs);
     http_server.fn_handler("/connect-wg", Method::Post, move |mut request| {
         let mut nvs = nvs_save_wireguard
@@ -46,10 +45,9 @@ pub fn set_routes(
             wg_config.wg_server_pub_key.clean_string().as_str(),
         )?;
 
-        //WIREGUARD BULLSHITTERY
+        // WIREGUARD BULLSHITTERY
 
-        //END WIREGUARD BULLSHITTERY
-
+        // END WIREGUARD BULLSHITTERY
 
         let connection = request.connection();
 

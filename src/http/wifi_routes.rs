@@ -12,7 +12,7 @@ pub fn set_routes(
     http_server: &mut EspHttpServer<'static>,
     nvs: &Arc<Mutex<EspNvs<NvsDefault>>>,
     wifi: &Arc<Mutex<BlockingWifi<EspWifi<'static>>>>,
-) -> anyhow::Result<()>{
+) -> anyhow::Result<()> {
     let disconnect_wifi = Arc::clone(&wifi);
 
     http_server.fn_handler("/disconnect-wifi", Method::Get, move |mut request| {
@@ -48,11 +48,7 @@ pub fn set_routes(
         let form_data = String::from_utf8(body)?;
         let wifi_config: NvsWifi = serde_urlencoded::from_str(form_data.as_str())?;
 
-        NvsWifi::set_field(
-            &mut nvs_save,
-            NvsKeys::STA_SSID,
-            wifi_config.sta_ssid.clean_string().as_str(),
-        )?;
+        NvsWifi::set_field(&mut nvs_save, NvsKeys::STA_SSID, wifi_config.sta_ssid.clean_string().as_str())?;
 
         NvsWifi::set_field(
             &mut nvs_save,
