@@ -50,8 +50,13 @@ pub fn start_http_server(
 
     let mut mdns = EspMdns::take()?;
     mdns.set_hostname("charizhard")?;
-    mdns.add_service(Some("_http"), "_tcp", "80", 60, &[])?;
-    mdns.add_service(Some("_https"), "_tcp", "443", 60, &[])?;
+    mdns.add_service(
+        Some("charizhard"), //instance_name
+        "_http", // service_type
+        "_tcp", //proto
+        80, //port
+        &[], //txt
+    )?;
 
     Ok((http_server, mdns))
 }
