@@ -29,3 +29,24 @@ dependencies = [
     "convert-to-bin",
     "write",
 ]
+
+# CONFIG
+
+[tasks.mvdebug]
+command = "mv"
+args = ["sdkconfig", "sdkconfig.debug"]
+
+[tasks.mvrelease]
+command = "mv"
+args = ["sdkconfig.debug", "sdkconfig"]
+
+[tasks.pio]
+command = "cargo"
+args = ["pio", "espidf", "menuconfig"]
+
+[tasks.config]
+dependencies = [
+    "mvdebug",
+    "pio",
+    "mvrelease",
+]
