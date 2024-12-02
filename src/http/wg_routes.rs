@@ -9,7 +9,7 @@ use std::sync::{Arc, Mutex};
 #[allow(unused_must_use)]
 pub fn set_routes(
     http_server: &mut EspHttpServer<'static>,
-    nvs: &Arc<Mutex<EspNvs<NvsDefault>>>,
+    nvs: Arc<Mutex<EspNvs<NvsDefault>>>,
     // wifi: &Arc<Mutex<BlockingWifi<EspWifi<'static>>>>,
 ) -> anyhow::Result<()> {
     let nvs_save_wireguard = Arc::clone(&nvs);
@@ -19,7 +19,7 @@ pub fn set_routes(
             .map_err(|_| anyhow::anyhow!("Failed to lock NVS Mutex."))?;
 
         let mut body = Vec::new();
-        let mut buffer = [0_u8; 128];
+        let mut buffer = [0u8; 128];
 
         loop {
             match request.read(&mut buffer) {

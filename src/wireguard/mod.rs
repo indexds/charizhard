@@ -36,8 +36,8 @@ pub fn start_wg_tunnel(
     let private_key = CString::new(nvs_wg.wg_client_priv_key.clean_string().as_str())?.into_raw();
     let public_key = CString::new(nvs_wg.wg_server_pub_key.clean_string().as_str())?.into_raw();
 
-    let allowed_ip = CString::new("192.168.0.0")?.into_raw();
-    let allowed_ip_mask = CString::new("255.255.0.0")?.into_raw();
+    let allowed_ip = CString::new("0.0.0.0")?.into_raw();
+    let allowed_ip_mask = CString::new("0.0.0.0")?.into_raw();
 
     let sntp = EspSntp::new_default()?;
 
@@ -50,7 +50,7 @@ pub fn start_wg_tunnel(
         std::thread::park_timeout(std::time::Duration::from_secs(1));
 
         if retries == 10 {
-            log::error!("Failed to synchronize time after multiple attempts!");
+            log::error!("Failed to synchronize time! Is internet available?");
             return Err(anyhow::anyhow!("Failed to synchronize time!"));
         }
     }
@@ -74,7 +74,7 @@ pub fn start_wg_tunnel(
         let mut wg_ctx_t = wireguard_ctx_t {
             config: config_ptr,
             netif: core::ptr::null_mut(),
-            netif_default: esp_idf_svc::sys::wg::netif_default,
+            netif_default: core::ptr::null_mut(),
         };
 
         let ctx_ptr = &mut wg_ctx_t as *mut _;

@@ -3,22 +3,17 @@ use anyhow::Error;
 use esp_idf_hal::io::Write;
 use esp_idf_svc::http::server::{EspHttpServer, Method};
 use esp_idf_svc::nvs::{EspNvs, NvsDefault};
-use esp_idf_svc::wifi::AuthMethod;
-use esp_idf_svc::wifi::{BlockingWifi, EspWifi};
+use esp_idf_svc::wifi::{AuthMethod, WifiDriver};
 use std::sync::{Arc, Mutex};
 
 #[allow(unused_must_use)]
 pub fn set_routes(
     http_server: &mut EspHttpServer<'static>,
-    nvs: &Arc<Mutex<EspNvs<NvsDefault>>>,
-    wifi: &Arc<Mutex<BlockingWifi<EspWifi<'static>>>>,
+    nvs: Arc<Mutex<EspNvs<NvsDefault>>>,
+    wifi: Arc<Mutex<WifiDriver<'static>>>,
 ) -> anyhow::Result<()> {
-    let disconnect_wifi = Arc::clone(&wifi);
-
     http_server.fn_handler("/disconnect-wifi", Method::Get, move |mut request| {
         let connection = request.connection();
-
-        crate::wifi::disconnect_wifi(&disconnect_wifi);
 
         connection.initiate_response(204, Some("OK"), &[("Content-Type", "text/html")])?;
 
@@ -26,8 +21,6 @@ pub fn set_routes(
     });
 
     let nvs_save_wifi = Arc::clone(&nvs);
-    let nvs_connect_wifi = Arc::clone(&nvs);
-    let wifi_connect = Arc::clone(&wifi);
 
     http_server.fn_handler("/connect-wifi", Method::Post, move |mut request| {
         let mut nvs_save = nvs_save_wifi
@@ -64,7 +57,7 @@ pub fn set_routes(
 
         drop(nvs_save);
 
-        crate::wifi::connect_wifi(&wifi_connect, &nvs_connect_wifi)?;
+        // WIFI CONNECT LOGIC
 
         let connection = request.connection();
 

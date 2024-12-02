@@ -21,9 +21,8 @@ opt-level = "z"
 esp-idf-svc = { git = "https://github.com/indexds/esp-idf-svc" }
 
 [features]
-default = ["std", "embassy", "esp-idf-svc/native", "wireguard"]
+default = ["std", "embassy", "esp-idf-svc/native"]
 
-mdns_ipv6 = []
 wireguard = []
 
 std = ["alloc", "esp-idf-svc/binstart", "esp-idf-svc/std"]

@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use crate::utils::heapless::HeaplessString;
 use esp_idf_svc::nvs::{EspNvs, NvsDefault};
 use serde::Deserialize;

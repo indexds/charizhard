@@ -1,10 +1,12 @@
+#![allow(dead_code)]
+
 use crate::utils::nvs::NvsWireguard;
 use anyhow::Error;
 use esp_idf_hal::io::Write;
 use esp_idf_svc::http::server::{Configuration as HttpServerConfig, EspHttpServer, Method};
 use esp_idf_svc::mdns::EspMdns;
 use esp_idf_svc::nvs::{EspNvs, NvsDefault};
-use esp_idf_svc::wifi::{BlockingWifi, EspWifi};
+use esp_idf_svc::wifi::WifiDriver;
 use std::sync::{Arc, Mutex};
 
 mod assets_routes;
@@ -15,7 +17,7 @@ mod wifi_routes;
 #[allow(unused_must_use)]
 pub fn start_http_server(
     nvs: Arc<Mutex<EspNvs<NvsDefault>>>,
-    wifi: Arc<Mutex<BlockingWifi<EspWifi<'static>>>>,
+    wifi: Arc<Mutex<WifiDriver<'static>>>,
 ) -> anyhow::Result<(EspHttpServer<'static>, EspMdns)> {
     let http_config = HttpServerConfig {
         http_port: 80,
@@ -25,9 +27,7 @@ pub fn start_http_server(
     let mut http_server = EspHttpServer::new(&http_config)?;
 
     assets_routes::set_routes(&mut http_server)?;
-    wifi_routes::set_routes(&mut http_server, &nvs, &wifi)?;
-    // wg_routes::set_routes(&mut http_server, &nvs, &wifi)?;
-    wg_routes::set_routes(&mut http_server, &nvs)?;
+    wifi_routes::set_routes(&mut http_server, Arc::clone(&nvs), Arc::clone(&wifi))?;
 
     let nvs_root = Arc::clone(&nvs);
     http_server.fn_handler("/", Method::Get, move |mut request| {
@@ -51,11 +51,11 @@ pub fn start_http_server(
     let mut mdns = EspMdns::take()?;
     mdns.set_hostname("charizhard")?;
     mdns.add_service(
-        Some("charizhard"), //instance_name
-        "_http", // service_type
-        "_tcp", //proto
-        80, //port
-        &[], //txt
+        Some("charizhard"), // instance_name
+        "_http",            // service_type
+        "_tcp",             // proto
+        80,                 // port
+        &[],                // txt
     )?;
 
     Ok((http_server, mdns))

@@ -9,15 +9,15 @@ args = ["--chip", "esp32", "elf2image", "--output", "${CARGO_MAKE_WORKSPACE_WORK
 [tasks.write]
 command = "esptool"
 args = [
-    "write_flash", "--encrypt", 
+    "write_flash", #"--encrypt", 
     "0x1000", "${CARGO_MAKE_WORKSPACE_WORKING_DIRECTORY}/target/xtensa-esp32-espidf/release/bootloader.bin",
     "0x10000", "${CARGO_MAKE_WORKSPACE_WORKING_DIRECTORY}/target/xtensa-esp32-espidf/release/partition-table.bin",
-    "0x30000", "${CARGO_MAKE_WORKSPACE_WORKING_DIRECTORY}/target/xtensa-esp32-espidf/release/charizhard.bin"
+    "0x20000", "${CARGO_MAKE_WORKSPACE_WORKING_DIRECTORY}/target/xtensa-esp32-espidf/release/charizhard.bin"
 ]
 
 [tasks.monitor-windows]
 command = "putty"
-args = ["-serial", "${COM_PORT}", "-sercfg", "115200,8,n,1,N"]
+args = ["-serial", "${COM}", "-sercfg", "115200,8,n,1,N"]
 
 [tasks.monitor-linux]
 command = "screen"
@@ -29,6 +29,10 @@ dependencies = [
     "convert-to-bin",
     "write",
 ]
+
+[tasks.erase-flash]
+command = "espflash"
+args = ["erase-flash"]
 
 # CONFIG
 
