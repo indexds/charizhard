@@ -60,7 +60,7 @@ jobs:
           cargo audit -- --deny warnings
 
       - name: Clippy
-        run: cargo clippy -- --deny warnings
+        run: cargo clippy --no-deps -- -Dwarnings
 
       - name: Enable Caching
         uses: Swatinem/rust-cache@v2
