@@ -1,24 +1,33 @@
-#![feature(never_type)]
+use esp_idf_svc::hal::prelude::Peripherals;
+use esp_idf_svc::log::EspLogger;
+use esp_idf_svc::nvs::EspNvs;
+use esp_idf_svc::{eventloop::EspSystemEventLoop, nvs::EspDefaultNvsPartition};
+use std::sync::{Arc, Mutex};
 
-use bridge::state::*;
-use std::sync::Arc;
-mod bridge;
+use network::{eth, wifi};
+
 mod http;
+mod network;
 mod utils;
+mod wireguard;
 
 fn main() -> anyhow::Result<()> {
     esp_idf_svc::sys::link_patches();
-    esp_idf_svc::log::EspLogger::initialize_default();
+    EspLogger::initialize_default();
 
-    let idle = Bridge::new()?;
-    let eth_ready = Bridge::<EthReady>::try_from(idle)?;
-    let wifi_ready = Bridge::<WifiReady>::try_from(eth_ready)?;
+    let peripherals = Peripherals::take()?;
+    let sysloop = EspSystemEventLoop::take()?;
+    let nvs = EspDefaultNvsPartition::take()?;
 
-    // let (_http_server, _mdns) =
-    //     http::start_http_server(Arc::clone(&wifi_ready.state.nvs), Arc::clone(&wifi_ready.state.wifi))?;
+    let nvs_config = Arc::new(Mutex::new(EspNvs::new(nvs.clone(), "config", true)?));
 
-    let _running = Bridge::<Running>::try_from(wifi_ready)?;
+    let _eth_netif = eth::init_eth(peripherals.pins, peripherals.mac, sysloop.clone())?;
+
+    let wifi_netif = wifi::init_wifi(peripherals.modem, sysloop.clone(), nvs.clone())?;
+
+    let (_http, _mdns) = http::start_http_server(nvs_config.clone(), wifi_netif.clone())?;
 
     std::thread::park();
+
     Ok(())
 }

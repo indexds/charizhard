@@ -138,18 +138,12 @@ impl TryFrom<Bridge<WifiReady>> for Bridge<Running> {
         // SET
         // NvsWifi::set_field(&mut nvs_guard, NvsKeys::STA_SSID, "fishingrodent")?;
         // NvsWifi::set_field(&mut nvs_guard, NvsKeys::STA_PASSWD, "iliketrains")?;
-        // NvsWifi::set_field(&mut nvs_guard, NvsKeys::STA_AUTH_METHOD,
-        // "wpa2personal")?; END SET
+        // NvsWifi::set_field(&mut nvs_guard, NvsKeys::STA_AUTH_METHOD, "wpa2personal")?; 
+        // END SET
 
-        let ssid = NvsWifi::get_field::<32>(&nvs_guard, NvsKeys::STA_SSID)?
-            .clean_string()
-            .inner();
-        let password = NvsWifi::get_field::<64>(&nvs_guard, NvsKeys::STA_PASSWD)?
-            .clean_string()
-            .inner();
-        let auth_method = NvsWifi::get_field::<32>(&nvs_guard, NvsKeys::STA_AUTH_METHOD)?
-            .clean_string()
-            .inner();
+        let ssid = NvsWifi::get_field::<32>(&nvs_guard, NvsKeys::STA_SSID)?;
+        let password = NvsWifi::get_field::<64>(&nvs_guard, NvsKeys::STA_PASSWD)?;
+        let auth_method = NvsWifi::get_field::<32>(&nvs_guard, NvsKeys::STA_AUTH_METHOD)?;
 
         let wifi_config = Configuration::Client(ClientConfiguration {
             ssid,

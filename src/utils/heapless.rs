@@ -4,9 +4,8 @@ use std::ffi::CString;
 use std::fmt;
 
 #[derive(Debug, Deserialize, Default)]
-pub struct HeaplessString<const N: usize>(String<N>);
+pub struct HeaplessString<const N: usize>(pub String<N>);
 
-#[allow(unused_must_use)]
 impl<const N: usize> HeaplessString<N> {
     pub fn new() -> Self {
         Self(String::<N>::new())
@@ -21,7 +20,7 @@ impl<const N: usize> HeaplessString<N> {
             return Err(anyhow::anyhow!("String too long."));
         }
 
-        self.0.push_str(s);
+        _ = self.0.push_str(s);
 
         Ok(())
     }
@@ -29,7 +28,7 @@ impl<const N: usize> HeaplessString<N> {
     pub fn from_utf8(s: &[u8]) -> anyhow::Result<Self> {
         let mut heapless_string = HeaplessString::<N>::new();
 
-        heapless_string.0.push_str(core::str::from_utf8(s)?);
+        _ = heapless_string.0.push_str(core::str::from_utf8(s)?);
 
         Ok(heapless_string)
     }
@@ -37,7 +36,7 @@ impl<const N: usize> HeaplessString<N> {
     pub fn from_str(s: &str) -> Self {
         let mut heapless_string = HeaplessString::new();
 
-        heapless_string.push_str(s);
+        _ = heapless_string.push_str(s);
 
         heapless_string
     }
@@ -83,7 +82,7 @@ impl<const N: usize> FromIterator<char> for HeaplessString<N> {
 
         for c in iter {
             if heapless_string.0.len() < N {
-                if let Err(_) = heapless_string.0.push(c) {
+                if heapless_string.0.push(c).is_err() {
                     break;
                 }
             } else {
@@ -100,7 +99,7 @@ impl<const N: usize> TryInto<HeaplessString<N>> for &str {
 
     fn try_into(self) -> anyhow::Result<HeaplessString<N>> {
         let mut heapless_string = HeaplessString::<N>::new();
-        heapless_string.push_str(&self)?;
+        heapless_string.push_str(self)?;
 
         Ok(heapless_string)
     }

@@ -33,7 +33,7 @@ embassy = ["esp-idf-svc/embassy-sync", "esp-idf-svc/critical-section", "esp-idf-
 remote_component = { name = "espressif/mdns", version = "1.4.2" }
 
 [[package.metadata.esp-idf-sys.extra_components]]
-remote_component = { name = "trombik/esp_wireguard", version = "0.9" }
+component_dirs = "src/wireguard/esp_wireguard"
 bindings_header = "src/wireguard/bindings.h"
 bindings_module = "wg"
 
@@ -53,6 +53,7 @@ serde = { version = "1.0", default-features = false, features = ["derive"] }
 serde_urlencoded = { version = "0.7", default-features = false }
 strum = { version = "0.26", default-features = false, features = ["derive"] }
 once_cell = { version = "1.20", default-features = false, features = ["std"] }
+lazy_static = { version = "1.5", default-features = false }
 
 [build-dependencies]
 embuild = "0.32"
