@@ -12,10 +12,6 @@ on:
   pull_request:
   workflow_dispatch:
 
-# Fail on any warning (clippy)
-env:
-  RUSTFLAGS: "-Dwarnings"
-
 jobs:
   rust-checks:
     name: Rust Checks
@@ -34,17 +30,6 @@ jobs:
           chmod a+x espup
           ./espup install
 
-      - name: Format
-        run: cargo fmt
-
-      - name: Audit
-        run: |
-          cargo install cargo-audit
-          cargo audit
-
-      - name: Run Clippy
-        run: cargo clippy --all-targets --all-features
-
       - name: Set ESP32 Environment Variables
         run: |
           source $HOME/export-esp.sh  # Source environment variables
@@ -54,13 +39,13 @@ jobs:
       - name: Fmt Check
         run: cargo fmt -- --check
 
-      - name: Run Audit
+      - name: Audit Check
         run: |
           cargo install cargo-audit
           cargo audit -- --deny warnings
 
-      - name: Clippy
-        run: cargo clippy --deny warnings
+      - name: Clippy Check
+        run: cargo clippy -- --deny warnings
 
       - name: Enable Caching
         uses: Swatinem/rust-cache@v2
