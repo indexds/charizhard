@@ -28,7 +28,7 @@ pub fn init_wifi(
             ip_configuration: Some(IpConfiguration::Client(IpClientConfiguration::Fixed(IpClientSettings {
                 ip: Ipv4Addr::new(192, 168, 71, 200),
                 subnet: Subnet {
-                    gateway: Ipv4Addr::new(192, 168, 71, 1),
+                    gateway: Ipv4Addr::new(192, 168, 71, 200),
                     mask: Mask(24),
                 },
                 dns: Some(Ipv4Addr::new(1, 1, 1, 1)),
@@ -49,6 +49,12 @@ pub fn set_configuration(
     let mut wifi_netif = wifi_netif.lock().unwrap();
     let nvs = nvs_config.lock().unwrap();
 
+    // TEMP SET
+    // NvsWifi::set_field(&mut nvs, NvsKeys::STA_SSID, "fishingrodent")?;
+    // NvsWifi::set_field(&mut nvs, NvsKeys::STA_PASSWD, "iliketrains")?;
+    // NvsWifi::set_field(&mut nvs, NvsKeys::STA_AUTH_METHOD, "wpa2personal")?;
+    // END TEMP SET
+
     let wifi_config = Configuration::Client(ClientConfiguration {
         ssid: NvsWifi::get_field::<32>(&nvs, NvsKeys::STA_SSID)?,
         password: NvsWifi::get_field::<64>(&nvs, NvsKeys::STA_PASSWD)?,
@@ -63,6 +69,7 @@ pub fn set_configuration(
 
 pub fn start(wifi_netif: Arc<Mutex<EspWifi<'static>>>) -> anyhow::Result<()> {
     let mut lock = wifi_netif.lock().unwrap();
+
     lock.start()?;
 
     Ok(())
@@ -70,6 +77,7 @@ pub fn start(wifi_netif: Arc<Mutex<EspWifi<'static>>>) -> anyhow::Result<()> {
 
 pub fn connect(wifi_netif: Arc<Mutex<EspWifi<'static>>>) -> anyhow::Result<()> {
     let mut lock = wifi_netif.lock().unwrap();
+
     lock.connect()?;
 
     Ok(())
@@ -77,6 +85,7 @@ pub fn connect(wifi_netif: Arc<Mutex<EspWifi<'static>>>) -> anyhow::Result<()> {
 
 pub fn disconnect(wifi_netif: Arc<Mutex<EspWifi<'static>>>) -> anyhow::Result<()> {
     let mut lock = wifi_netif.lock().unwrap();
+
     lock.disconnect()?;
 
     Ok(())

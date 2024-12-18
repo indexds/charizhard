@@ -43,9 +43,9 @@ pub fn init_eth(
         eth_driver,
         EspNetif::new_with_conf(&NetifConfiguration {
             ip_configuration: Some(IpConfiguration::Client(IpClientConfiguration::Fixed(IpClientSettings {
-                ip: Ipv4Addr::new(10, 0, 0, 3),
+                ip: Ipv4Addr::new(192, 168, 1, 100),
                 subnet: Subnet {
-                    gateway: Ipv4Addr::new(10, 0, 0, 1),
+                    gateway: Ipv4Addr::new(192, 168, 1, 200),
                     mask: Mask(24),
                 },
                 dns: Some(Ipv4Addr::new(1, 1, 1, 1)),

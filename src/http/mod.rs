@@ -29,9 +29,7 @@ pub fn start_http_server(
 
     let nvs_root = Arc::clone(&nvs);
     http_server.fn_handler("/", Method::Get, move |mut request| {
-        let nvs = nvs_root
-            .lock()
-            .map_err(|_| anyhow::anyhow!("Failed to lock NVS Mutex."))?;
+        let nvs = nvs_root.lock().unwrap();
 
         let nvs_wg_conf = NvsWireguard::new(&nvs)?;
 

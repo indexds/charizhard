@@ -52,9 +52,7 @@ pub fn sync_sntp(wifi: Arc<Mutex<EspWifi<'static>>>) -> anyhow::Result<()> {
 }
 
 pub fn start_wg_tunnel(nvs: Arc<Mutex<EspNvs<NvsDefault>>>) -> anyhow::Result<*mut wireguard_ctx_t> {
-    let nvs = nvs
-        .try_lock()
-        .map_err(|_| anyhow::anyhow!("Failed to lock NVS Mutex!"))?;
+    let nvs = nvs.lock().unwrap();
 
     let nvs_wg = NvsWireguard::new(&nvs)?;
 
