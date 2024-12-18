@@ -17,13 +17,13 @@ env:
   RUSTFLAGS: "-Dwarnings"
 
 jobs:
-  setup-toolchain:
-    name: Setup ESP32 Toolchain
+  rust-checks:
+    name: Rust Checks
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 120
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v4      
 
       - name: Install ESP32 Toolchain with espup
         run: |
@@ -33,51 +33,37 @@ jobs:
           curl -L https://github.com/esp-rs/espup/releases/latest/download/espup-x86_64-unknown-linux-gnu -o espup
           chmod a+x espup
           ./espup install
-      - name: Set ESP32 Environment Variables
-        run: |
-          export ESP_IDF_PATH=$HOME/.espressif/esp-idf
-          echo "ESP_IDF_PATH set to $ESP_IDF_PATH"
-      - name: Enable Caching
-        uses: Swatinem/rust-cache@v2
 
-  format:
-    name: Format Code
-    runs-on: ubuntu-latest
-    needs: setup-toolchain
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
       - name: Format
         run: cargo fmt
 
-  audit:
-    name: Audit Dependencies
-    runs-on: ubuntu-latest
-    needs: setup-toolchain
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
       - name: Audit
         run: |
           cargo install cargo-audit
           cargo audit
 
-  clippy:
-    name: Run Clippy
-    runs-on: ubuntu-latest
-    needs: setup-toolchain
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
       - name: Run Clippy
         run: cargo clippy --all-targets --all-features
 
-  build:
-    name: Build (Release)
-    runs-on: ubuntu-latest
-    needs: setup-toolchain
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-      - name: Build
+      - name: Set ESP32 Environment Variables
+        run: |
+          source $HOME/export-esp.sh  # Source environment variables
+          export ESP_IDF_PATH=$HOME/.espressif/esp-idf
+          echo "ESP_IDF_PATH set to $ESP_IDF_PATH"
+
+      - name: Fmt Check
+        run: cargo fmt -- --check
+
+      - name: Run Audit
+        run: |
+          cargo install cargo-audit
+          cargo audit -- --deny warnings
+
+      - name: Clippy
+        run: cargo clippy -- --deny warnings
+
+      - name: Enable Caching
+        uses: Swatinem/rust-cache@v2
+
+      - name: Build Project for ESP32
         run: RUST_BACKTRACE=full cargo build --release --target xtensa-esp32-espidf
