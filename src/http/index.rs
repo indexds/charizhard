@@ -2,7 +2,7 @@ use crate::utils::nvs::NvsWireguard;
 use base64::prelude::BASE64_STANDARD;
 use base64::Engine;
 
-const FAVICON_DATA: &'static [u8] = include_bytes!("./static/assets/favicon.ico");
+const FAVICON_DATA: &[u8] = include_bytes!("./static/assets/favicon.ico");
 
 pub fn index_html(nvs: &NvsWireguard) -> anyhow::Result<String> {
     let favicon = BASE64_STANDARD.encode(FAVICON_DATA);

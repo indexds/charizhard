@@ -1,17 +1,14 @@
-use esp_idf_svc::eventloop::EspSystemEventLoop;
 use esp_idf_svc::hal::prelude::Peripherals;
 use esp_idf_svc::log::EspLogger;
-use esp_idf_svc::nvs::{EspDefaultNvsPartition, EspNvs};
-use esp_idf_svc::wifi::{BlockingWifi, EspWifi};
+use esp_idf_svc::nvs::EspNvs;
+use esp_idf_svc::{eventloop::EspSystemEventLoop, nvs::EspDefaultNvsPartition};
 use std::sync::{Arc, Mutex};
-use utils::nvs::{NvsKeys, NvsWifi};
 
-mod bridge;
+use network::{eth, wifi};
+
 mod http;
+mod network;
 mod utils;
-mod wifi;
-
-#[cfg(feature = "wireguard")]
 mod wireguard;
 
 fn main() -> anyhow::Result<()> {
@@ -19,31 +16,18 @@ fn main() -> anyhow::Result<()> {
     EspLogger::initialize_default();
 
     let peripherals = Peripherals::take()?;
-    let event_loop = EspSystemEventLoop::take()?;
+    let sysloop = EspSystemEventLoop::take()?;
     let nvs = EspDefaultNvsPartition::take()?;
 
-    let wifi = BlockingWifi::wrap(
-        EspWifi::new(peripherals.modem, event_loop.clone(), Some(nvs.clone()))?,
-        event_loop,
-    )?;
+    let nvs_config = Arc::new(Mutex::new(EspNvs::new(nvs.clone(), "config", true)?));
 
-    let guarded_wifi = Arc::new(Mutex::new(wifi));
-    let nvs_instance = EspNvs::new(nvs.clone(), "config", true)?;
-    let guarded_nvs = Arc::new(Mutex::new(nvs_instance));
+    let _eth_netif = eth::init_eth(peripherals.pins, peripherals.mac, sysloop.clone())?;
 
-    let (_http_server, _mdns) = http::start_http_server(Arc::clone(&guarded_nvs), Arc::clone(&guarded_wifi))?;
+    let wifi_netif = wifi::init_wifi(peripherals.modem, sysloop.clone(), nvs.clone())?;
 
-    // WG TEST
-    let mut nvslock = guarded_nvs.try_lock().unwrap();
-    NvsWifi::set_field(&mut nvslock, NvsKeys::STA_PASSWD, "fishingrodent")?;
-    NvsWifi::set_field(&mut nvslock, NvsKeys::STA_PASSWD, "iliketrains")?;
-    NvsWifi::set_field(&mut nvslock, NvsKeys::STA_AUTH_METHOD, "wpa2personal")?;
-    drop(nvslock);
-    wifi::connect_wifi(&Arc::clone(&guarded_wifi), &Arc::clone(&guarded_nvs))?;
-    let _ctx = wireguard::start_wg_tunnel(Arc::clone(&guarded_nvs))?;
-    // END WG TEST
+    let (_http, _mdns) = http::start_http_server(nvs_config.clone(), wifi_netif.clone())?;
 
-    loop {
-        std::thread::park();
-    }
+    std::thread::park();
+
+    Ok(())
 }

@@ -1,2 +1,2 @@
-mod logic;
-mod state;
+pub mod bridge;
+pub mod state;

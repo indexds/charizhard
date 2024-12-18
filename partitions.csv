@@ -1,11 +1,13 @@
 #ALL APPS MUST BE ALIGNED WITH 0x10000
 # ESP-IDF Partition Table
 # Name,   Type, SubType,  Offset,  Size, Flags
-nvs,      data, nvs,      0x12000,  0x6000, encrypted
-nvs_keys, data, nvs_keys, 0x18000,  0x4000, encrypted
-phy_init, data, phy,      0x22000,  0x1000, encrypted
-otadata,  data, ota,      0x23000,  0x2000, encrypted
-factory,  app,  factory,  0x30000,  2M, encrypted
+nvs,      data, nvs,      0x12000,  0x4000,
+nvs_keys, data, nvs_keys, 0x17000,  0x1000,
+otadata,  data, ota,      0x18000,  0x2000,
+factory,  app,  factory,  0x20000,  2M, 
 
-# ota_0,    app,  ota_0,   ????????, 2M,
-# ota_1,    app,  ota_1,   ????????, 2M,
+# ota_0,    app,  ota_0,  , 2M,
+# ota_1,    app,  ota_1,  , 2M,
+
+#OTA NEEDS TO BE THE SAME SIZE AS FACTORY
+#https://eu.mouser.com/ProductDetail/Espressif-Systems/ESP32-S3-WROOM-2-N32R8V?qs=Li%2BoUPsLEntC3FaT%2FvCeug%3D%3D

@@ -1,39 +1,32 @@
+use crate::network::wifi;
 use crate::utils::nvs::{NvsKeys, NvsWifi};
 use anyhow::Error;
 use esp_idf_hal::io::Write;
 use esp_idf_svc::http::server::{EspHttpServer, Method};
 use esp_idf_svc::nvs::{EspNvs, NvsDefault};
-use esp_idf_svc::wifi::AuthMethod;
-use esp_idf_svc::wifi::{BlockingWifi, EspWifi};
+use esp_idf_svc::wifi::{AuthMethod, EspWifi};
 use std::sync::{Arc, Mutex};
 
-#[allow(unused_must_use)]
 pub fn set_routes(
     http_server: &mut EspHttpServer<'static>,
-    nvs: &Arc<Mutex<EspNvs<NvsDefault>>>,
-    wifi: &Arc<Mutex<BlockingWifi<EspWifi<'static>>>>,
+    nvs: Arc<Mutex<EspNvs<NvsDefault>>>,
+    wifi: Arc<Mutex<EspWifi<'static>>>,
 ) -> anyhow::Result<()> {
-    let disconnect_wifi = Arc::clone(&wifi);
-
+    let wifi_disconnect = Arc::clone(&wifi);
     http_server.fn_handler("/disconnect-wifi", Method::Get, move |mut request| {
         let connection = request.connection();
 
-        crate::wifi::disconnect_wifi(&disconnect_wifi);
+        wifi::disconnect(Arc::clone(&wifi_disconnect))?;
 
         connection.initiate_response(204, Some("OK"), &[("Content-Type", "text/html")])?;
 
         Ok::<(), Error>(())
-    });
+    })?;
 
-    let nvs_save_wifi = Arc::clone(&nvs);
-    let nvs_connect_wifi = Arc::clone(&nvs);
+    let nvs_connect = Arc::clone(&nvs);
     let wifi_connect = Arc::clone(&wifi);
-
     http_server.fn_handler("/connect-wifi", Method::Post, move |mut request| {
-        let mut nvs_save = nvs_save_wifi
-            .lock()
-            .map_err(|_| anyhow::anyhow!("Failed to lock NVS Mutex."))?;
-
+        let mut nvs_save = nvs_connect.lock().unwrap();
         let mut body = Vec::new();
         let mut buffer = [0_u8; 128];
 
@@ -59,26 +52,25 @@ pub fn set_routes(
         NvsWifi::set_field(
             &mut nvs_save,
             NvsKeys::STA_AUTH_METHOD,
-            &wifi_config.sta_auth_method.clean_string().as_str(),
+            wifi_config.sta_auth_method.clean_string().as_str(),
         )?;
 
         drop(nvs_save);
 
-        crate::wifi::connect_wifi(&wifi_connect, &nvs_connect_wifi)?;
+        wifi::set_configuration(Arc::clone(&nvs_connect), Arc::clone(&wifi_connect))?;
+        wifi::start(Arc::clone(&wifi_connect))?;
+        wifi::connect(Arc::clone(&wifi_connect))?;
 
         let connection = request.connection();
 
         connection.initiate_response(204, Some("OK"), &[("Content-Type", "text/html")])?;
 
         Ok::<(), Error>(())
-    });
+    })?;
 
     let wifi_get = Arc::clone(&wifi);
-
     http_server.fn_handler("/wifi", Method::Get, move |request| {
-        let mut wifi = wifi_get
-            .lock()
-            .map_err(|_| anyhow::anyhow!("Failed to lock Wifi Mutex."))?;
+        let mut wifi = wifi_get.lock().unwrap();
 
         let mut html = String::new();
 
@@ -165,14 +157,11 @@ pub fn set_routes(
         response.write_all(html.as_bytes())?;
 
         Ok::<(), Error>(())
-    });
+    })?;
 
-    let nvs_wifi_connected = Arc::clone(&wifi);
-
+    let wifi_status = Arc::clone(&wifi);
     http_server.fn_handler("/wifi-status", Method::Get, move |mut request| {
-        let wifi = nvs_wifi_connected
-            .lock()
-            .map_err(|_| anyhow::anyhow!("Failed to lock NVS Mutex."))?;
+        let wifi = wifi_status.lock().unwrap();
 
         let is_connected = wifi.is_connected()?;
 
@@ -180,7 +169,7 @@ pub fn set_routes(
         let ssid = match binding.as_client_conf_ref() {
             Some(config) => {
                 if is_connected {
-                    &config.ssid.as_str()
+                    config.ssid.as_str()
                 } else {
                     "Disconnected"
                 }
@@ -220,10 +209,10 @@ pub fn set_routes(
 
         connection.initiate_response(200, Some("OK"), &[("Content-Type", "text/html")])?;
 
-        connection.write(html.as_bytes());
+        connection.write(html.as_bytes())?;
 
         Ok::<(), Error>(())
-    });
+    })?;
 
     Ok(())
 }
