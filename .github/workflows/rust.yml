@@ -37,15 +37,15 @@ jobs:
           echo "ESP_IDF_PATH set to $ESP_IDF_PATH"
 
       - name: Fmt Check
-        run: cargo fmt -- --check
+        run: cargo fmt --check
 
       - name: Audit Check
         run: |
           cargo install cargo-audit
-          cargo audit -- --deny warnings
+          cargo audit --deny warnings
 
       - name: Clippy Check
-        run: cargo clippy -- --deny warnings
+        run: cargo clippy -- --deny warnings --no-deps
 
       - name: Enable Caching
         uses: Swatinem/rust-cache@v2
