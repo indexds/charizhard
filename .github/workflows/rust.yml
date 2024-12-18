@@ -12,16 +12,18 @@ on:
   pull_request:
   workflow_dispatch:
 
+# Fail on any warning (clippy)
+env:
+  RUSTFLAGS: "-Dwarnings"
+
 jobs:
-  rust-checks:
-    name: Rust Checks
+  setup-toolchain:
+    name: Setup ESP32 Toolchain
     runs-on: ubuntu-latest
-    timeout-minutes: 120
+    timeout-minutes: 30
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-
-      
 
       - name: Install ESP32 Toolchain with espup
         run: |
@@ -31,38 +33,51 @@ jobs:
           curl -L https://github.com/esp-rs/espup/releases/latest/download/espup-x86_64-unknown-linux-gnu -o espup
           chmod a+x espup
           ./espup install
-
-      - name: Format
-        run: cargo fmt
-
-      - name: Audit
-        run: |
-          cargo install cargo-audit
-          cargo audit
-
-      - name: Clippy
-        run: cargo clippy
-
       - name: Set ESP32 Environment Variables
         run: |
-          source $HOME/export-esp.sh  # Source environment variables
           export ESP_IDF_PATH=$HOME/.espressif/esp-idf
           echo "ESP_IDF_PATH set to $ESP_IDF_PATH"
-
-
-      - name: Format
-        run: cargo fmt
-
-      - name: Audit
-        run: |
-          cargo install cargo-audit
-          cargo audit
-
-      - name: Clippy
-        run: cargo clippy
-
       - name: Enable Caching
         uses: Swatinem/rust-cache@v2
 
-      - name: Build Project for ESP32
+  format:
+    name: Format Code
+    runs-on: ubuntu-latest
+    needs: setup-toolchain
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Format
+        run: cargo fmt
+
+  audit:
+    name: Audit Dependencies
+    runs-on: ubuntu-latest
+    needs: setup-toolchain
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Audit
+        run: |
+          cargo install cargo-audit
+          cargo audit
+
+  clippy:
+    name: Run Clippy
+    runs-on: ubuntu-latest
+    needs: setup-toolchain
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Run Clippy
+        run: cargo clippy --all-targets --all-features
+
+  build:
+    name: Build (Release)
+    runs-on: ubuntu-latest
+    needs: setup-toolchain
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Build
         run: RUST_BACKTRACE=full cargo build --release --target xtensa-esp32-espidf
