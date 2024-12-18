@@ -31,9 +31,7 @@ jobs:
           ./espup install
 
       - name: Format
-        run: |
-        rustup component add rustfmt --toolchain nightly
-        cargo fmt
+        run: cargo fmt
 
       - name: Audit
         run: cargo audit
