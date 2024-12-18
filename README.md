@@ -111,6 +111,10 @@ All that remains is to install all remaining dependencies, build the project and
 ```fish
 cargo flash
 ```
+or
+```
+cargo f
+```
 
 ## Monitoring
 
@@ -122,7 +126,7 @@ Then set the environment variable defining the port your `esp32` is available on
 You only need to do this once per terminal. 
 Alternatively you can use `setx` to make the variable permanent.
 ```fish
-set COM_PORT=COM{X}
+set COM=COM{X}
 ```  
 With `{X}` being the port your `esp32` is available on. This can be found in the device manager.
 
