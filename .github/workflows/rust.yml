@@ -21,6 +21,8 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      
+
       - name: Install ESP32 Toolchain with espup
         run: |
           curl -L https://github.com/esp-rs/embuild/releases/latest/download/ldproxy-x86_64-unknown-linux-gnu.zip -o $HOME/.cargo/bin/ldproxy.zip
@@ -46,6 +48,18 @@ jobs:
           source $HOME/export-esp.sh  # Source environment variables
           export ESP_IDF_PATH=$HOME/.espressif/esp-idf
           echo "ESP_IDF_PATH set to $ESP_IDF_PATH"
+
+
+      - name: Format
+        run: cargo fmt
+
+      - name: Audit
+        run: |
+          cargo install cargo-audit
+          cargo audit
+
+      - name: Clippy
+        run: cargo clippy
 
       - name: Enable Caching
         uses: Swatinem/rust-cache@v2
