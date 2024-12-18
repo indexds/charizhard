@@ -111,6 +111,10 @@ All that remains is to install all remaining dependencies, build the project and
 ```fish
 cargo flash
 ```
+or
+```
+cargo f
+```
 
 ## Monitoring
 
