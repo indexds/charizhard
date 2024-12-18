@@ -29,6 +29,18 @@ jobs:
           curl -L https://github.com/esp-rs/espup/releases/latest/download/espup-x86_64-unknown-linux-gnu -o espup
           chmod a+x espup
           ./espup install
+
+      - name: Format
+        run: |
+        rustup component add rustfmt --toolchain nightly
+        cargo fmt
+
+      - name: Audit
+        run: cargo audit
+
+      - name: Clippy
+        run: cargo clippy
+
       - name: Set ESP32 Environment Variables
         run: |
           source $HOME/export-esp.sh  # Source environment variables
