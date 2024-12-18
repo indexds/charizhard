@@ -35,8 +35,8 @@ jobs:
 
       - name: Audit
         run: |
-        cargo install cargo-audit
-        cargo audit
+          cargo install cargo-audit
+          cargo audit
 
       - name: Clippy
         run: cargo clippy
