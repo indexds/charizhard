@@ -4,8 +4,8 @@ on:
   push:
     paths-ignore:
       - "**/README.md"
-      - "**/logo"
-      - "**/schematic"
+      - "**/logo/*"
+      - "**/schematic/*"
       - "LICENCE"
       - "logo.png"
       - ".gitignore"

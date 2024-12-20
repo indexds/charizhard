@@ -58,7 +58,6 @@ pub fn set_routes(
         drop(nvs_save);
 
         wifi::set_configuration(Arc::clone(&nvs_connect), Arc::clone(&wifi_connect))?;
-        wifi::start(Arc::clone(&wifi_connect))?;
         wifi::connect(Arc::clone(&wifi_connect))?;
 
         let connection = request.connection();
