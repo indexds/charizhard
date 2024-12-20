@@ -58,7 +58,8 @@ pub fn start_wg_tunnel(nvs: Arc<Mutex<EspNvs<NvsDefault>>>) -> anyhow::Result<()
     let nvs_wg = NvsWireguard::new(&nvs)?;
 
     let endpoint = CString::new("34.66.61.218")?.into_raw();
-    // let endpoint = CString::new(nvs_wg.wg_addr.clean_string().as_str())?.into_raw();
+    // let endpoint =
+    // CString::new(nvs_wg.wg_addr.clean_string().as_str())?.into_raw();
 
     unsafe {
         let config = &mut wireguard_config_t {

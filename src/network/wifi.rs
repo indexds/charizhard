@@ -33,7 +33,6 @@ pub fn init_netif(
     Ok(Arc::new(Mutex::new(wifi_netif)))
 }
 
-
 pub fn set_configuration(
     nvs_config: Arc<Mutex<EspNvs<NvsDefault>>>,
     wifi_netif: Arc<Mutex<EspWifi<'static>>>,
