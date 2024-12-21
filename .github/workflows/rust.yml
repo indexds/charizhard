@@ -21,7 +21,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4      
 
-      - name: Install ESP32 Toolchain with espup
+      - name: Install ESP32 Toolchain
         run: |
           curl -L https://github.com/esp-rs/embuild/releases/latest/download/ldproxy-x86_64-unknown-linux-gnu.zip -o $HOME/.cargo/bin/ldproxy.zip
           unzip "$HOME/.cargo/bin/ldproxy.zip" -d "$HOME/.cargo/bin/"
@@ -35,7 +35,7 @@ jobs:
           source $HOME/export-esp.sh  # Source environment variables
           export ESP_IDF_PATH=$HOME/.espressif/esp-idf
           echo "ESP_IDF_PATH set to $ESP_IDF_PATH"
-          
+
       - name: Fmt Check
         run: cargo fmt --check
 
