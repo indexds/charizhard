@@ -9,6 +9,7 @@ on:
       - "LICENCE"
       - "logo.png"
       - ".gitignore"
+      - ".gitattributes"
   pull_request:
   workflow_dispatch:
 
@@ -42,7 +43,6 @@ jobs:
           cache-all-crates: "true"
           cache-on-failure: "false"
           cache-targets: "true"
-          cache-bin: "true"
           cache-provider: "github"
 
       - name: Fmt Check
