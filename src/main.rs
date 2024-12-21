@@ -29,7 +29,7 @@ fn main() -> anyhow::Result<()> {
 
     let _eth_driver = eth::init_driver(peripherals.pins, peripherals.mac, sysloop.clone())?;
 
-    wireguard::start_wg_tunnel(Arc::clone(&nvs_config))?;
+    // wireguard::start_wg_tunnel(Arc::clone(&nvs_config))?;
 
     let (_http, _mdns) = http::start_http_server(Arc::clone(&nvs_config), Arc::clone(&wifi_driver))?;
 

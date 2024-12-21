@@ -23,8 +23,6 @@ jobs:
 
       - name: Install ESP32 Toolchain with espup
         run: |
-          cargo clean
-          rm -rf /home/runner/work/charizhard/charizhard/.embuild
           curl -L https://github.com/esp-rs/embuild/releases/latest/download/ldproxy-x86_64-unknown-linux-gnu.zip -o $HOME/.cargo/bin/ldproxy.zip
           unzip "$HOME/.cargo/bin/ldproxy.zip" -d "$HOME/.cargo/bin/"
           chmod a+x $HOME/.cargo/bin/ldproxy
@@ -37,6 +35,8 @@ jobs:
           source $HOME/export-esp.sh  # Source environment variables
           export ESP_IDF_PATH=$HOME/.espressif/esp-idf
           echo "ESP_IDF_PATH set to $ESP_IDF_PATH"
+          cargo clean
+          rm -rf /home/runner/work/charizhard/charizhard/.embuild
 
       - name: Fmt Check
         run: cargo fmt --check
