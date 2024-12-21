@@ -42,7 +42,8 @@ jobs:
           cache-all-crates: "true"
           cache-on-failure: "false"
           cache-targets: "true"
-          
+          cache-bin: "true"
+          cache-provider: "github"
 
       - name: Fmt Check
         run: cargo fmt --check
@@ -56,4 +57,4 @@ jobs:
         run: cargo clippy -- --deny warnings --no-deps
 
       - name: Build Project for ESP32
-        run: RUST_BACKTRACE=full cargo build --release --target xtensa-esp32-espidf
+        run: cargo build --release --target xtensa-esp32-espidf -vv
