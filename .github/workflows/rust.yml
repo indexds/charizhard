@@ -21,6 +21,9 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4      
 
+      - name: Enable Caching
+        uses: Swatinem/rust-cache@v2
+
       - name: Install ESP32 Toolchain
         run: |
           curl -L https://github.com/esp-rs/embuild/releases/latest/download/ldproxy-x86_64-unknown-linux-gnu.zip -o $HOME/.cargo/bin/ldproxy.zip
@@ -46,9 +49,6 @@ jobs:
 
       - name: Clippy Check
         run: cargo clippy -- --deny warnings --no-deps
-
-      - name: Enable Caching
-        uses: Swatinem/rust-cache@v2
 
       - name: Build Project for ESP32
         run: RUST_BACKTRACE=full cargo build --release --target xtensa-esp32-espidf
