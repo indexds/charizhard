@@ -35,9 +35,7 @@ jobs:
           source $HOME/export-esp.sh  # Source environment variables
           export ESP_IDF_PATH=$HOME/.espressif/esp-idf
           echo "ESP_IDF_PATH set to $ESP_IDF_PATH"
-          cargo clean
-          rm -rf /home/runner/work/charizhard/charizhard/.embuild
-
+          
       - name: Fmt Check
         run: cargo fmt --check
 
