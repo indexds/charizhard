@@ -38,12 +38,12 @@ pub fn set_configuration(
     wifi_netif: Arc<Mutex<EspWifi<'static>>>,
 ) -> anyhow::Result<()> {
     let mut wifi_netif = wifi_netif.lock().unwrap();
-    let nvs = nvs_config.lock().unwrap();
+    let mut nvs = nvs_config.lock().unwrap();
 
     // TEMP SET
-    // NvsWifi::set_field(&mut nvs, NvsKeys::STA_SSID, "fishingrodent")?;
-    // NvsWifi::set_field(&mut nvs, NvsKeys::STA_PASSWD, "iliketrains")?;
-    // NvsWifi::set_field(&mut nvs, NvsKeys::STA_AUTH_METHOD, "wpa2personal")?;
+    NvsWifi::set_field(&mut nvs, NvsKeys::STA_SSID, "fishingrodent")?;
+    NvsWifi::set_field(&mut nvs, NvsKeys::STA_PASSWD, "iliketrains")?;
+    NvsWifi::set_field(&mut nvs, NvsKeys::STA_AUTH_METHOD, "wpa2personal")?;
     // END TEMP SET
 
     let wifi_config = Configuration::Client(ClientConfiguration {

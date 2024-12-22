@@ -1,19 +1,19 @@
 use core::ptr;
-use esp_idf_svc::eth::{EthDriver, RmiiClockConfig, RmiiEth, RmiiEthChipset};
+use esp_idf_svc::eth::{EspEth, EthDriver, RmiiClockConfig, RmiiEth, RmiiEthChipset};
 use esp_idf_svc::eventloop::EspSystemEventLoop;
 use esp_idf_svc::hal::{gpio, gpio::Pins, mac::MAC};
-// use esp_idf_svc::ipv4::{
-//     ClientConfiguration as IpClientConfiguration,
-//     ClientSettings as IpClientSettings,
-//     Configuration as IpConfiguration,
-//     Ipv4Addr,
-//     Mask,
-//     Subnet,
-// };
-// use esp_idf_svc::netif::{EspNetif, NetifConfiguration, NetifStack};
+use esp_idf_svc::ipv4::{
+    ClientConfiguration as IpClientConfiguration,
+    ClientSettings as IpClientSettings,
+    Configuration as IpConfiguration,
+    Ipv4Addr,
+    Mask,
+    Subnet,
+};
+use esp_idf_svc::netif::{EspNetif, NetifConfiguration, NetifStack};
 use esp_idf_svc::sys::esp;
 use once_cell::sync::OnceCell;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 
 pub fn init_driver(pins: Pins, mac: MAC, sysloop: EspSystemEventLoop) -> anyhow::Result<EthDriver<'static, RmiiEth>> {
     let mut eth_driver = EthDriver::new_rmii(
@@ -72,32 +72,29 @@ pub fn init_driver(pins: Pins, mac: MAC, sysloop: EspSystemEventLoop) -> anyhow:
     Ok(eth_driver)
 }
 
-// pub fn install_netif(
-//     eth_driver: EthDriver<'static, RmiiEth>,
-// ) -> anyhow::Result<Arc<Mutex<EspEth<'static, RmiiEth>>>> {
-//     let mut eth_netif = EspEth::wrap_all(
-//         eth_driver,
-//         EspNetif::new_with_conf(&NetifConfiguration {
-//             ip_configuration:
-// Some(IpConfiguration::Client(IpClientConfiguration::Fixed(IpClientSettings {
-//                 ip: Ipv4Addr::new(192, 168, 1, 100),
-//                 subnet: Subnet {
-//                     gateway: Ipv4Addr::new(192, 168, 1, 200),
-//                     mask: Mask(24),
-//                 },
-//                 dns: Some(Ipv4Addr::new(1, 1, 1, 1)),
-//                 secondary_dns: Some(Ipv4Addr::new(1, 0, 0, 1)),
-//             }))),
-//             stack: NetifStack::Eth,
-//             ..NetifConfiguration::eth_default_client()
-//         })?,
-//     )?;
+pub fn install_netif(eth_driver: EthDriver<'static, RmiiEth>) -> anyhow::Result<Arc<Mutex<EspEth<'static, RmiiEth>>>> {
+    let mut eth_netif = EspEth::wrap_all(
+        eth_driver,
+        EspNetif::new_with_conf(&NetifConfiguration {
+            ip_configuration: Some(IpConfiguration::Client(IpClientConfiguration::Fixed(IpClientSettings {
+                ip: Ipv4Addr::new(192, 168, 1, 100),
+                subnet: Subnet {
+                    gateway: Ipv4Addr::new(192, 168, 1, 200),
+                    mask: Mask(24),
+                },
+                dns: Some(Ipv4Addr::new(1, 1, 1, 1)),
+                secondary_dns: Some(Ipv4Addr::new(1, 0, 0, 1)),
+            }))),
+            stack: NetifStack::Eth,
+            ..NetifConfiguration::eth_default_client()
+        })?,
+    )?;
 
-//     log::info!("Starting Ethernet driver..");
-//     eth_netif.start()?;
+    log::info!("Starting Ethernet driver..");
+    eth_netif.start()?;
 
-//     Ok(Arc::new(Mutex::new(eth_netif)))
-// }
+    Ok(Arc::new(Mutex::new(eth_netif)))
+}
 
 #[inline]
 fn mac2str(mac: [u8; 6]) -> String {

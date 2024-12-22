@@ -21,17 +21,18 @@ fn main() -> anyhow::Result<()> {
 
     let nvs_config = Arc::new(Mutex::new(EspNvs::new(nvs.clone(), "config", true)?));
 
-    let wifi_driver = wifi::init_netif(peripherals.modem, sysloop.clone(), nvs.clone())?;
+    let wifi_netif = wifi::init_netif(peripherals.modem, sysloop.clone(), nvs.clone())?;
 
-    wifi::set_configuration(Arc::clone(&nvs_config), Arc::clone(&wifi_driver))?;
-    wifi::start(Arc::clone(&wifi_driver))?;
-    wifi::connect(Arc::clone(&wifi_driver))?;
+    wifi::set_configuration(Arc::clone(&nvs_config), Arc::clone(&wifi_netif))?;
+    wifi::start(Arc::clone(&wifi_netif))?;
+    wifi::connect(Arc::clone(&wifi_netif))?;
 
-    let _eth_driver = eth::init_driver(peripherals.pins, peripherals.mac, sysloop.clone())?;
+    let eth_driver = eth::init_driver(peripherals.pins, peripherals.mac, sysloop.clone())?;
+    let _eth_netif = eth::install_netif(eth_driver);
 
     // wireguard::start_wg_tunnel(Arc::clone(&nvs_config))?;
 
-    let (_http, _mdns) = http::start_http_server(Arc::clone(&nvs_config), Arc::clone(&wifi_driver))?;
+    let (_http, _mdns) = http::start_http_server(Arc::clone(&nvs_config), Arc::clone(&wifi_netif))?;
 
     std::thread::park();
 
