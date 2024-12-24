@@ -1,11 +1,13 @@
-use crate::utils::nvs::NvsWireguard;
+use std::sync::{Arc, Mutex};
+
 use anyhow::Error;
 use esp_idf_hal::io::Write;
 use esp_idf_svc::http::server::{Configuration as HttpServerConfig, EspHttpServer, Method};
 use esp_idf_svc::mdns::EspMdns;
 use esp_idf_svc::nvs::{EspNvs, NvsDefault};
 use esp_idf_svc::wifi::EspWifi;
-use std::sync::{Arc, Mutex};
+
+use crate::utils::nvs::NvsWireguard;
 
 mod assets_routes;
 mod index;

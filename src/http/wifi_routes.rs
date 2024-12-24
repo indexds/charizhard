@@ -1,11 +1,13 @@
-use crate::network::wifi;
-use crate::utils::nvs::{NvsKeys, NvsWifi};
+use std::sync::{Arc, Mutex};
+
 use anyhow::Error;
 use esp_idf_hal::io::Write;
 use esp_idf_svc::http::server::{EspHttpServer, Method};
 use esp_idf_svc::nvs::{EspNvs, NvsDefault};
 use esp_idf_svc::wifi::{AuthMethod, EspWifi};
-use std::sync::{Arc, Mutex};
+
+use crate::network::wifi;
+use crate::utils::nvs::{NvsKeys, NvsWifi};
 
 pub fn set_routes(
     http_server: &mut EspHttpServer<'static>,
@@ -71,16 +73,19 @@ pub fn set_routes(
     http_server.fn_handler("/wifi", Method::Get, move |request| {
         let mut wifi = wifi_get.lock().unwrap();
 
-        let mut html = String::new();
+        if !wifi.is_started()? {
+            wifi.start()?;
+        }
 
-        let mut scanned = wifi.scan()?;
+        let mut scanned = wifi.scan_n::<10>()?.0.to_vec();
 
         // Remove dups
         scanned.sort_by(|a, b| a.ssid.cmp(&b.ssid));
         scanned.dedup_by(|a, b| a.ssid == b.ssid);
-
         // Sort by desc sig strength (values are negative, with 0db max, -50db avg)
         scanned.sort_by(|a, b| b.signal_strength.cmp(&a.signal_strength));
+
+        let mut html = String::new();
 
         for access_point in scanned.iter() {
             let auth_method = match access_point.auth_method {
@@ -165,6 +170,7 @@ pub fn set_routes(
         let is_connected = wifi.is_connected()?;
 
         let binding = wifi.get_configuration()?;
+
         let ssid = match binding.as_client_conf_ref() {
             Some(config) => {
                 if is_connected {

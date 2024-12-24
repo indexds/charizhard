@@ -1,7 +1,10 @@
-use core::ptr;
+use std::sync::{Arc, Mutex};
+
 use esp_idf_svc::eth::{EspEth, EthDriver, RmiiClockConfig, RmiiEth, RmiiEthChipset};
 use esp_idf_svc::eventloop::EspSystemEventLoop;
-use esp_idf_svc::hal::{gpio, gpio::Pins, mac::MAC};
+use esp_idf_svc::hal::gpio;
+use esp_idf_svc::hal::gpio::Pins;
+use esp_idf_svc::hal::mac::MAC;
 use esp_idf_svc::ipv4::{
     ClientConfiguration as IpClientConfiguration,
     ClientSettings as IpClientSettings,
@@ -11,9 +14,7 @@ use esp_idf_svc::ipv4::{
     Subnet,
 };
 use esp_idf_svc::netif::{EspNetif, NetifConfiguration, NetifStack};
-use esp_idf_svc::sys::esp;
 use once_cell::sync::OnceCell;
-use std::sync::{Arc, Mutex};
 
 pub fn init_driver(pins: Pins, mac: MAC, sysloop: EspSystemEventLoop) -> anyhow::Result<EthDriver<'static, RmiiEth>> {
     let mut eth_driver = EthDriver::new_rmii(
@@ -53,26 +54,17 @@ pub fn init_driver(pins: Pins, mac: MAC, sysloop: EspSystemEventLoop) -> anyhow:
     log::info!("Waiting to sniff client MAC...");
     let _client_mac = *client_mac.wait();
 
+    // stops the driver
     eth_driver.set_rx_callback(|_| {})?;
 
-    log::warn!("Setting Ethernet promiscuous...");
-    esp!(unsafe {
-        use esp_idf_svc::handle::RawHandle;
-        use esp_idf_svc::sys::{esp_eth_io_cmd_t_ETH_CMD_S_PROMISCUOUS, esp_eth_ioctl};
-        let handle = eth_driver.handle();
-        let mut t = true;
-        esp_eth_ioctl(handle, esp_eth_io_cmd_t_ETH_CMD_S_PROMISCUOUS, ptr::addr_of_mut!(t).cast())
-    })?;
-
-    log::warn!("Ethernet promiscuous success!");
-
-    log::info!("Starting Ethernet driver..");
-    eth_driver.start()?;
+    eth_driver.set_promiscuous(true)?;
 
     Ok(eth_driver)
 }
 
 pub fn install_netif(eth_driver: EthDriver<'static, RmiiEth>) -> anyhow::Result<Arc<Mutex<EspEth<'static, RmiiEth>>>> {
+    log::warn!("Installing eth netif...");
+
     let mut eth_netif = EspEth::wrap_all(
         eth_driver,
         EspNetif::new_with_conf(&NetifConfiguration {
@@ -90,8 +82,11 @@ pub fn install_netif(eth_driver: EthDriver<'static, RmiiEth>) -> anyhow::Result<
         })?,
     )?;
 
-    log::info!("Starting Ethernet driver..");
     eth_netif.start()?;
+
+    log::warn!("Eth netif install success!");
+
+    log::info!("NETIF IP INFO: {:#?}", eth_netif.netif().get_ip_info()?);
 
     Ok(Arc::new(Mutex::new(eth_netif)))
 }

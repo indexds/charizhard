@@ -1,10 +1,12 @@
 #![allow(unused)]
 
-use crate::utils::heapless::HeaplessString;
+use std::sync::MutexGuard;
+
 use esp_idf_svc::nvs::{EspNvs, NvsDefault};
 use heapless::String;
 use serde::Deserialize;
-use std::sync::MutexGuard;
+
+use crate::utils::heapless::HeaplessString;
 
 const DEFAULT_STA_SSID: &str = "";
 const DEFAULT_STA_PASSWD: &str = "";

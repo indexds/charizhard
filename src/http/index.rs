@@ -1,6 +1,7 @@
-use crate::utils::nvs::NvsWireguard;
 use base64::prelude::BASE64_STANDARD;
 use base64::Engine;
+
+use crate::utils::nvs::NvsWireguard;
 
 const FAVICON_DATA: &[u8] = include_bytes!("./static/assets/favicon.ico");
 

@@ -1,4 +1,6 @@
-use crate::utils::nvs::{NvsKeys, NvsWifi};
+use std::str::FromStr;
+use std::sync::{Arc, Mutex};
+
 use esp_idf_svc::eventloop::EspSystemEventLoop;
 use esp_idf_svc::hal::modem::Modem;
 // use esp_idf_svc::ipv4::{
@@ -12,14 +14,15 @@ use esp_idf_svc::hal::modem::Modem;
 use esp_idf_svc::netif::{EspNetif, NetifConfiguration, NetifStack};
 use esp_idf_svc::nvs::{EspDefaultNvsPartition, EspNvs, NvsDefault};
 use esp_idf_svc::wifi::{AuthMethod, ClientConfiguration, Configuration, EspWifi, WifiDriver};
-use std::str::FromStr;
-use std::sync::{Arc, Mutex};
+
+use crate::utils::nvs::{NvsKeys, NvsWifi};
 
 pub fn init_netif(
     modem: Modem,
     sysloop: EspSystemEventLoop,
     nvs: EspDefaultNvsPartition,
 ) -> anyhow::Result<Arc<Mutex<EspWifi<'static>>>> {
+    log::warn!("Installing wifi netif...");
     let wifi_driver = WifiDriver::new(modem, sysloop.clone(), Some(nvs.clone()))?;
 
     let wifi_netif = EspWifi::wrap_all(
@@ -30,6 +33,7 @@ pub fn init_netif(
         })?,
     )?;
 
+    log::warn!("Wifi netif install success!");
     Ok(Arc::new(Mutex::new(wifi_netif)))
 }
 
@@ -37,13 +41,15 @@ pub fn set_configuration(
     nvs_config: Arc<Mutex<EspNvs<NvsDefault>>>,
     wifi_netif: Arc<Mutex<EspWifi<'static>>>,
 ) -> anyhow::Result<()> {
+    log::warn!("Setting wifi configuration...");
+
     let mut wifi_netif = wifi_netif.lock().unwrap();
-    let mut nvs = nvs_config.lock().unwrap();
+    let nvs = nvs_config.lock().unwrap();
 
     // TEMP SET
-    NvsWifi::set_field(&mut nvs, NvsKeys::STA_SSID, "fishingrodent")?;
-    NvsWifi::set_field(&mut nvs, NvsKeys::STA_PASSWD, "iliketrains")?;
-    NvsWifi::set_field(&mut nvs, NvsKeys::STA_AUTH_METHOD, "wpa2personal")?;
+    // NvsWifi::set_field(&mut nvs, NvsKeys::STA_SSID, "fishingrodent")?;
+    // NvsWifi::set_field(&mut nvs, NvsKeys::STA_PASSWD, "iliketrains")?;
+    // NvsWifi::set_field(&mut nvs, NvsKeys::STA_AUTH_METHOD, "wpa2personal")?;
     // END TEMP SET
 
     let wifi_config = Configuration::Client(ClientConfiguration {
@@ -54,30 +60,41 @@ pub fn set_configuration(
     });
 
     wifi_netif.set_configuration(&wifi_config)?;
-
-    Ok(())
-}
-
-pub fn start(wifi_netif: Arc<Mutex<EspWifi<'static>>>) -> anyhow::Result<()> {
-    let mut lock = wifi_netif.lock().unwrap();
-
-    lock.start()?;
+    log::warn!("Wifi configuration set!");
 
     Ok(())
 }
 
 pub fn connect(wifi_netif: Arc<Mutex<EspWifi<'static>>>) -> anyhow::Result<()> {
-    let mut lock = wifi_netif.lock().unwrap();
+    log::warn!("Connecting to AP!");
+    let mut wifi = wifi_netif.lock().unwrap();
 
-    lock.connect()?;
+    if !wifi.is_started()? {
+        wifi.start()?;
+    }
+
+    if wifi.is_connected()? {
+        return Ok(());
+    }
+
+    wifi.connect()?;
 
     Ok(())
 }
 
 pub fn disconnect(wifi_netif: Arc<Mutex<EspWifi<'static>>>) -> anyhow::Result<()> {
-    let mut lock = wifi_netif.lock().unwrap();
+    log::warn!("Disconnecting from AP!");
+    let mut wifi = wifi_netif.lock().unwrap();
 
-    lock.disconnect()?;
+    if !wifi.is_started()? {
+        wifi.start()?;
+    }
+
+    if !wifi.is_connected()? {
+        return Ok(());
+    }
+
+    wifi.disconnect()?;
 
     Ok(())
 }

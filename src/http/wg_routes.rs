@@ -1,11 +1,13 @@
-use crate::utils::nvs::{NvsKeys, NvsWireguard};
-use crate::wireguard;
+use std::sync::{Arc, Mutex};
+
 use anyhow::Error;
 use esp_idf_hal::io::Write;
 use esp_idf_svc::http::server::{EspHttpServer, Method};
 use esp_idf_svc::nvs::{EspNvs, NvsDefault};
 use esp_idf_svc::wifi::EspWifi;
-use std::sync::{Arc, Mutex};
+
+use crate::utils::nvs::{NvsKeys, NvsWireguard};
+use crate::wireguard;
 
 pub fn set_routes(
     http_server: &mut EspHttpServer<'static>,
@@ -46,7 +48,6 @@ pub fn set_routes(
         drop(nvs);
 
         wireguard::sync_sntp(Arc::clone(&wifi_start_wg))?;
-
         wireguard::start_wg_tunnel(Arc::clone(&nvs_start_wg))?;
 
         let connection = request.connection();

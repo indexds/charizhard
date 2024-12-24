@@ -1,7 +1,8 @@
-use heapless::String;
-use serde::Deserialize;
 use std::ffi::CString;
 use std::fmt;
+
+use heapless::String;
+use serde::Deserialize;
 
 #[derive(Debug, Deserialize, Default)]
 pub struct HeaplessString<const N: usize>(pub String<N>);
