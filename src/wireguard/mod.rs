@@ -91,19 +91,18 @@ pub fn start_wg_tunnel(nvs: Arc<Mutex<EspNvs<NvsDefault>>>) -> anyhow::Result<()
             match esp!(esp_wireguardif_peer_is_up(ctx)) {
                 Ok(_) => {
                     log::info!("Peer is up!");
-                    break
-                },
+                    break;
+                }
                 Err(_) => log::warn!("Peer is down.."),
             }
         }
 
         log::info!("Setting default gateway..");
-        
+
         esp!(esp_netif_tcpip_exec(
             Some(wg_set_default_wrapper),
             ctx as *mut core::ffi::c_void
         ))?;
-        
 
         let mut global_ctx = WG_CTX.lock().unwrap();
         *global_ctx = Some(crate::wireguard::ctx::WireguardCtx::new(ctx));
@@ -127,10 +126,11 @@ pub fn end_wg_tunnel() -> anyhow::Result<()> {
 
     unsafe {
         log::info!("Disconnecting from peer..");
+
         esp!(esp_wireguard_disconnect(ctx))?;
-        log::info!("Disconnected.");
 
         *global_ctx = None;
     }
+
     Ok(())
 }
