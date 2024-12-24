@@ -1,7 +1,7 @@
 [package]
 name = "charizhard"
 version = "0.1.0"
-authors = ["_index indexd@pm.me"]
+authors = ["indexds"]
 edition = "2021"
 resolver = "2"
 rust-version = "1.81"
@@ -18,7 +18,7 @@ debug = true    # Symbols are nice and they don't increase the size on Flash
 opt-level = "z"
 
 [patch.crates-io]
-esp-idf-svc = { git = "https://github.com/esp-rs/esp-idf-svc", branch = "master" }
+esp-idf-svc = { git = "https://github.com/indexds/esp-idf-svc", branch = "master" }
 esp-idf-sys = { git = "https://github.com/esp-rs/esp-idf-sys", branch = "master" }
 esp-idf-hal = { git = "https://github.com/esp-rs/esp-idf-hal", branch = "master" }
 embedded-svc = { git = "https://github.com/esp-rs/embedded-svc", branch = "master" }
@@ -44,8 +44,8 @@ esp_idf_sdkconfig="sdkconfig"
 
 [dependencies]
 log = { version = "0.4", default-features = false }
-esp-idf-svc = { version = "0.49", default-features = false, features = ["alloc", "std"] }
-esp-idf-hal = { version = "0.44" }
+esp-idf-svc = "0.49"
+esp-idf-hal = "0.44"
 embedded-hal = "1.0"
 embedded-svc = "0.28"
 heapless = { version = "0.8", default-features = false }
