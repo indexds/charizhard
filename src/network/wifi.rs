@@ -3,14 +3,6 @@ use std::sync::{Arc, Mutex};
 
 use esp_idf_svc::eventloop::EspSystemEventLoop;
 use esp_idf_svc::hal::modem::Modem;
-// use esp_idf_svc::ipv4::{
-//     ClientConfiguration as IpClientConfiguration,
-//     ClientSettings as IpClientSettings,
-//     Configuration as IpConfiguration,
-//     Ipv4Addr,
-//     Mask,
-//     Subnet,
-// };
 use esp_idf_svc::netif::{EspNetif, NetifConfiguration, NetifStack};
 use esp_idf_svc::nvs::{EspDefaultNvsPartition, EspNvs, NvsDefault};
 use esp_idf_svc::wifi::{AuthMethod, ClientConfiguration, Configuration, EspWifi, WifiDriver};
@@ -22,7 +14,8 @@ pub fn init_netif(
     sysloop: EspSystemEventLoop,
     nvs: EspDefaultNvsPartition,
 ) -> anyhow::Result<Arc<Mutex<EspWifi<'static>>>> {
-    log::warn!("Installing wifi netif...");
+    log::info!("Installing wifi netif...");
+
     let wifi_driver = WifiDriver::new(modem, sysloop.clone(), Some(nvs.clone()))?;
 
     let wifi_netif = EspWifi::wrap_all(
@@ -33,7 +26,8 @@ pub fn init_netif(
         })?,
     )?;
 
-    log::warn!("Wifi netif install success!");
+    log::info!("Installed wifi netif!");
+
     Ok(Arc::new(Mutex::new(wifi_netif)))
 }
 
@@ -41,7 +35,7 @@ pub fn set_configuration(
     nvs_config: Arc<Mutex<EspNvs<NvsDefault>>>,
     wifi_netif: Arc<Mutex<EspWifi<'static>>>,
 ) -> anyhow::Result<()> {
-    log::warn!("Setting wifi configuration...");
+    log::info!("Setting wifi configuration...");
 
     let mut wifi_netif = wifi_netif.lock().unwrap();
     let nvs = nvs_config.lock().unwrap();
@@ -60,13 +54,15 @@ pub fn set_configuration(
     });
 
     wifi_netif.set_configuration(&wifi_config)?;
-    log::warn!("Wifi configuration set!");
+
+    log::info!("Wifi configuration set!");
 
     Ok(())
 }
 
 pub fn connect(wifi_netif: Arc<Mutex<EspWifi<'static>>>) -> anyhow::Result<()> {
-    log::warn!("Connecting to AP!");
+    log::info!("Connecting to access point..");
+
     let mut wifi = wifi_netif.lock().unwrap();
 
     if !wifi.is_started()? {
@@ -83,7 +79,8 @@ pub fn connect(wifi_netif: Arc<Mutex<EspWifi<'static>>>) -> anyhow::Result<()> {
 }
 
 pub fn disconnect(wifi_netif: Arc<Mutex<EspWifi<'static>>>) -> anyhow::Result<()> {
-    log::warn!("Disconnecting from AP!");
+    log::warn!("Disconnecting from access point..");
+
     let mut wifi = wifi_netif.lock().unwrap();
 
     if !wifi.is_started()? {
