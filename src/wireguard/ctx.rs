@@ -1,5 +1,6 @@
-use crate::wireguard::wireguard_ctx_t;
 use std::sync::{Arc, Mutex};
+
+use crate::wireguard::wireguard_ctx_t;
 
 pub struct WireguardCtx(*mut wireguard_ctx_t);
 
