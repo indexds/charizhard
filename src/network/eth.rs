@@ -95,18 +95,3 @@ fn mac2str(mac: [u8; 6]) -> String {
         mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]
     )
 }
-
-// EspNetif::new_with_conf(&NetifConfiguration {
-//     ip_configuration:
-// Some(IpConfiguration::Client(IpClientConfiguration::Fixed(IpClientSettings {
-//         ip: Ipv4Addr::new(192, 168, 1, 100),
-//         subnet: Subnet {
-//             gateway: Ipv4Addr::new(0, 0, 0, 0),
-//             mask: Mask(24),
-//         },
-//         dns: Some(Ipv4Addr::new(1, 1, 1, 1)),
-//         secondary_dns: Some(Ipv4Addr::new(1, 0, 0, 1)),
-//     }))),
-//     stack: NetifStack::Eth,
-//     ..NetifConfiguration::eth_default_client()
-// })?,
