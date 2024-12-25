@@ -6,11 +6,10 @@ use esp_idf_svc::hal::gpio;
 use esp_idf_svc::hal::gpio::Pins;
 use esp_idf_svc::hal::mac::MAC;
 use esp_idf_svc::ipv4::{
-    ClientConfiguration as IpClientConfiguration,
-    ClientSettings as IpClientSettings,
     Configuration as IpConfiguration,
     Ipv4Addr,
     Mask,
+    RouterConfiguration as IpRouterConfiguration,
     Subnet,
 };
 use esp_idf_svc::netif::{EspNetif, NetifConfiguration, NetifStack};
@@ -68,25 +67,23 @@ pub fn install_netif(eth_driver: EthDriver<'static, RmiiEth>) -> anyhow::Result<
     let mut eth_netif = EspEth::wrap_all(
         eth_driver,
         EspNetif::new_with_conf(&NetifConfiguration {
-            ip_configuration: Some(IpConfiguration::Client(IpClientConfiguration::Fixed(IpClientSettings {
-                ip: Ipv4Addr::new(192, 168, 1, 100),
+            ip_configuration: Some(IpConfiguration::Router(IpRouterConfiguration {
                 subnet: Subnet {
-                    gateway: Ipv4Addr::new(192, 168, 1, 200),
-                    mask: Mask(24),
+                    gateway: Ipv4Addr::new(192, 168, 1, 1),
+                    mask: Mask(30),
                 },
-                dns: Some(Ipv4Addr::new(1, 1, 1, 1)),
-                secondary_dns: Some(Ipv4Addr::new(1, 0, 0, 1)),
-            }))),
+                dhcp_enabled: true,
+                dns: None,
+                secondary_dns: None,
+            })),
             stack: NetifStack::Eth,
-            ..NetifConfiguration::eth_default_client()
+            ..NetifConfiguration::eth_default_router()
         })?,
     )?;
 
     eth_netif.start()?;
 
     log::warn!("Eth netif install success!");
-
-    log::info!("NETIF IP INFO: {:#?}", eth_netif.netif().get_ip_info()?);
 
     Ok(Arc::new(Mutex::new(eth_netif)))
 }
@@ -98,3 +95,18 @@ fn mac2str(mac: [u8; 6]) -> String {
         mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]
     )
 }
+
+// EspNetif::new_with_conf(&NetifConfiguration {
+//     ip_configuration:
+// Some(IpConfiguration::Client(IpClientConfiguration::Fixed(IpClientSettings {
+//         ip: Ipv4Addr::new(192, 168, 1, 100),
+//         subnet: Subnet {
+//             gateway: Ipv4Addr::new(0, 0, 0, 0),
+//             mask: Mask(24),
+//         },
+//         dns: Some(Ipv4Addr::new(1, 1, 1, 1)),
+//         secondary_dns: Some(Ipv4Addr::new(1, 0, 0, 1)),
+//     }))),
+//     stack: NetifStack::Eth,
+//     ..NetifConfiguration::eth_default_client()
+// })?,
