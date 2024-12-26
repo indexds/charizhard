@@ -1,7 +1,6 @@
 use std::sync::{Arc, Mutex};
 
 use anyhow::Error;
-use esp_idf_hal::io::Write;
 use esp_idf_svc::http::server::{Configuration as HttpServerConfig, EspHttpServer, Method};
 use esp_idf_svc::mdns::EspMdns;
 use esp_idf_svc::nvs::{EspNvs, NvsDefault};
@@ -48,13 +47,6 @@ pub fn start_http_server(
 
     let mut mdns = EspMdns::take()?;
     mdns.set_hostname("charizhard")?;
-    mdns.add_service(
-        Some("charizhard"), // instance_name
-        "_http",            // service_type
-        "_tcp",             // proto
-        80,                 // port
-        &[],                // txt
-    )?;
 
     Ok((http_server, mdns))
 }

@@ -1,10 +1,9 @@
 use std::ffi::CString;
-use std::fmt;
 
 use heapless::String;
 use serde::Deserialize;
 
-#[derive(Debug, Deserialize, Default)]
+#[derive(Deserialize, Default)]
 pub struct HeaplessString<const N: usize>(pub String<N>);
 
 impl<const N: usize> HeaplessString<N> {
@@ -26,54 +25,18 @@ impl<const N: usize> HeaplessString<N> {
         Ok(())
     }
 
-    pub fn from_utf8(s: &[u8]) -> anyhow::Result<Self> {
-        let mut heapless_string = HeaplessString::<N>::new();
-
-        _ = heapless_string.0.push_str(core::str::from_utf8(s)?);
-
-        Ok(heapless_string)
-    }
-
-    pub fn from_str(s: &str) -> Self {
-        let mut heapless_string = HeaplessString::new();
-
-        _ = heapless_string.push_str(s);
-
-        heapless_string
-    }
-
     pub fn as_str(&self) -> &str {
         self.0.as_str()
-    }
-
-    pub fn is_empty(&self) -> bool {
-        self.0.is_empty()
     }
 
     pub fn chars(&self) -> std::str::Chars<'_> {
         self.0.chars()
     }
 
-    pub fn trim(&self) -> anyhow::Result<HeaplessString<N>> {
-        let trimmed = self.0.trim();
-
-        let mut heapless_string = HeaplessString::new();
-
-        heapless_string.push_str(trimmed)?;
-
-        Ok(heapless_string)
-    }
-
     pub fn clean_string(&self) -> HeaplessString<N> {
         self.chars()
             .filter(|&c| c.is_ascii() && (c.is_ascii_graphic() || c.is_ascii_whitespace()))
             .collect()
-    }
-}
-
-impl<const N: usize> fmt::Display for HeaplessString<N> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
-        write!(f, "{}", self.0.as_str())
     }
 }
 
@@ -92,28 +55,6 @@ impl<const N: usize> FromIterator<char> for HeaplessString<N> {
         }
 
         heapless_string
-    }
-}
-
-impl<const N: usize> TryInto<HeaplessString<N>> for &str {
-    type Error = anyhow::Error;
-
-    fn try_into(self) -> anyhow::Result<HeaplessString<N>> {
-        let mut heapless_string = HeaplessString::<N>::new();
-        heapless_string.push_str(self)?;
-
-        Ok(heapless_string)
-    }
-}
-
-impl<const N: usize> TryInto<HeaplessString<N>> for heapless::String<N> {
-    type Error = anyhow::Error;
-
-    fn try_into(self) -> anyhow::Result<HeaplessString<N>> {
-        let mut heapless_string = HeaplessString::<N>::new();
-        heapless_string.push_str(&self)?;
-
-        Ok(heapless_string)
     }
 }
 

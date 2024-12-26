@@ -74,7 +74,7 @@ pub fn index_html(nvs: &NvsWireguard) -> anyhow::Result<String> {
         "###,
         nvs.wg_addr.clean_string().as_str(),
         nvs.wg_port.clean_string().as_str(),
-        nvs.wg_client_priv_key.clean_string().as_str(),
-        nvs.wg_server_pub_key.clean_string().as_str(),
+        nvs.wg_cli_pri.clean_string().as_str(),
+        nvs.wg_serv_pub.clean_string().as_str(),
     ))
 }

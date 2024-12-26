@@ -32,45 +32,41 @@ pub fn init_netif(
 }
 
 pub fn set_configuration(
-    nvs_config: Arc<Mutex<EspNvs<NvsDefault>>>,
-    wifi_netif: Arc<Mutex<EspWifi<'static>>>,
+    nvs: Arc<Mutex<EspNvs<NvsDefault>>>,
+    wifi: Arc<Mutex<EspWifi<'static>>>,
 ) -> anyhow::Result<()> {
     log::info!("Setting wifi configuration...");
 
-    let mut wifi_netif = wifi_netif.lock().unwrap();
-    let nvs = nvs_config.lock().unwrap();
-
-    // TEMP SET
-    // NvsWifi::set_field(&mut nvs, NvsKeys::STA_SSID, "fishingrodent")?;
-    // NvsWifi::set_field(&mut nvs, NvsKeys::STA_PASSWD, "iliketrains")?;
-    // NvsWifi::set_field(&mut nvs, NvsKeys::STA_AUTH_METHOD, "wpa2personal")?;
-    // END TEMP SET
+    let mut wifi = wifi.lock().unwrap();
+    let nvs = nvs.lock().unwrap();
 
     let wifi_config = Configuration::Client(ClientConfiguration {
         ssid: NvsWifi::get_field::<32>(&nvs, NvsKeys::STA_SSID)?,
         password: NvsWifi::get_field::<64>(&nvs, NvsKeys::STA_PASSWD)?,
-        auth_method: AuthMethod::from_str(NvsWifi::get_field::<32>(&nvs, NvsKeys::STA_AUTH_METHOD)?.as_str())?,
+        auth_method: AuthMethod::from_str(NvsWifi::get_field::<32>(&nvs, NvsKeys::STA_AUTH)?.as_str())?,
         ..Default::default()
     });
 
-    wifi_netif.set_configuration(&wifi_config)?;
+    wifi.set_configuration(&wifi_config)?;
 
     log::info!("Wifi configuration set!");
 
     Ok(())
 }
 
-pub fn connect(wifi_netif: Arc<Mutex<EspWifi<'static>>>) -> anyhow::Result<()> {
+pub fn connect(wifi: Arc<Mutex<EspWifi<'static>>>) -> anyhow::Result<()> {
     log::info!("Connecting to access point..");
 
-    let mut wifi = wifi_netif.lock().unwrap();
+    let mut wifi = wifi.lock().unwrap();
 
     if !wifi.is_started()? {
+        log::info!("Starting wifi..");
         wifi.start()?;
     }
 
     if wifi.is_connected()? {
-        return Ok(());
+        log::error!("Already connected to an access point!");
+        return Err(anyhow::anyhow!("Already connected to an access point!"));
     }
 
     wifi.connect()?;
@@ -78,13 +74,14 @@ pub fn connect(wifi_netif: Arc<Mutex<EspWifi<'static>>>) -> anyhow::Result<()> {
     Ok(())
 }
 
-pub fn disconnect(wifi_netif: Arc<Mutex<EspWifi<'static>>>) -> anyhow::Result<()> {
-    log::warn!("Disconnecting from access point..");
+pub fn disconnect(wifi: Arc<Mutex<EspWifi<'static>>>) -> anyhow::Result<()> {
+    log::info!("Disconnecting from access point..");
 
-    let mut wifi = wifi_netif.lock().unwrap();
+    let mut wifi = wifi.lock().unwrap();
 
     if !wifi.is_started()? {
         wifi.start()?;
+        return Ok(());
     }
 
     if !wifi.is_connected()? {

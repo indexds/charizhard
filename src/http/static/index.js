@@ -37,7 +37,7 @@ document.getElementById('config').addEventListener('submit', function(event) {
     // Validate WireGuard Address
     const address = document.getElementById('address').value;
     if (address && !/^(\d{1,3}\.){3}\d{1,3}$/.test(address)) {
-        setError('address-error', "Must be a valid CIDR address.");
+        setError('address-error', "Must be a valid IP address.");
     } else {
         clearError('address-error');
     }

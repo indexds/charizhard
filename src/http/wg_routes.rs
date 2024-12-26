@@ -1,7 +1,6 @@
 use std::sync::{Arc, Mutex};
 
 use anyhow::Error;
-use esp_idf_hal::io::Write;
 use esp_idf_svc::http::server::{EspHttpServer, Method};
 use esp_idf_svc::nvs::{EspNvs, NvsDefault};
 use esp_idf_svc::wifi::EspWifi;
@@ -17,6 +16,13 @@ pub fn set_routes(
     let nvs_start_wg = Arc::clone(&nvs);
     let wifi_start_wg = Arc::clone(&wifi);
     http_server.fn_handler("/connect-wg", Method::Post, move |mut request| {
+        let wifi = wifi_start_wg.lock().unwrap();
+        if !wifi.is_connected()? {
+            log::error!("Wifi not connected!");
+            return Err(anyhow::anyhow!("Wifi not connected!"));
+        }
+        drop(wifi);
+
         let mut nvs = nvs_start_wg.lock().unwrap();
         let mut body = Vec::new();
         let mut buffer = [0u8; 128];
@@ -30,23 +36,17 @@ pub fn set_routes(
         }
 
         let form_data = String::from_utf8(body)?;
-        let wg_config: NvsWireguard = serde_urlencoded::from_str(form_data.as_str())?;
+        let wg_conf: NvsWireguard = serde_urlencoded::from_str(form_data.as_str())?;
 
-        NvsWireguard::set_field(&mut nvs, NvsKeys::WG_ADDR, wg_config.wg_addr.clean_string().as_str())?;
-        NvsWireguard::set_field(&mut nvs, NvsKeys::WG_PORT, wg_config.wg_port.clean_string().as_str())?;
-        NvsWireguard::set_field(
-            &mut nvs,
-            NvsKeys::WG_CLIENT_PRIV_KEY,
-            wg_config.wg_client_priv_key.clean_string().as_str(),
-        )?;
-        NvsWireguard::set_field(
-            &mut nvs,
-            NvsKeys::WG_SERVER_PUB_KEY,
-            wg_config.wg_server_pub_key.clean_string().as_str(),
-        )?;
+        NvsWireguard::set_field(&mut nvs, NvsKeys::WG_ADDR, wg_conf.wg_addr.clean_string().as_str())?;
+        NvsWireguard::set_field(&mut nvs, NvsKeys::WG_PORT, wg_conf.wg_port.clean_string().as_str())?;
+        NvsWireguard::set_field(&mut nvs, NvsKeys::WG_CLI_PRI, wg_conf.wg_cli_pri.clean_string().as_str())?;
+        NvsWireguard::set_field(&mut nvs, NvsKeys::WG_SERV_PUB, wg_conf.wg_serv_pub.clean_string().as_str())?;
 
         drop(nvs);
 
+        // TODO! async
+        // TODO! cant connect without first connecting to wifi
         wireguard::sync_sntp(Arc::clone(&wifi_start_wg))?;
         wireguard::start_wg_tunnel(Arc::clone(&nvs_start_wg))?;
 

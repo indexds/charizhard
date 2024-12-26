@@ -23,13 +23,11 @@ fn main() -> anyhow::Result<()> {
     let nvs_config = Arc::new(Mutex::new(EspNvs::new(nvs.clone(), "config", true)?));
 
     let wifi_netif = wifi::init_netif(peripherals.modem, sysloop.clone(), nvs.clone())?;
-
-    let eth_driver = eth::init_driver(peripherals.pins, peripherals.mac, sysloop.clone())?;
-    let _eth_netif = eth::install_netif(eth_driver)?;
+    let _eth_netif = eth::init_netif(peripherals.pins, peripherals.mac, sysloop.clone())?;
 
     let (_http, _mdns) = http::start_http_server(Arc::clone(&nvs_config), Arc::clone(&wifi_netif))?;
-    // core::mem::forget
-    std::thread::park();
 
+    std::thread::park();
+    
     Ok(())
 }

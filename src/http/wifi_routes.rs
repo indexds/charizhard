@@ -1,7 +1,7 @@
 use std::sync::{Arc, Mutex};
+use std::thread;
 
 use anyhow::Error;
-use esp_idf_hal::io::Write;
 use esp_idf_svc::http::server::{EspHttpServer, Method};
 use esp_idf_svc::nvs::{EspNvs, NvsDefault};
 use esp_idf_svc::wifi::{AuthMethod, EspWifi};
@@ -14,16 +14,19 @@ pub fn set_routes(
     nvs: Arc<Mutex<EspNvs<NvsDefault>>>,
     wifi: Arc<Mutex<EspWifi<'static>>>,
 ) -> anyhow::Result<()> {
-    let wifi_disconnect = Arc::clone(&wifi);
-    http_server.fn_handler("/disconnect-wifi", Method::Get, move |mut request| {
-        let connection = request.connection();
+    
+    http_server.fn_handler("/disconnect-wifi", Method::Get, {
+        let wifi_disconnect = Arc::clone(&wifi);
+        move |mut request| {
 
         wifi::disconnect(Arc::clone(&wifi_disconnect))?;
+  
+        let connection = request.connection();
 
         connection.initiate_response(204, Some("OK"), &[("Content-Type", "text/html")])?;
 
         Ok::<(), Error>(())
-    })?;
+    }})?;
 
     let nvs_connect = Arc::clone(&nvs);
     let wifi_connect = Arc::clone(&wifi);
@@ -41,21 +44,11 @@ pub fn set_routes(
         }
 
         let form_data = String::from_utf8(body)?;
-        let wifi_config: NvsWifi = serde_urlencoded::from_str(form_data.as_str())?;
+        let wifi_conf: NvsWifi = serde_urlencoded::from_str(form_data.as_str())?;
 
-        NvsWifi::set_field(&mut nvs_save, NvsKeys::STA_SSID, wifi_config.sta_ssid.clean_string().as_str())?;
-
-        NvsWifi::set_field(
-            &mut nvs_save,
-            NvsKeys::STA_PASSWD,
-            wifi_config.sta_passwd.clean_string().as_str(),
-        )?;
-
-        NvsWifi::set_field(
-            &mut nvs_save,
-            NvsKeys::STA_AUTH_METHOD,
-            wifi_config.sta_auth_method.clean_string().as_str(),
-        )?;
+        NvsWifi::set_field(&mut nvs_save, NvsKeys::STA_SSID, wifi_conf.sta_ssid.clean_string().as_str())?;
+        NvsWifi::set_field(&mut nvs_save, NvsKeys::STA_PASSWD, wifi_conf.sta_passwd.clean_string().as_str())?;
+        NvsWifi::set_field(&mut nvs_save, NvsKeys::STA_AUTH, wifi_conf.sta_auth.clean_string().as_str())?;
 
         drop(nvs_save);
 
@@ -77,11 +70,12 @@ pub fn set_routes(
             wifi.start()?;
         }
 
-        let mut scanned = wifi.scan_n::<10>()?.0.to_vec();
+        let mut scanned = wifi.scan()?;
 
         // Remove dups
         scanned.sort_by(|a, b| a.ssid.cmp(&b.ssid));
         scanned.dedup_by(|a, b| a.ssid == b.ssid);
+
         // Sort by desc sig strength (values are negative, with 0db max, -50db avg)
         scanned.sort_by(|a, b| b.signal_strength.cmp(&a.signal_strength));
 
@@ -158,7 +152,7 @@ pub fn set_routes(
 
         let mut response = request.into_ok_response()?;
 
-        response.write_all(html.as_bytes())?;
+        response.write(html.as_bytes())?;
 
         Ok::<(), Error>(())
     })?;

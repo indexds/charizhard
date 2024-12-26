@@ -1,5 +1,4 @@
 use anyhow::Error;
-use esp_idf_hal::io::Write;
 use esp_idf_svc::http::server::{EspHttpServer, Method};
 
 pub fn set_routes(http_server: &mut EspHttpServer<'static>) -> anyhow::Result<()> {

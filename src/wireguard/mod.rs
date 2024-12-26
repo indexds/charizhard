@@ -1,5 +1,6 @@
 use std::ffi::CString;
 use std::sync::{Arc, Mutex};
+use std::time::Duration;
 
 use ctx::WG_CTX;
 use esp_idf_svc::nvs::{EspNvs, NvsDefault};
@@ -55,16 +56,14 @@ pub fn start_wg_tunnel(nvs: Arc<Mutex<EspNvs<NvsDefault>>>) -> anyhow::Result<()
 
     let nvs_wg = NvsWireguard::new(&nvs)?;
 
-    let endpoint = CString::new("34.66.61.218")?.into_raw();
-    // let endpoint =
-    // CString::new(nvs_wg.wg_addr.clean_string().as_str())?.into_raw();
+    let endpoint = CString::new(nvs_wg.wg_addr.clean_string().as_str())?.into_raw();
 
     unsafe {
         let config = &mut wireguard_config_t {
-            private_key: CString::new(nvs_wg.wg_client_priv_key.clean_string().as_str())?.into_raw(),
+            private_key: CString::new(nvs_wg.wg_cli_pri.clean_string().as_str())?.into_raw(),
             listen_port: 51820,
             fw_mark: 0,
-            public_key: CString::new(nvs_wg.wg_server_pub_key.clean_string().as_str())?.into_raw(),
+            public_key: CString::new(nvs_wg.wg_serv_pub.clean_string().as_str())?.into_raw(),
             preshared_key: core::ptr::null_mut(),
             allowed_ip: CString::new("0.0.0.0")?.into_raw(),
             allowed_ip_mask: CString::new("0.0.0.0")?.into_raw(),
@@ -93,7 +92,10 @@ pub fn start_wg_tunnel(nvs: Arc<Mutex<EspNvs<NvsDefault>>>) -> anyhow::Result<()
                     log::info!("Peer is up!");
                     break;
                 }
-                Err(_) => log::warn!("Peer is down.."),
+                Err(_) => {
+                    log::warn!("Peer is down..");
+                    std::thread::park_timeout(Duration::from_millis(1000));
+                }
             }
         }
 
@@ -134,3 +136,24 @@ pub fn end_wg_tunnel() -> anyhow::Result<()> {
 
     Ok(())
 }
+
+// use esp_idf_svc::eth::{EspEth, RmiiEth};
+// use esp_idf_svc::handle::RawHandle;
+// use esp_idf_svc::sys::wg::wireguard_ctx_t;
+
+// use crate::wireguard::ctx::WG_CTX;
+
+// pub fn _start_bridge(eth_netif: EspEth<'static, RmiiEth>) ->
+// anyhow::Result<()> {     let mut lock = WG_CTX.lock().unwrap();
+
+//     let ctx: *mut wireguard_ctx_t = lock.as_mut().unwrap().get_raw();
+
+//     unsafe {
+//         let _wg_netif = ctx.as_ref().unwrap().netif;
+//         let _eth_netif = eth_netif.netif().handle();
+
+//         // create callbacks between both netifs to bridge them?
+//     }
+
+//     Ok(())
+// }

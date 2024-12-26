@@ -1,9 +1,6 @@
-use std::sync::{Arc, Mutex};
-
 use esp_idf_svc::eth::{EspEth, EthDriver, RmiiClockConfig, RmiiEth, RmiiEthChipset};
 use esp_idf_svc::eventloop::EspSystemEventLoop;
-use esp_idf_svc::hal::gpio;
-use esp_idf_svc::hal::gpio::Pins;
+use esp_idf_svc::hal::gpio::{self, Pins};
 use esp_idf_svc::hal::mac::MAC;
 use esp_idf_svc::ipv4::{
     Configuration as IpConfiguration,
@@ -13,10 +10,11 @@ use esp_idf_svc::ipv4::{
     Subnet,
 };
 use esp_idf_svc::netif::{EspNetif, NetifConfiguration, NetifStack};
-use once_cell::sync::OnceCell;
 
-pub fn init_driver(pins: Pins, mac: MAC, sysloop: EspSystemEventLoop) -> anyhow::Result<EthDriver<'static, RmiiEth>> {
-    let mut eth_driver = EthDriver::new_rmii(
+pub fn init_netif(pins: Pins, mac: MAC, sysloop: EspSystemEventLoop) -> anyhow::Result<EspEth<'static, RmiiEth>> {
+    log::info!("Initializing eth driver..");
+
+    let eth_driver = EthDriver::new_rmii(
         mac,
         pins.gpio25, // RMII RDX0
         pins.gpio26, // RMII RDX1
@@ -35,34 +33,7 @@ pub fn init_driver(pins: Pins, mac: MAC, sysloop: EspSystemEventLoop) -> anyhow:
         sysloop,
     )?;
 
-    let client_mac: Arc<OnceCell<[u8; 6]>> = Arc::new(OnceCell::new());
-    let client_mac2 = Arc::clone(&client_mac);
-
-    eth_driver.set_rx_callback(move |frame| match frame.as_slice().get(6..12) {
-        Some(mac_bytes) => {
-            let src_mac = mac_bytes.try_into().unwrap();
-            if client_mac2.set(src_mac).is_ok() {
-                log::info!("Sniffed client MAC: {}", mac2str(src_mac));
-            }
-        }
-        None => unreachable!("Failed to read source MAC from Ethernet frame!"),
-    })?;
-
-    eth_driver.start()?;
-
-    log::info!("Waiting to sniff client MAC...");
-    let _client_mac = *client_mac.wait();
-
-    // stops the driver
-    eth_driver.set_rx_callback(|_| {})?;
-
-    eth_driver.set_promiscuous(true)?;
-
-    Ok(eth_driver)
-}
-
-pub fn install_netif(eth_driver: EthDriver<'static, RmiiEth>) -> anyhow::Result<Arc<Mutex<EspEth<'static, RmiiEth>>>> {
-    log::warn!("Installing eth netif...");
+    log::info!("Installing eth netif...");
 
     let mut eth_netif = EspEth::wrap_all(
         eth_driver,
@@ -77,21 +48,14 @@ pub fn install_netif(eth_driver: EthDriver<'static, RmiiEth>) -> anyhow::Result<
                 secondary_dns: None,
             })),
             stack: NetifStack::Eth,
+            flags: 0,
             ..NetifConfiguration::eth_default_router()
         })?,
     )?;
 
+    log::info!("Starting eth netif..");
+
     eth_netif.start()?;
 
-    log::warn!("Eth netif install success!");
-
-    Ok(Arc::new(Mutex::new(eth_netif)))
-}
-
-#[inline]
-fn mac2str(mac: [u8; 6]) -> String {
-    format!(
-        "{:02x}:{:02x}:{:02x}:{:02x}:{:02x}:{:02x}",
-        mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]
-    )
+    Ok(eth_netif)
 }
