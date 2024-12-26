@@ -17,32 +17,33 @@ pub fn start_http_server(
     nvs: Arc<Mutex<EspNvs<NvsDefault>>>,
     wifi: Arc<Mutex<EspWifi<'static>>>,
 ) -> anyhow::Result<(EspHttpServer<'static>, EspMdns)> {
-    let http_config = HttpServerConfig {
+    let mut http_server = EspHttpServer::new(&HttpServerConfig {
         http_port: 80,
         ..Default::default()
-    };
-
-    let mut http_server = EspHttpServer::new(&http_config)?;
+    })?;
 
     assets_routes::set_routes(&mut http_server)?;
     wifi_routes::set_routes(&mut http_server, Arc::clone(&nvs), Arc::clone(&wifi))?;
     wg_routes::set_routes(&mut http_server, Arc::clone(&nvs), Arc::clone(&wifi))?;
 
-    let nvs_root = Arc::clone(&nvs);
-    http_server.fn_handler("/", Method::Get, move |mut request| {
-        let nvs = nvs_root.lock().unwrap();
+    // Handler to get the main config page
+    http_server.fn_handler("/", Method::Get, {
+        let nvs = Arc::clone(&nvs);
+        move |mut request| {
+            let nvs = nvs.lock().unwrap();
 
-        let nvs_wg_conf = NvsWireguard::new(&nvs)?;
+            let wg_conf = NvsWireguard::new(&nvs)?;
 
-        let html = index::index_html(&nvs_wg_conf)?;
+            let html = index::index_html(&wg_conf)?;
 
-        let connection = request.connection();
+            let connection = request.connection();
 
-        connection.initiate_response(200, Some("OK"), &[("Content-Type", "text/html")])?;
+            connection.initiate_response(200, Some("OK"), &[("Content-Type", "text/html")])?;
 
-        connection.write(html.as_bytes())?;
+            connection.write(html.as_bytes())?;
 
-        Ok::<(), Error>(())
+            Ok::<(), Error>(())
+        }
     })?;
 
     let mut mdns = EspMdns::take()?;

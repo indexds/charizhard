@@ -13,50 +13,58 @@ pub fn set_routes(
     nvs: Arc<Mutex<EspNvs<NvsDefault>>>,
     wifi: Arc<Mutex<EspWifi<'static>>>,
 ) -> anyhow::Result<()> {
-    let nvs_start_wg = Arc::clone(&nvs);
-    let wifi_start_wg = Arc::clone(&wifi);
-    http_server.fn_handler("/connect-wg", Method::Post, move |mut request| {
-        let wifi = wifi_start_wg.lock().unwrap();
-        if !wifi.is_connected()? {
-            log::error!("Wifi not connected!");
-            return Err(anyhow::anyhow!("Wifi not connected!"));
-        }
-        drop(wifi);
+    // Handler to connect to a wireguard peer
+    http_server.fn_handler("/connect-wg", Method::Post, {
+        let nvs_set = Arc::clone(&nvs);
+        let wifi_check = Arc::clone(&wifi);
 
-        let mut nvs = nvs_start_wg.lock().unwrap();
-        let mut body = Vec::new();
-        let mut buffer = [0u8; 128];
+        let nvs_wg = Arc::clone(&nvs);
+        let wifi_sync = Arc::clone(&wifi);
 
-        loop {
-            match request.read(&mut buffer) {
-                Ok(0) => break,
-                Ok(n) => body.extend_from_slice(&buffer[..n]),
-                Err(e) => return Err(e.into()),
+        move |mut request| {
+            let wifi_check = wifi_check.lock().unwrap();
+
+            if !wifi_check.is_connected()? {
+                log::error!("Wifi not connected!");
+                return Err(anyhow::anyhow!("Wifi not connected!"));
             }
+
+            drop(wifi_check);
+
+            let mut body = Vec::new();
+            let mut buffer = [0u8; 128];
+
+            loop {
+                match request.read(&mut buffer) {
+                    Ok(0) => break,
+                    Ok(n) => body.extend_from_slice(&buffer[..n]),
+                    Err(e) => return Err(e.into()),
+                }
+            }
+
+            let wg_conf: NvsWireguard = serde_urlencoded::from_str(String::from_utf8(body)?.as_str())?;
+
+            let mut nvs_set = nvs_set.lock().unwrap();
+
+            NvsWireguard::set_field(&mut nvs_set, NvsKeys::WG_ADDR, wg_conf.wg_addr.clean_string().as_str())?;
+            NvsWireguard::set_field(&mut nvs_set, NvsKeys::WG_PORT, wg_conf.wg_port.clean_string().as_str())?;
+            NvsWireguard::set_field(&mut nvs_set, NvsKeys::WG_CLI_PRI, wg_conf.wg_cli_pri.clean_string().as_str())?;
+            NvsWireguard::set_field(&mut nvs_set, NvsKeys::WG_SERV_PUB, wg_conf.wg_serv_pub.clean_string().as_str())?;
+
+            drop(nvs_set);
+
+            wireguard::sync_sntp(Arc::clone(&wifi_sync))?;
+            wireguard::start_wg_tunnel(Arc::clone(&nvs_wg))?;
+
+            let connection = request.connection();
+
+            connection.initiate_response(204, Some("OK"), &[("Content-Type", "text/html")])?;
+
+            Ok::<(), Error>(())
         }
-
-        let form_data = String::from_utf8(body)?;
-        let wg_conf: NvsWireguard = serde_urlencoded::from_str(form_data.as_str())?;
-
-        NvsWireguard::set_field(&mut nvs, NvsKeys::WG_ADDR, wg_conf.wg_addr.clean_string().as_str())?;
-        NvsWireguard::set_field(&mut nvs, NvsKeys::WG_PORT, wg_conf.wg_port.clean_string().as_str())?;
-        NvsWireguard::set_field(&mut nvs, NvsKeys::WG_CLI_PRI, wg_conf.wg_cli_pri.clean_string().as_str())?;
-        NvsWireguard::set_field(&mut nvs, NvsKeys::WG_SERV_PUB, wg_conf.wg_serv_pub.clean_string().as_str())?;
-
-        drop(nvs);
-
-        // TODO! async
-        // TODO! cant connect without first connecting to wifi
-        wireguard::sync_sntp(Arc::clone(&wifi_start_wg))?;
-        wireguard::start_wg_tunnel(Arc::clone(&nvs_start_wg))?;
-
-        let connection = request.connection();
-
-        connection.initiate_response(204, Some("OK"), &[("Content-Type", "text/html")])?;
-
-        Ok::<(), Error>(())
     })?;
 
+    // Handler to disconnect from the wireguard peer
     http_server.fn_handler("/disconnect-wg", Method::Post, move |mut request| {
         wireguard::end_wg_tunnel()?;
 
@@ -67,6 +75,7 @@ pub fn set_routes(
         Ok::<(), Error>(())
     })?;
 
+    // Handler to get current wireguard status (connected/disconnected)
     http_server.fn_handler("/wg-status", Method::Get, move |mut request| {
         let connection = request.connection();
 
@@ -83,11 +92,11 @@ pub fn set_routes(
         html.push_str(
             format!(
                 r###"
-            <div class=svg-status-text-container>
-                <img id="{}-svg-wg" src="{}.svg">
-                <div id="wg-status-text">{}</div>
-            </div>                
-        "###,
+                <div class=svg-status-text-container>
+                    <img id="{}-svg-wg" src="{}.svg">
+                    <div id="wg-status-text">{}</div>
+                </div>                
+            "###,
                 svg_status, svg_status, connected_server,
             )
             .as_str(),

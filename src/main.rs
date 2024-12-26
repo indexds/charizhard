@@ -28,6 +28,6 @@ fn main() -> anyhow::Result<()> {
     let (_http, _mdns) = http::start_http_server(Arc::clone(&nvs_config), Arc::clone(&wifi_netif))?;
 
     std::thread::park();
-    
+
     Ok(())
 }
