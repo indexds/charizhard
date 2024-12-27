@@ -92,10 +92,7 @@ pub fn start_wg_tunnel(nvs: Arc<Mutex<EspNvs<NvsDefault>>>) -> anyhow::Result<()
                 // While we're not connected yet, this allows us to fail gracefully by
                 // deinitializing the entire stack to start from a clean slate
                 // next time we make an attempt to connect to a peer.
-                esp!(esp_netif_tcpip_exec(
-                    Some(wg_disconnect_wrapper),
-                    ctx as *mut core::ffi::c_void
-                ))?;
+                esp!(esp_netif_tcpip_exec(Some(wg_disconnect_wrapper), ctx as *mut core::ffi::c_void))?;
 
                 return Err(anyhow::anyhow!("Failed to connect to peer, cleaning up."));
             }
@@ -146,10 +143,7 @@ pub fn end_wg_tunnel() -> anyhow::Result<()> {
     unsafe {
         log::info!("Disconnecting from peer..");
 
-        esp!(esp_netif_tcpip_exec(
-            Some(wg_disconnect_wrapper),
-            ctx as *mut core::ffi::c_void
-        ))?;
+        esp!(esp_netif_tcpip_exec(Some(wg_disconnect_wrapper), ctx as *mut core::ffi::c_void))?;
 
         *global_ctx = None;
     }
