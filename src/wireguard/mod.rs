@@ -147,7 +147,7 @@ pub fn end_wg_tunnel() -> anyhow::Result<()> {
         return Err(anyhow::anyhow!("Failed to disconnect from peer!"));
     }
 
-    let ctx = global_ctx.as_mut().unwrap().0 as *mut wireguard_ctx_t;
+    let ctx = global_ctx.as_mut().unwrap().0;
 
     unsafe {
         log::info!("Disconnecting from peer..");

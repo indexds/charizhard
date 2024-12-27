@@ -40,7 +40,7 @@ pub fn init_netif(pins: Pins, mac: MAC, sysloop: EspSystemEventLoop) -> anyhow::
         EspNetif::new_with_conf(&NetifConfiguration {
             ip_configuration: Some(IpConfiguration::Router(IpRouterConfiguration {
                 subnet: Subnet {
-                    gateway: Ipv4Addr::new(192, 168, 1, 1),
+                    gateway: Ipv4Addr::new(192, 168, 100, 1),
                     mask: Mask(30),
                 },
                 dhcp_enabled: true,
@@ -49,7 +49,8 @@ pub fn init_netif(pins: Pins, mac: MAC, sysloop: EspSystemEventLoop) -> anyhow::
             })),
             stack: NetifStack::Eth,
             flags: 0,
-            ..NetifConfiguration::eth_default_router()
+            route_priority: 50,
+            ..NetifConfiguration::eth_default_client()
         })?,
     )?;
 

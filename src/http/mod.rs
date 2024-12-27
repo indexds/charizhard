@@ -2,7 +2,6 @@ use std::sync::{Arc, Mutex};
 
 use anyhow::Error;
 use esp_idf_svc::http::server::{Configuration as HttpServerConfig, EspHttpServer, Method};
-use esp_idf_svc::mdns::EspMdns;
 use esp_idf_svc::nvs::{EspNvs, NvsDefault};
 use esp_idf_svc::wifi::EspWifi;
 
@@ -16,7 +15,7 @@ mod wifi_routes;
 pub fn start_http_server(
     nvs: Arc<Mutex<EspNvs<NvsDefault>>>,
     wifi: Arc<Mutex<EspWifi<'static>>>,
-) -> anyhow::Result<(EspHttpServer<'static>, EspMdns)> {
+) -> anyhow::Result<EspHttpServer<'static>> {
     let mut http_server = EspHttpServer::new(&HttpServerConfig {
         http_port: 80,
         ..Default::default()
@@ -44,10 +43,5 @@ pub fn start_http_server(
         }
     })?;
 
-    let mut mdns = EspMdns::take()?;
-
-    mdns.set_hostname("charizhard")?;
-    mdns.add_service(Some("charizhard"), "_http", "_tcp", 80, &[])?;
-
-    Ok((http_server, mdns))
+    Ok(http_server)
 }
