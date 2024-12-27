@@ -45,7 +45,9 @@ pub fn start_http_server(
     })?;
 
     let mut mdns = EspMdns::take()?;
+
     mdns.set_hostname("charizhard")?;
+    mdns.add_service(Some("charizhard"), "_http", "_tcp", 80, &[])?;
 
     Ok((http_server, mdns))
 }
