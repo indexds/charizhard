@@ -62,6 +62,7 @@ impl WgConfig {
     pub fn get_config(nvs: Arc<Mutex<EspNvs<NvsDefault>>>) -> anyhow::Result<Self> {
         let nvs = nvs.lock().unwrap();
 
+        //These cannot fail, so we don't care about the unwraps
         Ok(Self {
             address: HeaplessString(
                 WgConfig::get_key::<32>(&nvs, Self::ADDR).unwrap_or_else(|_| Self::DEFAULT_ADDR.try_into().unwrap()),

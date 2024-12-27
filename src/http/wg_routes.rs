@@ -57,7 +57,7 @@ pub fn set_routes(
                 _ = wireguard::sync_sntp(Arc::clone(&wifi));
                 _ = wireguard::start_wg_tunnel(Arc::clone(&nvs));
             });
-
+        
             let connection = request.connection();
 
             connection.initiate_response(204, Some("OK"), &[("Content-Type", "text/html")])?;
@@ -67,7 +67,7 @@ pub fn set_routes(
     })?;
 
     // Handler to disconnect from the wireguard peer
-    http_server.fn_handler("/disconnect-wg", Method::Post, move |mut request| {
+    http_server.fn_handler("/disconnect-wg", Method::Get, move |mut request| {
         thread::spawn(|| {
             _ = wireguard::end_wg_tunnel();
         });
@@ -80,7 +80,6 @@ pub fn set_routes(
     })?;
 
     // Handler to get current wireguard status (connected/disconnected)
-    // TODO! FIX THIS CALLBACK
     http_server.fn_handler("/wg-status", Method::Get, {
         let nvs = Arc::clone(&nvs);
 

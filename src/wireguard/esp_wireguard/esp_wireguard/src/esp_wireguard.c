@@ -324,8 +324,10 @@ esp_err_t esp_wireguard_disconnect(wireguard_ctx_t *ctx)
         ESP_LOGW(TAG, "wireguardif_remove_peer: peer_index: %" PRIu8 " err: %i", wireguard_peer_index, lwip_err);
     }
 
+    ESP_LOGI(TAG, "shutting down if");
     wireguard_peer_index = WIREGUARDIF_INVALID_INDEX;
     wireguardif_shutdown(ctx->netif);
+    ESP_LOGI(TAG, "removing netif");
     netif_remove(ctx->netif);
     wireguardif_fini(ctx->netif);
     netif_set_default(ctx->netif_default);
