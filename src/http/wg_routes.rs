@@ -1,4 +1,5 @@
 use std::sync::{Arc, Mutex};
+use std::thread;
 
 use anyhow::Error;
 use esp_idf_svc::http::server::{EspHttpServer, Method};
@@ -17,9 +18,6 @@ pub fn set_routes(
     http_server.fn_handler("/connect-wg", Method::Post, {
         let nvs_set = Arc::clone(&nvs);
         let wifi_check = Arc::clone(&wifi);
-
-        let nvs_wg = Arc::clone(&nvs);
-        let wifi_sync = Arc::clone(&wifi);
 
         move |mut request| {
             let wifi_check = wifi_check.lock().unwrap();
@@ -53,8 +51,13 @@ pub fn set_routes(
 
             drop(nvs_set);
 
-            wireguard::sync_sntp(Arc::clone(&wifi_sync))?;
-            wireguard::start_wg_tunnel(Arc::clone(&nvs_wg))?;
+            let wifi = Arc::clone(&wifi);
+            let nvs = Arc::clone(&nvs);
+
+            thread::spawn(move || {
+                _ = wireguard::sync_sntp(Arc::clone(&wifi));
+                _ = wireguard::start_wg_tunnel(Arc::clone(&nvs));
+            });
 
             let connection = request.connection();
 
@@ -66,7 +69,9 @@ pub fn set_routes(
 
     // Handler to disconnect from the wireguard peer
     http_server.fn_handler("/disconnect-wg", Method::Post, move |mut request| {
-        wireguard::end_wg_tunnel()?;
+        thread::spawn(|| {
+            _ = wireguard::end_wg_tunnel();
+        });
 
         let connection = request.connection();
 
@@ -76,6 +81,7 @@ pub fn set_routes(
     })?;
 
     // Handler to get current wireguard status (connected/disconnected)
+    // TODO! FIX THIS CALLBACK
     http_server.fn_handler("/wg-status", Method::Get, move |mut request| {
         let connection = request.connection();
 

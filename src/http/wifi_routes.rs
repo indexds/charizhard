@@ -1,4 +1,5 @@
 use std::sync::{Arc, Mutex};
+use std::thread;
 
 use anyhow::Error;
 use esp_idf_svc::http::server::{EspHttpServer, Method};
@@ -16,6 +17,7 @@ pub fn set_routes(
     // Handler to disconnect from wifi
     http_server.fn_handler("/disconnect-wifi", Method::Get, {
         let wifi = Arc::clone(&wifi);
+
         move |mut request| {
             wifi::disconnect(Arc::clone(&wifi))?;
 
@@ -29,10 +31,10 @@ pub fn set_routes(
 
     // Handler to connect to wifi
     http_server.fn_handler("/connect-wifi", Method::Post, {
-        let nvs = Arc::clone(&nvs);
+        let nvs_set = Arc::clone(&nvs);
         let wifi = Arc::clone(&wifi);
+
         move |mut request| {
-            let mut nvs_set = nvs.lock().unwrap();
             let mut body = Vec::new();
             let mut buffer = [0_u8; 128];
 
@@ -44,8 +46,9 @@ pub fn set_routes(
                 }
             }
 
-            let form_data = String::from_utf8(body)?;
-            let wifi_conf: NvsWifi = serde_urlencoded::from_str(form_data.as_str())?;
+            let wifi_conf: NvsWifi = serde_urlencoded::from_str(String::from_utf8(body)?.as_str())?;
+
+            let mut nvs_set = nvs_set.lock().unwrap();
 
             NvsWifi::set_field(&mut nvs_set, NvsKeys::STA_SSID, wifi_conf.sta_ssid.clean_string().as_str())?;
             NvsWifi::set_field(&mut nvs_set, NvsKeys::STA_PASSWD, wifi_conf.sta_passwd.clean_string().as_str())?;
@@ -53,9 +56,14 @@ pub fn set_routes(
 
             drop(nvs_set);
 
-            wifi::set_configuration(Arc::clone(&nvs), Arc::clone(&wifi))?;
-            wifi::connect(Arc::clone(&wifi))?;
+            
+            let nvs_thread = Arc::clone(&nvs);
+            let wifi = Arc::clone(&wifi);
 
+            thread::spawn(move || {
+                _ = wifi::set_configuration(Arc::clone(&nvs_thread), Arc::clone(&wifi));
+                _ = wifi::connect(Arc::clone(&wifi));
+            });
             let connection = request.connection();
 
             connection.initiate_response(204, Some("OK"), &[("Content-Type", "text/html")])?;
@@ -67,6 +75,7 @@ pub fn set_routes(
     // Handler to get available wifis
     http_server.fn_handler("/wifi", Method::Get, {
         let wifi = Arc::clone(&wifi);
+
         move |request| {
             let mut wifi = wifi.lock().unwrap();
 
@@ -165,6 +174,7 @@ pub fn set_routes(
     // Handler to get current wifi status (connected/disconnected)
     http_server.fn_handler("/wifi-status", Method::Get, {
         let wifi = Arc::clone(&wifi);
+
         move |mut request| {
             let wifi = wifi.lock().unwrap();
 
