@@ -57,7 +57,7 @@ pub fn set_routes(
                 _ = wireguard::sync_sntp(Arc::clone(&wifi));
                 _ = wireguard::start_wg_tunnel(Arc::clone(&nvs));
             });
-        
+
             let connection = request.connection();
 
             connection.initiate_response(204, Some("OK"), &[("Content-Type", "text/html")])?;
