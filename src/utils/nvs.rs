@@ -143,17 +143,20 @@ impl WifiConfig {
             sta_ssid: HeaplessString(
                 WifiConfig::get_key::<32>(&nvs, Self::STA_SSID)
                     .unwrap_or_else(|_| Self::DEFAULT_STA_SSID.try_into().unwrap()),
-            ),
+            )
+            .clean_string(),
 
             sta_passwd: HeaplessString(
                 WifiConfig::get_key::<64>(&nvs, Self::STA_PASSWD)
                     .unwrap_or_else(|_| Self::DEFAULT_STA_PASSWD.try_into().unwrap()),
-            ),
+            )
+            .clean_string(),
 
             sta_auth: HeaplessString(
                 WifiConfig::get_key::<32>(&nvs, Self::STA_AUTH)
                     .unwrap_or_else(|_| Self::DEFAULT_STA_AUTH.try_into().unwrap()),
-            ),
+            )
+            .clean_string(),
         })
     }
 }
