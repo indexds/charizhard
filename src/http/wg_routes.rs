@@ -89,44 +89,34 @@ pub fn set_routes(
 
             connection.initiate_response(200, Some("OK"), &[("Content-Type", "text/html")])?;
 
-            let mut html = String::new();
-
-            let ctx = WG_CTX.lock().unwrap();
-
             // If ctx is Some, then we returned from wireguard::start_wg_tunnel so we have
             // to be connected
-            let svg_status = match *ctx {
-                Some(_) => "connected",
-                None => "disconnected",
-            };
+            let ctx = WG_CTX.lock().unwrap();
+            let is_connected = (*ctx).is_some();
 
             let nvs = NvsWireguard::new(Arc::clone(&nvs))?;
 
-            let status = match *ctx {
-                Some(_) => nvs.address.as_str(),
-                None => "Disconnected",
+            let svg_status = if is_connected { "connected" } else { "disconnected" };
+            let status = if is_connected {
+                nvs.address.as_str()
+            } else {
+                "Disconnected"
             };
 
-            html.push_str(
-                format!(
-                    r###"
-                    <div class=svg-status-text-container>
-                        <img id="{}-svg-wg" src="{}.svg">
-                        <div id="wg-status-text">{}</div>
-                    </div>                
+            let html = format!(
+                r###"
+                <div class=svg-status-text-container>
+                    <img id="{svg_status}-svg-wg" src="{svg_status}.svg">
+                    <div id="wg-status-text">{status}</div>
+                </div>
+                {button}
                 "###,
-                    svg_status, svg_status, status,
-                )
-                .as_str(),
+                button = if is_connected {
+                    "<button id='disconnect-wg-button' onclick='disconnectWg()'>Disconnect</button>"
+                } else {
+                    ""
+                }
             );
-
-            if (*ctx).is_some() {
-                html.push_str(
-                    r###"
-                    <button id="disconnect-wg-button" onclick="disconnectWg()">Disconnect</button>
-                    "###,
-                );
-            };
 
             connection.write(html.as_bytes())?;
             Ok::<(), Error>(())
