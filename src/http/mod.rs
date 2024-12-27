@@ -30,9 +30,7 @@ pub fn start_http_server(
     http_server.fn_handler("/", Method::Get, {
         let nvs = Arc::clone(&nvs);
         move |mut request| {
-            let nvs = nvs.lock().unwrap();
-
-            let wg_conf = NvsWireguard::new(&nvs)?;
+            let wg_conf = NvsWireguard::new(Arc::clone(&nvs))?;
 
             let html = index::index_html(&wg_conf)?;
 

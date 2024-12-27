@@ -1,13 +1,12 @@
-use std::str::FromStr;
 use std::sync::{Arc, Mutex};
 
 use esp_idf_svc::eventloop::EspSystemEventLoop;
 use esp_idf_svc::hal::modem::Modem;
 use esp_idf_svc::netif::{EspNetif, NetifConfiguration, NetifStack};
 use esp_idf_svc::nvs::{EspDefaultNvsPartition, EspNvs, NvsDefault};
-use esp_idf_svc::wifi::{AuthMethod, ClientConfiguration, Configuration, EspWifi, WifiDriver};
+use esp_idf_svc::wifi::{ClientConfiguration, Configuration, EspWifi, WifiDriver};
 
-use crate::utils::nvs::{NvsKeys, NvsWifi};
+use crate::utils::nvs::NvsWifi;
 
 pub fn init_netif(
     modem: Modem,
@@ -38,12 +37,13 @@ pub fn set_configuration(
     log::info!("Setting wifi configuration...");
 
     let mut wifi = wifi.lock().unwrap();
-    let nvs = nvs.lock().unwrap();
+
+    let nvs = NvsWifi::new(Arc::clone(&nvs))?;
 
     let wifi_config = Configuration::Client(ClientConfiguration {
-        ssid: NvsWifi::get_field::<32>(&nvs, NvsKeys::STA_SSID)?,
-        password: NvsWifi::get_field::<64>(&nvs, NvsKeys::STA_PASSWD)?,
-        auth_method: AuthMethod::from_str(NvsWifi::get_field::<32>(&nvs, NvsKeys::STA_AUTH)?.as_str())?,
+        ssid: nvs.sta_ssid.0,
+        password: nvs.sta_passwd.0,
+        auth_method: nvs.sta_auth.as_str().try_into()?,
         ..Default::default()
     });
 

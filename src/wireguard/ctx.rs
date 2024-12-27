@@ -17,6 +17,7 @@ impl WireguardCtx {
     }
 }
 
+// Global hot potato that needs to never ever be dropped
 lazy_static::lazy_static!(
     pub static ref WG_CTX: Arc<Mutex<Option<WireguardCtx>>> = Arc::new(Mutex::new(None));
 );

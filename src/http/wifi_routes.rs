@@ -7,7 +7,7 @@ use esp_idf_svc::nvs::{EspNvs, NvsDefault};
 use esp_idf_svc::wifi::{AuthMethod, EspWifi};
 
 use crate::network::wifi;
-use crate::utils::nvs::{NvsKeys, NvsWifi};
+use crate::utils::nvs::NvsWifi;
 
 pub fn set_routes(
     http_server: &mut EspHttpServer<'static>,
@@ -31,7 +31,6 @@ pub fn set_routes(
 
     // Handler to connect to wifi
     http_server.fn_handler("/connect-wifi", Method::Post, {
-        let nvs_set = Arc::clone(&nvs);
         let wifi = Arc::clone(&wifi);
 
         move |mut request| {
@@ -48,13 +47,7 @@ pub fn set_routes(
 
             let wifi_conf: NvsWifi = serde_urlencoded::from_str(String::from_utf8(body)?.as_str())?;
 
-            let mut nvs_set = nvs_set.lock().unwrap();
-
-            NvsWifi::set_field(&mut nvs_set, NvsKeys::STA_SSID, wifi_conf.sta_ssid.clean_string().as_str())?;
-            NvsWifi::set_field(&mut nvs_set, NvsKeys::STA_PASSWD, wifi_conf.sta_passwd.clean_string().as_str())?;
-            NvsWifi::set_field(&mut nvs_set, NvsKeys::STA_AUTH, wifi_conf.sta_auth.clean_string().as_str())?;
-
-            drop(nvs_set);
+            NvsWifi::set_fields(Arc::clone(&nvs), wifi_conf)?;
 
             let nvs_thread = Arc::clone(&nvs);
             let wifi = Arc::clone(&wifi);

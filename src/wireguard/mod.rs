@@ -26,6 +26,7 @@ use esp_idf_svc::sys::wg::{
 const MAX_SNTP_RETRIES: u32 = 10;
 const MAX_WG_RETRIES: u32 = 10;
 
+// Wireguard needs time to be synced to UTC to not explode
 pub fn sync_sntp(wifi: Arc<Mutex<EspWifi<'static>>>) -> anyhow::Result<()> {
     let wifi = wifi.lock().unwrap();
 
@@ -53,23 +54,19 @@ pub fn sync_sntp(wifi: Arc<Mutex<EspWifi<'static>>>) -> anyhow::Result<()> {
 }
 
 pub fn start_wg_tunnel(nvs: Arc<Mutex<EspNvs<NvsDefault>>>) -> anyhow::Result<()> {
-    let nvs = nvs.lock().unwrap();
-
-    let nvs_wg = NvsWireguard::new(&nvs)?;
-
-    let endpoint = CString::new(nvs_wg.wg_addr.clean_string().as_str())?.into_raw();
+    let nvs = NvsWireguard::new(nvs)?;
 
     unsafe {
         let config = &mut wireguard_config_t {
-            private_key: CString::new(nvs_wg.wg_cli_pri.clean_string().as_str())?.into_raw(),
+            private_key: CString::new(nvs.client_private_key.clean_string().as_str())?.into_raw(),
             listen_port: 51820,
             fw_mark: 0,
-            public_key: CString::new(nvs_wg.wg_serv_pub.clean_string().as_str())?.into_raw(),
+            public_key: CString::new(nvs.server_public_key.clean_string().as_str())?.into_raw(),
             preshared_key: core::ptr::null_mut(),
             allowed_ip: CString::new("0.0.0.0")?.into_raw(),
             allowed_ip_mask: CString::new("0.0.0.0")?.into_raw(),
-            endpoint,
-            port: nvs_wg.wg_port.clean_string().as_str().parse()?,
+            endpoint: CString::new(nvs.address.clean_string().as_str())?.into_raw(),
+            port: nvs.port.clean_string().as_str().parse()?,
             persistent_keepalive: 20,
         } as *mut _;
 
@@ -85,6 +82,7 @@ pub fn start_wg_tunnel(nvs: Arc<Mutex<EspNvs<NvsDefault>>>) -> anyhow::Result<()
 
         log::info!("Connecting to peer..");
 
+        // Everything to do with ip shenanigans has to be executed in a tcpip context
         esp!(esp_netif_tcpip_exec(Some(wg_connect_wrapper), ctx as *mut core::ffi::c_void))?;
 
         for i in 0..=MAX_WG_RETRIES {

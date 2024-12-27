@@ -6,7 +6,7 @@ use esp_idf_svc::http::server::{EspHttpServer, Method};
 use esp_idf_svc::nvs::{EspNvs, NvsDefault};
 use esp_idf_svc::wifi::EspWifi;
 
-use crate::utils::nvs::{NvsKeys, NvsWireguard};
+use crate::utils::nvs::NvsWireguard;
 use crate::wireguard;
 use crate::wireguard::ctx::WG_CTX;
 
@@ -17,7 +17,6 @@ pub fn set_routes(
 ) -> anyhow::Result<()> {
     // Handler to connect to a wireguard peer
     http_server.fn_handler("/connect-wg", Method::Post, {
-        let nvs_set = Arc::clone(&nvs);
         let wifi_check = Arc::clone(&wifi);
 
         // This is so fucking stupid but we can't do otherwise
@@ -47,14 +46,7 @@ pub fn set_routes(
 
             let wg_conf: NvsWireguard = serde_urlencoded::from_str(String::from_utf8(body)?.as_str())?;
 
-            let mut nvs_set = nvs_set.lock().unwrap();
-
-            NvsWireguard::set_field(&mut nvs_set, NvsKeys::WG_ADDR, wg_conf.wg_addr.clean_string().as_str())?;
-            NvsWireguard::set_field(&mut nvs_set, NvsKeys::WG_PORT, wg_conf.wg_port.clean_string().as_str())?;
-            NvsWireguard::set_field(&mut nvs_set, NvsKeys::WG_CLI_PRI, wg_conf.wg_cli_pri.clean_string().as_str())?;
-            NvsWireguard::set_field(&mut nvs_set, NvsKeys::WG_SERV_PUB, wg_conf.wg_serv_pub.clean_string().as_str())?;
-
-            drop(nvs_set);
+            NvsWireguard::set_fields(Arc::clone(&nvs), wg_conf)?;
 
             // Yeah..
             let wifi = Arc::clone(&wifi);
@@ -107,11 +99,10 @@ pub fn set_routes(
                 None => "disconnected",
             };
 
-            let nvs = nvs.lock().unwrap();
-            let nvs = NvsWireguard::new(&nvs)?;
+            let nvs = NvsWireguard::new(Arc::clone(&nvs))?;
 
             let status = match *ctx {
-                Some(_) => nvs.wg_addr.as_str(),
+                Some(_) => nvs.address.as_str(),
                 None => "Disconnected",
             };
 
@@ -128,15 +119,12 @@ pub fn set_routes(
                 .as_str(),
             );
 
-            match *ctx {
-                Some(_) => {
-                    html.push_str(
-                        r###"
+            if (*ctx).is_some() {
+                html.push_str(
+                    r###"
                     <button id="disconnect-wg-button" onclick="disconnectWg()">Disconnect</button>
                     "###,
-                    );
-                }
-                None => {}
+                );
             };
 
             connection.write(html.as_bytes())?;
