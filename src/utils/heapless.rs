@@ -3,7 +3,7 @@ use std::ffi::CString;
 use heapless::String;
 use serde::Deserialize;
 
-//This wrapper is necessary to juggle wifi stuff
+// This wrapper is necessary to juggle wifi stuff
 #[derive(Deserialize, Default)]
 pub struct HeaplessString<const N: usize>(pub String<N>);
 

@@ -31,7 +31,7 @@ pub fn set_routes(
                 return Err(anyhow::anyhow!("Wifi not connected!"));
             }
 
-            //Necessary, we need to lock wifi later
+            // Necessary, we need to lock wifi later
             drop(wifi_check);
 
             let mut body = Vec::new();
