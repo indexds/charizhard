@@ -56,7 +56,6 @@ pub fn set_routes(
 
             drop(nvs_set);
 
-            
             let nvs_thread = Arc::clone(&nvs);
             let wifi = Arc::clone(&wifi);
 

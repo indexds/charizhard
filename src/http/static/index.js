@@ -12,8 +12,8 @@ document.addEventListener("DOMContentLoaded", function() {
     fetchWifiStatus();
     fetchWireguardStatus();
 
-    setInterval(fetchWifiStatus, 5000);
-    setInterval(fetchWireguardStatus, 5000);
+    setInterval(fetchWifiStatus, 2500);
+    setInterval(fetchWireguardStatus, 2500);
 });
 
 async function sleep(time) {
@@ -192,5 +192,19 @@ async function disconnectWifi() {
 
     } catch (error) {
         console.error("Failed to disconnect from wifi:", error);
+    }
+}
+
+async function disconnectWg() {
+    try {
+        const response = await fetch("/disconnect-wg");
+
+        if (!response.ok) {
+            console.error("Failed to disconnect from wireguard:", response.statusText);
+            return;
+        }
+
+    } catch (error) {
+        console.error("Failed to disconnect from wireguard:", error);
     }
 }

@@ -8,6 +8,7 @@ use esp_idf_svc::wifi::EspWifi;
 
 use crate::utils::nvs::{NvsKeys, NvsWireguard};
 use crate::wireguard;
+use crate::wireguard::ctx::WG_CTX;
 
 pub fn set_routes(
     http_server: &mut EspHttpServer<'static>,
@@ -18,6 +19,10 @@ pub fn set_routes(
     http_server.fn_handler("/connect-wg", Method::Post, {
         let nvs_set = Arc::clone(&nvs);
         let wifi_check = Arc::clone(&wifi);
+
+        // This is so fucking stupid but we can't do otherwise
+        let wifi = Arc::clone(&wifi);
+        let nvs = Arc::clone(&nvs);
 
         move |mut request| {
             let wifi_check = wifi_check.lock().unwrap();
@@ -51,6 +56,7 @@ pub fn set_routes(
 
             drop(nvs_set);
 
+            // Yeah..
             let wifi = Arc::clone(&wifi);
             let nvs = Arc::clone(&nvs);
 
@@ -82,34 +88,60 @@ pub fn set_routes(
 
     // Handler to get current wireguard status (connected/disconnected)
     // TODO! FIX THIS CALLBACK
-    http_server.fn_handler("/wg-status", Method::Get, move |mut request| {
-        let connection = request.connection();
+    http_server.fn_handler("/wg-status", Method::Get, {
+        let nvs = Arc::clone(&nvs);
 
-        connection.initiate_response(200, Some("OK"), &[("Content-Type", "text/html")])?;
+        move |mut request| {
+            let connection = request.connection();
 
-        let mut html = String::new();
-        let connected_server = "Disconnected"; // temp
+            connection.initiate_response(200, Some("OK"), &[("Content-Type", "text/html")])?;
 
-        let svg_status = match connected_server {
-            "Disconnected" => "disconnected",
-            _ => "connected",
-        };
+            let mut html = String::new();
 
-        html.push_str(
-            format!(
-                r###"
-                <div class=svg-status-text-container>
-                    <img id="{}-svg-wg" src="{}.svg">
-                    <div id="wg-status-text">{}</div>
-                </div>                
-            "###,
-                svg_status, svg_status, connected_server,
-            )
-            .as_str(),
-        );
+            let ctx = WG_CTX.lock().unwrap();
 
-        connection.write(html.as_bytes())?;
-        Ok::<(), Error>(())
+            // If ctx is Some, then we returned from wireguard::start_wg_tunnel so we have
+            // to be connected
+            let svg_status = match *ctx {
+                Some(_) => "connected",
+                None => "disconnected",
+            };
+
+            let nvs = nvs.lock().unwrap();
+            let nvs = NvsWireguard::new(&nvs)?;
+
+            let status = match *ctx {
+                Some(_) => nvs.wg_addr.as_str(),
+                None => "Disconnected",
+            };
+
+            html.push_str(
+                format!(
+                    r###"
+                    <div class=svg-status-text-container>
+                        <img id="{}-svg-wg" src="{}.svg">
+                        <div id="wg-status-text">{}</div>
+                    </div>                
+                "###,
+                    svg_status, svg_status, status,
+                )
+                .as_str(),
+            );
+
+            match *ctx {
+                Some(_) => {
+                    html.push_str(
+                        r###"
+                    <button id="disconnect-wg-button" onclick="disconnectWg()">Disconnect</button>
+                    "###,
+                    );
+                }
+                None => {}
+            };
+
+            connection.write(html.as_bytes())?;
+            Ok::<(), Error>(())
+        }
     })?;
 
     Ok(())
