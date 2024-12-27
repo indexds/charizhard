@@ -38,7 +38,7 @@ pub fn set_configuration(
 
     let mut wifi = wifi.lock().unwrap();
 
-    let config = WifiConfig::new(Arc::clone(&nvs))?;
+    let config = WifiConfig::get_config(Arc::clone(&nvs))?;
 
     let wifi_config = Configuration::Client(ClientConfiguration {
         ssid: config.sta_ssid.0,

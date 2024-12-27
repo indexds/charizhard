@@ -30,7 +30,7 @@ pub fn start_http_server(
     http_server.fn_handler("/", Method::Get, {
         let nvs = Arc::clone(&nvs);
         move |mut request| {
-            let wg_conf = WgConfig::new(Arc::clone(&nvs))?;
+            let wg_conf = WgConfig::get_config(Arc::clone(&nvs))?;
 
             let html = index::index_html(&wg_conf)?;
 

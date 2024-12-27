@@ -47,7 +47,7 @@ pub fn set_routes(
 
             let wifi_conf: WifiConfig = serde_urlencoded::from_str(String::from_utf8(body)?.as_str())?;
 
-            WifiConfig::set_fields(Arc::clone(&nvs), wifi_conf)?;
+            WifiConfig::set_config(Arc::clone(&nvs), wifi_conf)?;
 
             let nvs_thread = Arc::clone(&nvs);
             let wifi = Arc::clone(&wifi);

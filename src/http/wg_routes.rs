@@ -47,7 +47,7 @@ pub fn set_routes(
 
             let wg_conf: WgConfig = serde_urlencoded::from_str(String::from_utf8(body)?.as_str())?;
 
-            WgConfig::set_fields(Arc::clone(&nvs), wg_conf)?;
+            WgConfig::set_config(Arc::clone(&nvs), wg_conf)?;
 
             // Yeah..
             let wifi = Arc::clone(&wifi);
@@ -94,7 +94,7 @@ pub fn set_routes(
             let ctx = WG_CTX.lock().unwrap();
             let is_connected = (*ctx).is_some();
 
-            let nvs = WgConfig::new(Arc::clone(&nvs))?;
+            let nvs = WgConfig::get_config(Arc::clone(&nvs))?;
 
             let svg_status = if is_connected { "connected" } else { "disconnected" };
             let status = if is_connected {

@@ -54,7 +54,7 @@ pub fn sync_sntp(wifi: Arc<Mutex<EspWifi<'static>>>) -> anyhow::Result<()> {
 }
 
 pub fn start_wg_tunnel(nvs: Arc<Mutex<EspNvs<NvsDefault>>>) -> anyhow::Result<()> {
-    let wg_conf = WgConfig::new(nvs)?;
+    let wg_conf = WgConfig::get_config(nvs)?;
 
     unsafe {
         let config = &mut wireguard_config_t {
