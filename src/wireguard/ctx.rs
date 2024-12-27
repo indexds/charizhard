@@ -1,8 +1,8 @@
 use std::sync::{Arc, Mutex};
 
-use crate::wireguard::wireguard_ctx_t;
+use esp_idf_svc::sys::wg::wireguard_ctx_t;
 
-pub struct WireguardCtx(*mut wireguard_ctx_t);
+pub struct WireguardCtx(pub *mut wireguard_ctx_t);
 
 unsafe impl Send for WireguardCtx {}
 unsafe impl Sync for WireguardCtx {}
@@ -10,10 +10,6 @@ unsafe impl Sync for WireguardCtx {}
 impl WireguardCtx {
     pub fn new(ctx: *mut wireguard_ctx_t) -> Self {
         WireguardCtx(ctx)
-    }
-
-    pub fn get_raw(&self) -> *mut wireguard_ctx_t {
-        self.0
     }
 }
 

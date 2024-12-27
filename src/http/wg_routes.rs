@@ -92,6 +92,7 @@ pub fn set_routes(
             // to be connected
             let ctx = WG_CTX.lock().unwrap();
             let is_connected = (*ctx).is_some();
+            drop(ctx);
 
             let nvs = WgConfig::get_config(Arc::clone(&nvs))?;
 

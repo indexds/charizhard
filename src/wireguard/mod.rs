@@ -6,7 +6,6 @@ use ctx::WG_CTX;
 use esp_idf_svc::nvs::{EspNvs, NvsDefault};
 use esp_idf_svc::sntp::{EspSntp, SyncStatus};
 use esp_idf_svc::sys::esp;
-pub use esp_idf_svc::sys::wg::wireguard_ctx_t;
 use esp_idf_svc::wifi::EspWifi;
 
 use crate::utils::nvs::WgConfig;
@@ -21,6 +20,7 @@ use esp_idf_svc::sys::wg::{
     esp_wireguard_set_default,
     esp_wireguardif_peer_is_up,
     wireguard_config_t,
+    wireguard_ctx_t,
 };
 
 const MAX_SNTP_RETRIES: u32 = 10;
@@ -117,7 +117,7 @@ pub fn start_wg_tunnel(nvs: Arc<Mutex<EspNvs<NvsDefault>>>) -> anyhow::Result<()
         ))?;
 
         let mut global_ctx = WG_CTX.lock().unwrap();
-        *global_ctx = Some(crate::wireguard::ctx::WireguardCtx::new(ctx));
+        *global_ctx = Some(ctx::WireguardCtx::new(ctx));
 
         Ok(())
     }
@@ -135,15 +135,26 @@ pub unsafe extern "C" fn wg_disconnect_wrapper(ctx: *mut core::ffi::c_void) -> i
     esp_wireguard_disconnect(ctx as *mut wireguard_ctx_t)
 }
 
+// TODO! FIX THIS CRASH
+// assert failed: wireguardif_lookup_peer
+// C:/chhard/src/wireguard/esp_wireguard/esp_wireguard/src/wireguardif.c:654
+// (netif != NULL)
 pub fn end_wg_tunnel() -> anyhow::Result<()> {
     let mut global_ctx = WG_CTX.lock().unwrap();
 
-    let ctx = global_ctx.as_ref().unwrap().get_raw();
+    if global_ctx.is_none() {
+        log::error!("Failed to disconnect from peer! Were we connected in the first place?");
+        return Err(anyhow::anyhow!("Failed to disconnect from peer!"));
+    }
+
+    let ctx = global_ctx.as_mut().unwrap().0 as *mut wireguard_ctx_t;
 
     unsafe {
         log::info!("Disconnecting from peer..");
 
         esp!(esp_netif_tcpip_exec(Some(wg_disconnect_wrapper), ctx as *mut core::ffi::c_void))?;
+
+        log::info!("Resetting global context..");
 
         *global_ctx = None;
     }
