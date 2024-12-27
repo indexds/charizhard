@@ -58,15 +58,15 @@ pub fn start_wg_tunnel(nvs: Arc<Mutex<EspNvs<NvsDefault>>>) -> anyhow::Result<()
 
     unsafe {
         let config = &mut wireguard_config_t {
-            private_key: CString::new(wg_conf.client_private_key.clean_string().as_str())?.into_raw(),
+            private_key: CString::new(wg_conf.client_private_key.as_str())?.into_raw(),
             listen_port: 51820,
             fw_mark: 0,
-            public_key: CString::new(wg_conf.server_public_key.clean_string().as_str())?.into_raw(),
+            public_key: CString::new(wg_conf.server_public_key.as_str())?.into_raw(),
             preshared_key: core::ptr::null_mut(),
             allowed_ip: CString::new("0.0.0.0")?.into_raw(),
             allowed_ip_mask: CString::new("0.0.0.0")?.into_raw(),
-            endpoint: CString::new(wg_conf.address.clean_string().as_str())?.into_raw(),
-            port: wg_conf.port.clean_string().as_str().parse()?,
+            endpoint: CString::new(wg_conf.address.as_str())?.into_raw(),
+            port: wg_conf.port.as_str().parse()?,
             persistent_keepalive: 20,
         } as *mut _;
 

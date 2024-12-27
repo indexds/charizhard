@@ -72,9 +72,9 @@ pub fn index_html(wg_config: &WgConfig) -> anyhow::Result<String> {
                 <script src="index.js"></script>
             </html>
         "###,
-        wg_config.address.clean_string().as_str(),
-        wg_config.port.clean_string().as_str(),
-        wg_config.client_private_key.clean_string().as_str(),
-        wg_config.server_public_key.clean_string().as_str(),
+        wg_config.address.as_str(),
+        wg_config.port.as_str(),
+        wg_config.client_private_key.as_str(),
+        wg_config.server_public_key.as_str(),
     ))
 }

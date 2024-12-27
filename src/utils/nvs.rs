@@ -65,21 +65,25 @@ impl WgConfig {
         Ok(Self {
             address: HeaplessString(
                 WgConfig::get_key::<32>(&nvs, Self::ADDR).unwrap_or_else(|_| Self::DEFAULT_ADDR.try_into().unwrap()),
-            ),
+            )
+            .clean_string(),
 
             port: HeaplessString(
                 WgConfig::get_key::<16>(&nvs, Self::PORT).unwrap_or_else(|_| Self::DEFAULT_PORT.try_into().unwrap()),
-            ),
+            )
+            .clean_string(),
 
             client_private_key: HeaplessString(
                 WgConfig::get_key::<64>(&nvs, Self::CLIENT_PRIV)
                     .unwrap_or_else(|_| Self::DEFAULT_CLIENT_PRIV.try_into().unwrap()),
-            ),
+            )
+            .clean_string(),
 
             server_public_key: HeaplessString(
                 WgConfig::get_key::<64>(&nvs, Self::SERVER_PUB)
                     .unwrap_or_else(|_| Self::DEFAULT_SERVER_PUB.try_into().unwrap()),
-            ),
+            )
+            .clean_string(),
         })
     }
 }
