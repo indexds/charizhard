@@ -7,7 +7,7 @@ use esp_idf_svc::nvs::{EspNvs, NvsDefault};
 use esp_idf_svc::wifi::{AuthMethod, EspWifi};
 
 use crate::network::wifi;
-use crate::utils::nvs::NvsWifi;
+use crate::utils::nvs::WifiConfig;
 
 pub fn set_routes(
     http_server: &mut EspHttpServer<'static>,
@@ -45,9 +45,9 @@ pub fn set_routes(
                 }
             }
 
-            let wifi_conf: NvsWifi = serde_urlencoded::from_str(String::from_utf8(body)?.as_str())?;
+            let wifi_conf: WifiConfig = serde_urlencoded::from_str(String::from_utf8(body)?.as_str())?;
 
-            NvsWifi::set_fields(Arc::clone(&nvs), wifi_conf)?;
+            WifiConfig::set_fields(Arc::clone(&nvs), wifi_conf)?;
 
             let nvs_thread = Arc::clone(&nvs);
             let wifi = Arc::clone(&wifi);

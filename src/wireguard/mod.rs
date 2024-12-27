@@ -9,7 +9,7 @@ use esp_idf_svc::sys::esp;
 pub use esp_idf_svc::sys::wg::wireguard_ctx_t;
 use esp_idf_svc::wifi::EspWifi;
 
-use crate::utils::nvs::NvsWireguard;
+use crate::utils::nvs::WgConfig;
 
 pub mod ctx;
 
@@ -54,19 +54,19 @@ pub fn sync_sntp(wifi: Arc<Mutex<EspWifi<'static>>>) -> anyhow::Result<()> {
 }
 
 pub fn start_wg_tunnel(nvs: Arc<Mutex<EspNvs<NvsDefault>>>) -> anyhow::Result<()> {
-    let nvs = NvsWireguard::new(nvs)?;
+    let wg_conf = WgConfig::new(nvs)?;
 
     unsafe {
         let config = &mut wireguard_config_t {
-            private_key: CString::new(nvs.client_private_key.clean_string().as_str())?.into_raw(),
+            private_key: CString::new(wg_conf.client_private_key.clean_string().as_str())?.into_raw(),
             listen_port: 51820,
             fw_mark: 0,
-            public_key: CString::new(nvs.server_public_key.clean_string().as_str())?.into_raw(),
+            public_key: CString::new(wg_conf.server_public_key.clean_string().as_str())?.into_raw(),
             preshared_key: core::ptr::null_mut(),
             allowed_ip: CString::new("0.0.0.0")?.into_raw(),
             allowed_ip_mask: CString::new("0.0.0.0")?.into_raw(),
-            endpoint: CString::new(nvs.address.clean_string().as_str())?.into_raw(),
-            port: nvs.port.clean_string().as_str().parse()?,
+            endpoint: CString::new(wg_conf.address.clean_string().as_str())?.into_raw(),
+            port: wg_conf.port.clean_string().as_str().parse()?,
             persistent_keepalive: 20,
         } as *mut _;
 

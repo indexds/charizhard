@@ -1,11 +1,11 @@
 use base64::prelude::BASE64_STANDARD;
 use base64::Engine;
 
-use crate::utils::nvs::NvsWireguard;
+use crate::utils::nvs::WgConfig;
 
 const FAVICON_DATA: &[u8] = include_bytes!("./static/assets/favicon.ico");
 
-pub fn index_html(nvs: &NvsWireguard) -> anyhow::Result<String> {
+pub fn index_html(wg_config: &WgConfig) -> anyhow::Result<String> {
     let favicon = BASE64_STANDARD.encode(FAVICON_DATA);
 
     Ok(format!(
@@ -72,9 +72,9 @@ pub fn index_html(nvs: &NvsWireguard) -> anyhow::Result<String> {
                 <script src="index.js"></script>
             </html>
         "###,
-        nvs.address.clean_string().as_str(),
-        nvs.port.clean_string().as_str(),
-        nvs.client_private_key.clean_string().as_str(),
-        nvs.server_public_key.clean_string().as_str(),
+        wg_config.address.clean_string().as_str(),
+        wg_config.port.clean_string().as_str(),
+        wg_config.client_private_key.clean_string().as_str(),
+        wg_config.server_public_key.clean_string().as_str(),
     ))
 }

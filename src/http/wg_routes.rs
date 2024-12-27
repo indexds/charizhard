@@ -6,7 +6,7 @@ use esp_idf_svc::http::server::{EspHttpServer, Method};
 use esp_idf_svc::nvs::{EspNvs, NvsDefault};
 use esp_idf_svc::wifi::EspWifi;
 
-use crate::utils::nvs::NvsWireguard;
+use crate::utils::nvs::WgConfig;
 use crate::wireguard;
 use crate::wireguard::ctx::WG_CTX;
 
@@ -45,9 +45,9 @@ pub fn set_routes(
                 }
             }
 
-            let wg_conf: NvsWireguard = serde_urlencoded::from_str(String::from_utf8(body)?.as_str())?;
+            let wg_conf: WgConfig = serde_urlencoded::from_str(String::from_utf8(body)?.as_str())?;
 
-            NvsWireguard::set_fields(Arc::clone(&nvs), wg_conf)?;
+            WgConfig::set_fields(Arc::clone(&nvs), wg_conf)?;
 
             // Yeah..
             let wifi = Arc::clone(&wifi);
@@ -94,7 +94,7 @@ pub fn set_routes(
             let ctx = WG_CTX.lock().unwrap();
             let is_connected = (*ctx).is_some();
 
-            let nvs = NvsWireguard::new(Arc::clone(&nvs))?;
+            let nvs = WgConfig::new(Arc::clone(&nvs))?;
 
             let svg_status = if is_connected { "connected" } else { "disconnected" };
             let status = if is_connected {

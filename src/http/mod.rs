@@ -6,7 +6,7 @@ use esp_idf_svc::mdns::EspMdns;
 use esp_idf_svc::nvs::{EspNvs, NvsDefault};
 use esp_idf_svc::wifi::EspWifi;
 
-use crate::utils::nvs::NvsWireguard;
+use crate::utils::nvs::WgConfig;
 
 mod assets_routes;
 mod index;
@@ -30,7 +30,7 @@ pub fn start_http_server(
     http_server.fn_handler("/", Method::Get, {
         let nvs = Arc::clone(&nvs);
         move |mut request| {
-            let wg_conf = NvsWireguard::new(Arc::clone(&nvs))?;
+            let wg_conf = WgConfig::new(Arc::clone(&nvs))?;
 
             let html = index::index_html(&wg_conf)?;
 

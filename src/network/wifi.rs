@@ -6,7 +6,7 @@ use esp_idf_svc::netif::{EspNetif, NetifConfiguration, NetifStack};
 use esp_idf_svc::nvs::{EspDefaultNvsPartition, EspNvs, NvsDefault};
 use esp_idf_svc::wifi::{ClientConfiguration, Configuration, EspWifi, WifiDriver};
 
-use crate::utils::nvs::NvsWifi;
+use crate::utils::nvs::WifiConfig;
 
 pub fn init_netif(
     modem: Modem,
@@ -38,12 +38,12 @@ pub fn set_configuration(
 
     let mut wifi = wifi.lock().unwrap();
 
-    let nvs = NvsWifi::new(Arc::clone(&nvs))?;
+    let config = WifiConfig::new(Arc::clone(&nvs))?;
 
     let wifi_config = Configuration::Client(ClientConfiguration {
-        ssid: nvs.sta_ssid.0,
-        password: nvs.sta_passwd.0,
-        auth_method: nvs.sta_auth.as_str().try_into()?,
+        ssid: config.sta_ssid.0,
+        password: config.sta_passwd.0,
+        auth_method: config.sta_auth.as_str().try_into()?,
         ..Default::default()
     });
 
