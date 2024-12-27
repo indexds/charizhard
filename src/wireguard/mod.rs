@@ -24,6 +24,7 @@ use esp_idf_svc::sys::wg::{
 };
 
 const MAX_SNTP_RETRIES: u32 = 10;
+const MAX_WG_RETRIES: u32 = 10;
 
 pub fn sync_sntp(wifi: Arc<Mutex<EspWifi<'static>>>) -> anyhow::Result<()> {
     let wifi = wifi.lock().unwrap();
@@ -86,7 +87,18 @@ pub fn start_wg_tunnel(nvs: Arc<Mutex<EspNvs<NvsDefault>>>) -> anyhow::Result<()
 
         esp!(esp_netif_tcpip_exec(Some(wg_connect_wrapper), ctx as *mut core::ffi::c_void))?;
 
-        loop {
+        for i in 0..=MAX_WG_RETRIES {
+            if i == MAX_WG_RETRIES {
+                log::error!("Max retries reached, cleaning up.");
+
+                // While we're not connected yet, this allows us to fail gracefully by
+                // deinitializing the entire stack to start from a clean slate
+                // next time we make an attempt to connect to a peer.
+                esp!(esp_wireguard_disconnect(ctx))?;
+
+                return Err(anyhow::anyhow!("Failed to connect to peer, cleaning up."));
+            }
+
             match esp!(esp_wireguardif_peer_is_up(ctx)) {
                 Ok(_) => {
                     log::info!("Peer is up!");
@@ -136,24 +148,3 @@ pub fn end_wg_tunnel() -> anyhow::Result<()> {
 
     Ok(())
 }
-
-// use esp_idf_svc::eth::{EspEth, RmiiEth};
-// use esp_idf_svc::handle::RawHandle;
-// use esp_idf_svc::sys::wg::wireguard_ctx_t;
-
-// use crate::wireguard::ctx::WG_CTX;
-
-// pub fn _start_bridge(eth_netif: EspEth<'static, RmiiEth>) ->
-// anyhow::Result<()> {     let mut lock = WG_CTX.lock().unwrap();
-
-//     let ctx: *mut wireguard_ctx_t = lock.as_mut().unwrap().get_raw();
-
-//     unsafe {
-//         let _wg_netif = ctx.as_ref().unwrap().netif;
-//         let _eth_netif = eth_netif.netif().handle();
-
-//         // create callbacks between both netifs to bridge them?
-//     }
-
-//     Ok(())
-// }
