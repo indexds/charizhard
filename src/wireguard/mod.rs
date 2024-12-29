@@ -6,7 +6,6 @@ use ctx::WG_CTX;
 use esp_idf_svc::nvs::{EspNvs, NvsDefault};
 use esp_idf_svc::sntp::{EspSntp, SyncStatus};
 use esp_idf_svc::sys::esp;
-use esp_idf_svc::wifi::EspWifi;
 
 use crate::utils::nvs::WgConfig;
 
@@ -34,13 +33,7 @@ const MAX_WG_ATTEMPTS: u32 = 10;
 /// Syncs system time with UTC using SNTP. This is necessary to establish a
 /// wireguard tunnel. Care should thus be taken to always call this function
 /// before attempting to establish a connection with a Wireguard peer.
-pub fn sync_systime(wifi: Arc<Mutex<EspWifi<'static>>>) -> anyhow::Result<()> {
-    let wifi = wifi.lock().unwrap();
-
-    if !wifi.is_connected()? {
-        return Err(anyhow::anyhow!("Trying to sync time whilst wifi is down!"));
-    }
-
+pub fn sync_systime() -> anyhow::Result<()> {
     let sntp = EspSntp::new_default()?;
 
     for retries in 0..=MAX_SNTP_ATTEMPTS {
@@ -53,7 +46,7 @@ pub fn sync_systime(wifi: Arc<Mutex<EspWifi<'static>>>) -> anyhow::Result<()> {
 
         if retries == MAX_SNTP_ATTEMPTS {
             log::error!("Failed to synchronize time! Is internet available?");
-            return Err(anyhow::anyhow!("Failed to synchronize time!"));
+            return Ok(());
         }
     }
 
@@ -75,6 +68,15 @@ pub fn sync_systime(wifi: Arc<Mutex<EspWifi<'static>>>) -> anyhow::Result<()> {
 /// NEVER TO DROP this context as it would unvariably result in undefined
 /// behavior or crash the program.
 pub fn start_tunnel(nvs: Arc<Mutex<EspNvs<NvsDefault>>>) -> anyhow::Result<()> {
+
+    //Check if a tunnel is already in service, otherwise we will get undefined behavior
+    let mut guard = WG_CTX.lock().unwrap();
+
+    if guard.is_set() {
+        log::error!("Tunnel was already started! Disconnect first.");
+        return Ok(())
+    }
+
     let wg_conf = WgConfig::get_config(nvs)?;
 
     unsafe {
@@ -108,14 +110,14 @@ pub fn start_tunnel(nvs: Arc<Mutex<EspNvs<NvsDefault>>>) -> anyhow::Result<()> {
 
         for i in 0..=MAX_WG_ATTEMPTS {
             if i == MAX_WG_ATTEMPTS {
-                log::error!("Max retries reached, cleaning up.");
+                log::error!("Failed to connect to peer, cleaning up.");
 
                 // While we're not connected yet, this allows us to fail gracefully by
                 // deinitializing the entire stack to start from a clean slate the
                 // next time we make an attempt to connect to a peer.
                 esp!(esp_netif_tcpip_exec(Some(wg_disconnect_wrapper), ctx as *mut core::ffi::c_void))?;
 
-                return Err(anyhow::anyhow!("Failed to connect to peer, cleaning up."));
+                return Ok(())
             }
 
             match esp!(esp_wireguardif_peer_is_up(ctx)) {
@@ -138,7 +140,6 @@ pub fn start_tunnel(nvs: Arc<Mutex<EspNvs<NvsDefault>>>) -> anyhow::Result<()> {
         ))?;
 
         // Keep ctx in scope with global context.
-        let mut guard = WG_CTX.lock().unwrap();
         guard.set(ctx);
 
         Ok(())
@@ -174,8 +175,8 @@ pub fn end_tunnel() -> anyhow::Result<()> {
     let mut guard = WG_CTX.lock().unwrap();
 
     if !guard.is_set() {
-        log::error!("Called end_wg_tunnel with null context!");
-        return Err(anyhow::anyhow!("Null ctx pointer"));
+        log::error!("Attempted to disconnect without prior connection!");
+        return Ok(())
     }
 
     unsafe {

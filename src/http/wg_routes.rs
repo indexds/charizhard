@@ -7,8 +7,7 @@ use esp_idf_svc::nvs::{EspNvs, NvsDefault};
 use esp_idf_svc::wifi::EspWifi;
 
 use crate::utils::nvs::WgConfig;
-use crate::wireguard;
-use crate::wireguard::ctx::WG_CTX;
+use crate::wireguard as wg;
 
 /// Sets the Wireguard related routes for the http server.
 pub fn set_routes(
@@ -18,10 +17,8 @@ pub fn set_routes(
 ) -> anyhow::Result<()> {
     // Handler to connect to a wireguard peer
     http_server.fn_handler("/connect-wg", Method::Post, {
-        let wifi_check = Arc::clone(&wifi);
-
-        // This is so fucking stupid but we can't do otherwise
         let wifi = Arc::clone(&wifi);
+        // This is so fucking stupid but we can't do otherwise
         let nvs = Arc::clone(&nvs);
 
         move |mut request| {
@@ -30,11 +27,11 @@ pub fn set_routes(
             // We scope this to drop the lock on wifi at the end, as it needs to be locked
             // in the sync_sntp function below
             {
-                let wifi_check = wifi_check.lock().unwrap();
+                let wifi = wifi.lock().unwrap();
 
-                if !wifi_check.is_connected()? {
+                if !wifi.is_connected()? {
                     log::error!("Wifi not connected!");
-                    return Err(anyhow::anyhow!("Wifi not connected!"));
+                    return Ok(())
                 }
             }
 
@@ -54,12 +51,11 @@ pub fn set_routes(
             WgConfig::set_config(Arc::clone(&nvs), wg_conf)?;
 
             // Yeah..
-            let wifi = Arc::clone(&wifi);
             let nvs = Arc::clone(&nvs);
 
             thread::spawn(move || {
-                _ = wireguard::sync_systime(Arc::clone(&wifi));
-                _ = wireguard::start_tunnel(Arc::clone(&nvs));
+                _ = wg::sync_systime();
+                _ = wg::start_tunnel(Arc::clone(&nvs));
             });
 
             let connection = request.connection();
@@ -74,8 +70,8 @@ pub fn set_routes(
     http_server.fn_handler("/disconnect-wg", Method::Get, move |mut request| {
         super::check_ip(&mut request)?;
 
-        thread::spawn(|| {
-            _ = wireguard::end_tunnel();
+        thread::spawn(move || {
+            _ = wg::end_tunnel();
         });
 
         let connection = request.connection();
@@ -92,9 +88,7 @@ pub fn set_routes(
         move |mut request| {
             super::check_ip(&mut request)?;
 
-            let guard = WG_CTX.lock().unwrap();
-            // If ctx is (not) a null pointer, then we have to be connected to a peer
-            let is_connected = guard.is_set();
+            let is_connected = wg::ctx::WG_CTX.lock().unwrap().is_set();
 
             let nvs = WgConfig::get_config(Arc::clone(&nvs))?;
 
