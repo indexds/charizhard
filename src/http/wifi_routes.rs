@@ -83,7 +83,10 @@ pub fn set_routes(
                 wifi.start()?;
             }
 
-            let mut scanned = wifi.scan()?;
+            // We only allocate 10 AccessPointInfos worth of memory to prevent stack
+            // overflow. This value should be modified if some wifis aren't
+            // found upon scanning.
+            let mut scanned = wifi.scan_n::<10>()?.0.to_vec();
 
             // Remove dups
             scanned.sort_by(|a, b| a.ssid.cmp(&b.ssid));

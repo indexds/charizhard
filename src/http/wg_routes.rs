@@ -4,36 +4,19 @@ use std::thread;
 use anyhow::Error;
 use esp_idf_svc::http::server::{EspHttpServer, Method};
 use esp_idf_svc::nvs::{EspNvs, NvsDefault};
-use esp_idf_svc::wifi::EspWifi;
 
 use crate::utils::nvs::WgConfig;
 use crate::wireguard as wg;
 
 /// Sets the Wireguard related routes for the http server.
-pub fn set_routes(
-    http_server: &mut EspHttpServer<'static>,
-    nvs: Arc<Mutex<EspNvs<NvsDefault>>>,
-    wifi: Arc<Mutex<EspWifi<'static>>>,
-) -> anyhow::Result<()> {
+pub fn set_routes(http_server: &mut EspHttpServer<'static>, nvs: Arc<Mutex<EspNvs<NvsDefault>>>) -> anyhow::Result<()> {
     // Handler to connect to a wireguard peer
     http_server.fn_handler("/connect-wg", Method::Post, {
-        let wifi = Arc::clone(&wifi);
         // This is so fucking stupid but we can't do otherwise
         let nvs = Arc::clone(&nvs);
 
         move |mut request| {
             super::check_ip(&mut request)?;
-
-            // We scope this to drop the lock on wifi at the end, as it needs to be locked
-            // in the sync_sntp function below
-            {
-                let wifi = wifi.lock().unwrap();
-
-                if !wifi.is_connected()? {
-                    log::error!("Wifi not connected!");
-                    return Ok(());
-                }
-            }
 
             let mut body = Vec::new();
             let mut buffer = [0u8; 128];

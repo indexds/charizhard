@@ -47,8 +47,8 @@ pub fn start(
     })?;
 
     assets_routes::set_routes(&mut http_server)?;
+    wg_routes::set_routes(&mut http_server, Arc::clone(&nvs))?;
     wifi_routes::set_routes(&mut http_server, Arc::clone(&nvs), Arc::clone(&wifi))?;
-    wg_routes::set_routes(&mut http_server, Arc::clone(&nvs), Arc::clone(&wifi))?;
 
     // Handler to get the main config page
     http_server.fn_handler("/", Method::Get, {
