@@ -90,7 +90,7 @@ pub fn start_wg_tunnel(nvs: Arc<Mutex<EspNvs<NvsDefault>>>) -> anyhow::Result<()
                 log::error!("Max retries reached, cleaning up.");
 
                 // While we're not connected yet, this allows us to fail gracefully by
-                // deinitializing the entire stack to start from a clean slate
+                // deinitializing the entire stack to start from a clean slate the
                 // next time we make an attempt to connect to a peer.
                 esp!(esp_netif_tcpip_exec(Some(wg_disconnect_wrapper), ctx as *mut core::ffi::c_void))?;
 
@@ -135,10 +135,6 @@ pub unsafe extern "C" fn wg_disconnect_wrapper(ctx: *mut core::ffi::c_void) -> i
     esp_wireguard_disconnect(ctx as *mut wireguard_ctx_t)
 }
 
-// TODO! FIX THIS CRASH
-// assert failed: wireguardif_lookup_peer
-// C:/chhard/src/wireguard/esp_wireguard/esp_wireguard/src/wireguardif.c:654
-// (netif != NULL)
 pub fn end_wg_tunnel() -> anyhow::Result<()> {
     let mut global_ctx = WG_CTX.lock().unwrap();
 
