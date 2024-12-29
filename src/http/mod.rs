@@ -23,7 +23,8 @@ fn check_ip(request: &mut Request<&mut EspHttpConnection>) -> anyhow::Result<()>
     let source_ip = request.connection().raw_connection()?.source_ip4()?;
 
     if source_ip != ALLOWED_IP {
-        log::warn!("Forbidden ip [{}] tried to connect! Closed connection.", source_ip);
+        log::warn!("Forbidden ip [{}] tried to connect! Returned 403.", source_ip);
+        return Err(Error::msg("Forbidden"));
     }
 
     Ok(())
