@@ -116,8 +116,9 @@ pub fn start_wg_tunnel(nvs: Arc<Mutex<EspNvs<NvsDefault>>>) -> anyhow::Result<()
             ctx as *mut core::ffi::c_void
         ))?;
 
-        let mut global_ctx = WG_CTX.lock().unwrap();
-        *global_ctx = Some(ctx::WireguardCtx::new(ctx));
+        // Keep ctx in scope with global context
+        let mut guard = WG_CTX.lock().unwrap();
+        guard.set(ctx);
 
         Ok(())
     }
@@ -136,23 +137,24 @@ pub unsafe extern "C" fn wg_disconnect_wrapper(ctx: *mut core::ffi::c_void) -> i
 }
 
 pub fn end_wg_tunnel() -> anyhow::Result<()> {
-    let mut global_ctx = WG_CTX.lock().unwrap();
+    let mut guard = WG_CTX.lock().unwrap();
 
-    if global_ctx.is_none() {
-        log::error!("Failed to disconnect from peer! Were we connected in the first place?");
-        return Err(anyhow::anyhow!("Failed to disconnect from peer!"));
+    if !guard.is_set() {
+        log::error!("Called end_wg_tunnel with null context!");
+        return Err(anyhow::anyhow!("Null ctx pointer"));
     }
-
-    let ctx = global_ctx.as_mut().unwrap().0;
 
     unsafe {
         log::info!("Disconnecting from peer..");
 
-        esp!(esp_netif_tcpip_exec(Some(wg_disconnect_wrapper), ctx as *mut core::ffi::c_void))?;
+        esp!(esp_netif_tcpip_exec(
+            Some(wg_disconnect_wrapper),
+            guard.0 as *mut core::ffi::c_void
+        ))?;
 
         log::info!("Resetting global context..");
 
-        *global_ctx = None;
+        guard.reset();
     }
 
     Ok(())

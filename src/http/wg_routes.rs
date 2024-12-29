@@ -92,10 +92,9 @@ pub fn set_routes(
         move |mut request| {
             super::check_ip(&mut request)?;
 
-            // If ctx is Some, then we returned from wireguard::start_wg_tunnel so we have
-            // to be connected
-            let ctx = WG_CTX.lock().unwrap();
-            let is_connected = (*ctx).is_some();
+            let guard = WG_CTX.lock().unwrap();
+            // If ctx is (not) a null pointer, then we have to be connected to a peer
+            let is_connected = guard.is_set();
 
             let nvs = WgConfig::get_config(Arc::clone(&nvs))?;
 
