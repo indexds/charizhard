@@ -1,10 +1,17 @@
 [package]
 name = "charizhard"
 version = "0.1.0"
-authors = ["indexds"]
+authors = ["indexds https://github.com/indexds"]
 edition = "2021"
 resolver = "2"
 rust-version = "1.81"
+readme = "README.md"
+description = "A cutting-edge hardware solution designed to secure data exchanges and protect devices from hardware-based threats."
+repository = "https://github.com/indexds/charizhard"
+license-file = "LICENSE"
+keywords = ["vpn", "wireguard", "wg", "esp32"]
+categories = ["embedded"]
+exclude = ["/.github", "/logo", "/schematic"]
 
 [[bin]]
 name = "charizhard"
