@@ -302,7 +302,6 @@ fail:
 
 esp_err_t esp_wireguard_disconnect(wireguard_ctx_t *ctx)
 {
-    ESP_LOGI(TAG, "running esp_wireguard_disconnect..");
     esp_err_t err;
     err_t lwip_err;
 
