@@ -5,6 +5,8 @@ use crate::utils::nvs::WgConfig;
 
 const FAVICON_DATA: &[u8] = include_bytes!("./static/assets/favicon.ico");
 
+/// Gives the html for the "/" handler, with respect to the current wireguard
+/// configuration (autofill).
 pub fn index_html(wg_config: &WgConfig) -> anyhow::Result<String> {
     let favicon = BASE64_STANDARD.encode(FAVICON_DATA);
 

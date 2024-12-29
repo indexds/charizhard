@@ -31,6 +31,7 @@ impl WgConfig {
     const PORT: &'static str = "PORT";
     const SERVER_PUB: &'static str = "PUBKEY";
 
+    /// Retrieves and sanitizes a key from nvs.
     fn get_key<const N: usize>(nvs: &MutexGuard<'_, EspNvs<NvsDefault>>, key: &str) -> anyhow::Result<String<N>> {
         let mut buf = [0u8; N];
         nvs.get_str(key, &mut buf)?;
@@ -109,6 +110,7 @@ impl WifiConfig {
     const STA_PASSWD: &'static str = "PASSWD";
     const STA_SSID: &'static str = "SSID";
 
+    /// Retrieves and sanitizes a key from nvs.
     fn get_key<const N: usize>(nvs: &MutexGuard<'_, EspNvs<NvsDefault>>, key: &str) -> anyhow::Result<String<N>> {
         let mut buf = [0u8; N];
         nvs.get_str(key, &mut buf)?;

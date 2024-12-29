@@ -103,7 +103,7 @@ async function fetchScannedWifis() {
     try {
         document.getElementById('loading-svg').style.display = 'flex'; 
         
-        const response = await fetch('/wifi');
+        const response = await fetch('/scan-wifi');
         
         if (!response.ok) throw new Error('Error fetching scanned Wi-Fis.');
 

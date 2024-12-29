@@ -11,7 +11,8 @@ use esp_idf_svc::ipv4::{
 };
 use esp_idf_svc::netif::{EspNetif, NetifConfiguration, NetifStack};
 
-pub fn init_netif(pins: Pins, mac: MAC, sysloop: EspSystemEventLoop) -> anyhow::Result<EspEth<'static, RmiiEth>> {
+/// Initializes the Ethernet driver and network interface, then starts it.
+pub fn start(pins: Pins, mac: MAC, sysloop: EspSystemEventLoop) -> anyhow::Result<EspEth<'static, RmiiEth>> {
     log::info!("Initializing eth driver..");
 
     let eth_driver = EthDriver::new_rmii(
@@ -40,7 +41,7 @@ pub fn init_netif(pins: Pins, mac: MAC, sysloop: EspSystemEventLoop) -> anyhow::
         EspNetif::new_with_conf(&NetifConfiguration {
             ip_configuration: Some(IpConfiguration::Router(IpRouterConfiguration {
                 subnet: Subnet {
-                    gateway: Ipv4Addr::new(192, 168, 100, 1),
+                    gateway: Ipv4Addr::new(10, 10, 10, 1),
                     mask: Mask(30),
                 },
                 dhcp_enabled: true,

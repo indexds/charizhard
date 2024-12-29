@@ -10,6 +10,7 @@ use crate::utils::nvs::WgConfig;
 use crate::wireguard;
 use crate::wireguard::ctx::WG_CTX;
 
+/// Sets the Wireguard related routes for the http server.
 pub fn set_routes(
     http_server: &mut EspHttpServer<'static>,
     nvs: Arc<Mutex<EspNvs<NvsDefault>>>,
@@ -24,15 +25,18 @@ pub fn set_routes(
         let nvs = Arc::clone(&nvs);
 
         move |mut request| {
-            let wifi_check = wifi_check.lock().unwrap();
+            super::check_ip(&mut request)?;
 
-            if !wifi_check.is_connected()? {
-                log::error!("Wifi not connected!");
-                return Err(anyhow::anyhow!("Wifi not connected!"));
+            // We scope this to drop the lock on wifi at the end, as it needs to be locked
+            // in the sync_sntp function below
+            {
+                let wifi_check = wifi_check.lock().unwrap();
+
+                if !wifi_check.is_connected()? {
+                    log::error!("Wifi not connected!");
+                    return Err(anyhow::anyhow!("Wifi not connected!"));
+                }
             }
-
-            // Necessary, we need to lock wifi later
-            drop(wifi_check);
 
             let mut body = Vec::new();
             let mut buffer = [0u8; 128];
@@ -68,6 +72,8 @@ pub fn set_routes(
 
     // Handler to disconnect from the wireguard peer
     http_server.fn_handler("/disconnect-wg", Method::Get, move |mut request| {
+        super::check_ip(&mut request)?;
+
         thread::spawn(|| {
             _ = wireguard::end_wg_tunnel();
         });
@@ -84,41 +90,46 @@ pub fn set_routes(
         let nvs = Arc::clone(&nvs);
 
         move |mut request| {
-            let connection = request.connection();
-
-            connection.initiate_response(200, Some("OK"), &[("Content-Type", "text/html")])?;
+            super::check_ip(&mut request)?;
 
             // If ctx is Some, then we returned from wireguard::start_wg_tunnel so we have
             // to be connected
             let ctx = WG_CTX.lock().unwrap();
             let is_connected = (*ctx).is_some();
-            drop(ctx);
 
             let nvs = WgConfig::get_config(Arc::clone(&nvs))?;
 
             let svg_status = if is_connected { "connected" } else { "disconnected" };
+
             let status = if is_connected {
                 nvs.address.as_str()
             } else {
                 "Disconnected"
             };
 
-            let html = format!(
+            let mut html = format!(
                 r###"
-                <div class=svg-status-text-container>
-                    <img id="{svg_status}-svg-wg" src="{svg_status}.svg">
-                    <div id="wg-status-text">{status}</div>
-                </div>
-                {button}
-                "###,
-                button = if is_connected {
-                    "<button id='disconnect-wg-button' onclick='disconnectWg()'>Disconnect</button>"
-                } else {
-                    ""
-                }
+                    <div class=svg-status-text-container>
+                        <img id="{svg_status}-svg-wg" src="{svg_status}.svg">
+                        <div id="wg-status-text">{status}</div>
+                    </div>
+                "###
             );
 
+            if is_connected {
+                html.push_str(
+                    r###"
+                        <button id="disconnect-wg-button" onclick="disconnectWg()">Disconnect</button>
+                    "###,
+                );
+            }
+
+            let connection = request.connection();
+
+            connection.initiate_response(200, Some("OK"), &[("Content-Type", "text/html")])?;
+
             connection.write(html.as_bytes())?;
+
             Ok::<(), Error>(())
         }
     })?;

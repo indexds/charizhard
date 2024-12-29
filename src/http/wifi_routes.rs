@@ -9,6 +9,7 @@ use esp_idf_svc::wifi::{AuthMethod, EspWifi};
 use crate::network::wifi;
 use crate::utils::nvs::WifiConfig;
 
+/// Sets the WiFi related routes for the http server.
 pub fn set_routes(
     http_server: &mut EspHttpServer<'static>,
     nvs: Arc<Mutex<EspNvs<NvsDefault>>>,
@@ -19,6 +20,8 @@ pub fn set_routes(
         let wifi = Arc::clone(&wifi);
 
         move |mut request| {
+            super::check_ip(&mut request)?;
+
             wifi::disconnect(Arc::clone(&wifi))?;
 
             let connection = request.connection();
@@ -34,8 +37,10 @@ pub fn set_routes(
         let wifi = Arc::clone(&wifi);
 
         move |mut request| {
+            super::check_ip(&mut request)?;
+
             let mut body = Vec::new();
-            let mut buffer = [0_u8; 128];
+            let mut buffer = [0u8; 128];
 
             loop {
                 match request.read(&mut buffer) {
@@ -56,6 +61,7 @@ pub fn set_routes(
                 _ = wifi::set_configuration(Arc::clone(&nvs_thread), Arc::clone(&wifi));
                 _ = wifi::connect(Arc::clone(&wifi));
             });
+
             let connection = request.connection();
 
             connection.initiate_response(204, Some("OK"), &[("Content-Type", "text/html")])?;
@@ -65,10 +71,12 @@ pub fn set_routes(
     })?;
 
     // Handler to get available wifis
-    http_server.fn_handler("/wifi", Method::Get, {
+    http_server.fn_handler("/scan-wifi", Method::Get, {
         let wifi = Arc::clone(&wifi);
 
-        move |request| {
+        move |mut request| {
+            super::check_ip(&mut request)?;
+
             let mut wifi = wifi.lock().unwrap();
 
             if !wifi.is_started()? {
@@ -99,65 +107,60 @@ pub fn set_routes(
                     _ => "/signal-1.svg",
                 };
 
+                let ssid = &access_point.ssid;
+
                 let password_html = if access_point.auth_method != Some(AuthMethod::None) {
                     format!(
                         r###"
-                            <label for='passwd-{}'>Password</label>
-                            <input type='password' id='passwd-{}' name='passwd' required>
-                            <div class='error' id='passwd-{}-error'></div>
-                        "###,
-                        &access_point.ssid, &access_point.ssid, &access_point.ssid,
+                            <label for='passwd-{ssid}'>Password</label>
+                            <input type='password' id='passwd-{ssid}' name='passwd' required>
+                            <div class='error' id='passwd-{ssid}-error'></div>
+                        "###
                     )
                 } else {
                     format!(
                         r###"
-                            <input type='hidden' id='passwd-{}' name='passwd' value="">
-                        "###,
-                        &access_point.ssid,
+                            <input type='hidden' id='passwd-{ssid}' name='passwd' value="">
+                        "###
                     )
                 };
 
                 html.push_str(
                     format!(
                         r###"
-                        <div class='wifi' id={} onclick='toggleDropdown(event, this)'>
+                        <div class='wifi' id={ssid} onclick='toggleDropdown(event, this)'>
                             <div class='ssid-block'>    
-                                <div class='ssid'>{}</div>
+                                <div class='ssid'>{ssid}</div>
                                 <div class='signal-auth-container'>
                                     <div class='auth-method'>
-                                        <img src='{}'>
+                                        <img src='{auth_method}'>
                                     </div>
                                     <div class='signal-strength'>
-                                        <img src='{}'>
+                                        <img src='{signal_strength}'>
                                     </div>
                                 </div>
                             </div>
                             <div class='wifi-connect'>
-                                <form id='connect-form-{}' method='post' action='/connect-wifi'>
+                                <form id='connect-form-{ssid}' method='post' action='/connect-wifi'>
                                     <input type='hidden' name='authmethod' value='{}'>
-                                    <input type='hidden' name='ssid' value='{}'>
-                                    {}
+                                    <input type='hidden' name='ssid' value='{ssid}'>
+                                    {password_html}
                                     <button type="submit">Connect</button>
                                 </form>
                             </div>
                         </div>
                     "###,
-                        &access_point.ssid,
-                        &access_point.ssid,
-                        auth_method,
-                        signal_strength,
-                        &access_point.ssid,
                         access_point.auth_method.unwrap_or_default(),
-                        &access_point.ssid,
-                        password_html,
                     )
                     .as_str(),
                 );
             }
 
-            let mut response = request.into_ok_response()?;
+            let connection = request.connection();
 
-            response.write(html.as_bytes())?;
+            connection.initiate_response(200, Some("OK"), &[("Content-Type", "text/html")])?;
+
+            connection.write(html.as_bytes())?;
 
             Ok::<(), Error>(())
         }
@@ -168,6 +171,8 @@ pub fn set_routes(
         let wifi = Arc::clone(&wifi);
 
         move |mut request| {
+            super::check_ip(&mut request)?;
+
             let wifi = wifi.lock().unwrap();
 
             let is_connected = wifi.is_connected()?;
@@ -190,25 +195,19 @@ pub fn set_routes(
                 false => "disconnected",
             };
 
-            let mut html = String::new();
-
-            html.push_str(
-                format!(
-                    r###"
+            let mut html = format!(
+                r###"
                     <div class=svg-status-text-container>
-                        <img id="{}-svg-wifi" src="{}.svg">
-                        <div id="wifi-status-text">{}</div>
+                        <img id="{svg_status}-svg-wifi" src="{svg_status}.svg">
+                        <div id="wifi-status-text">{ssid}</div>
                     </div>
-                "###,
-                    svg_status, svg_status, ssid,
-                )
-                .as_str(),
+                "###
             );
 
             if is_connected {
                 html.push_str(
                     r###"
-                    <button id="disconnect-wifi-button" onclick="disconnectWifi()">Disconnect</button>
+                        <button id="disconnect-wifi-button" onclick="disconnectWifi()">Disconnect</button>
                     "###,
                 );
             }

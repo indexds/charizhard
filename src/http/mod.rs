@@ -1,7 +1,8 @@
+use std::net::Ipv4Addr;
 use std::sync::{Arc, Mutex};
 
 use anyhow::Error;
-use esp_idf_svc::http::server::{Configuration as HttpServerConfig, EspHttpServer, Method};
+use esp_idf_svc::http::server::{Configuration as HttpServerConfig, EspHttpConnection, EspHttpServer, Method, Request};
 use esp_idf_svc::nvs::{EspNvs, NvsDefault};
 use esp_idf_svc::wifi::EspWifi;
 
@@ -12,7 +13,24 @@ mod index;
 mod wg_routes;
 mod wifi_routes;
 
-pub fn start_http_server(
+/// The DHCP address allocated to the computer connecting to the esp32
+const ALLOWED_IP: Ipv4Addr = Ipv4Addr::new(10, 10, 10, 2);
+
+/// Checks that the source ip of the request is [`ALLOWED_IP`]. This function
+/// should be called at the beginning of every call to `fn_handler` to prevent
+/// security vulnerabilities.
+fn check_ip(request: &mut Request<&mut EspHttpConnection>) -> anyhow::Result<()> {
+    let source_ip = request.connection().raw_connection()?.source_ip4()?;
+
+    if source_ip != ALLOWED_IP {
+        log::warn!("Forbidden ip [{}] tried to connect! Closed connection.", source_ip);
+    }
+
+    Ok(())
+}
+
+/// Starts the http server.
+pub fn start(
     nvs: Arc<Mutex<EspNvs<NvsDefault>>>,
     wifi: Arc<Mutex<EspWifi<'static>>>,
 ) -> anyhow::Result<EspHttpServer<'static>> {
@@ -29,11 +47,13 @@ pub fn start_http_server(
     http_server.fn_handler("/", Method::Get, {
         let nvs = Arc::clone(&nvs);
         move |mut request| {
+            self::check_ip(&mut request)?;
+
+            let connection = request.connection();
+
             let wg_conf = WgConfig::get_config(Arc::clone(&nvs))?;
 
             let html = index::index_html(&wg_conf)?;
-
-            let connection = request.connection();
 
             connection.initiate_response(200, Some("OK"), &[("Content-Type", "text/html")])?;
 

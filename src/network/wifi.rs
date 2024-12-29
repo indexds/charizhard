@@ -8,7 +8,10 @@ use esp_idf_svc::wifi::{ClientConfiguration, Configuration, EspWifi, WifiDriver}
 
 use crate::utils::nvs::WifiConfig;
 
-pub fn init_netif(
+/// Initializes the WiFi driver and network interface, but does not start it
+/// yet. This will be done when the user calls a scan using the web interface
+/// provided by the http server.
+pub fn init(
     modem: Modem,
     sysloop: EspSystemEventLoop,
     nvs: EspDefaultNvsPartition,
@@ -30,6 +33,7 @@ pub fn init_netif(
     Ok(Arc::new(Mutex::new(wifi_netif)))
 }
 
+/// Stores the given configuration in nvs and sets it.
 pub fn set_configuration(
     nvs: Arc<Mutex<EspNvs<NvsDefault>>>,
     wifi: Arc<Mutex<EspWifi<'static>>>,
@@ -54,6 +58,9 @@ pub fn set_configuration(
     Ok(())
 }
 
+/// Connects the WiFi network interface to the configured access point.
+/// Care should be taken to always call [`set_configuration`] before this
+/// function.
 pub fn connect(wifi: Arc<Mutex<EspWifi<'static>>>) -> anyhow::Result<()> {
     log::info!("Connecting to access point..");
 
@@ -74,6 +81,8 @@ pub fn connect(wifi: Arc<Mutex<EspWifi<'static>>>) -> anyhow::Result<()> {
     Ok(())
 }
 
+/// Disconnects the WiFi network interface from the access point it is connected
+/// to.
 pub fn disconnect(wifi: Arc<Mutex<EspWifi<'static>>>) -> anyhow::Result<()> {
     log::info!("Disconnecting from access point..");
 

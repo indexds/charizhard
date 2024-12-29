@@ -24,10 +24,10 @@ fn main() -> anyhow::Result<()> {
 
     let nvs_config = Arc::new(Mutex::new(EspNvs::new(nvs.clone(), "config", true)?));
 
-    let eth_netif = eth::init_netif(peripherals.pins, peripherals.mac, sysloop.clone())?;
-    let wifi_netif = wifi::init_netif(peripherals.modem, sysloop.clone(), nvs.clone())?;
+    let eth_netif = eth::start(peripherals.pins, peripherals.mac, sysloop.clone())?;
+    let wifi_netif = wifi::init(peripherals.modem, sysloop.clone(), nvs.clone())?;
 
-    let http_server = http::start_http_server(Arc::clone(&nvs_config), Arc::clone(&wifi_netif))?;
+    let http_server = http::start(Arc::clone(&nvs_config), Arc::clone(&wifi_netif))?;
 
     let mut mdns = EspMdns::take()?;
     mdns.set_hostname("charizhard")?;
