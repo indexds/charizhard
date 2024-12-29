@@ -1,8 +1,8 @@
-use std::net::Ipv4Addr;
 use std::sync::{Arc, Mutex};
 
 use anyhow::Error;
 use esp_idf_svc::http::server::{Configuration as HttpServerConfig, EspHttpConnection, EspHttpServer, Method, Request};
+use esp_idf_svc::ipv4::Ipv4Addr;
 use esp_idf_svc::nvs::{EspNvs, NvsDefault};
 use esp_idf_svc::wifi::EspWifi;
 
@@ -13,7 +13,9 @@ mod index;
 mod wg_routes;
 mod wifi_routes;
 
-/// The DHCP address allocated to the computer connecting to the esp32
+/// This IP will be the only one allowed to access the http server once it is
+/// up. By default, this is set to the DHCP address allocated to the computer
+/// connecting to the esp32.
 const ALLOWED_IP: Ipv4Addr = Ipv4Addr::new(10, 10, 10, 2);
 
 /// Checks that the source ip of the request is [`ALLOWED_IP`]. This function

@@ -58,8 +58,8 @@ pub fn set_routes(
             let nvs = Arc::clone(&nvs);
 
             thread::spawn(move || {
-                _ = wireguard::sync_sntp(Arc::clone(&wifi));
-                _ = wireguard::start_wg_tunnel(Arc::clone(&nvs));
+                _ = wireguard::sync_systime(Arc::clone(&wifi));
+                _ = wireguard::start_tunnel(Arc::clone(&nvs));
             });
 
             let connection = request.connection();
@@ -75,7 +75,7 @@ pub fn set_routes(
         super::check_ip(&mut request)?;
 
         thread::spawn(|| {
-            _ = wireguard::end_wg_tunnel();
+            _ = wireguard::end_tunnel();
         });
 
         let connection = request.connection();

@@ -4,7 +4,7 @@ use esp_idf_svc::nvs::{EspNvs, NvsDefault};
 use heapless::String;
 use serde::Deserialize;
 
-use crate::utils::heapless::HeaplessString;
+use super::heapless::HeaplessString;
 
 #[derive(Deserialize)]
 pub struct WgConfig {

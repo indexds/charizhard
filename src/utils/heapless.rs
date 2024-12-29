@@ -1,10 +1,8 @@
-use std::ffi::CString;
-
 use heapless::String;
 use serde::Deserialize;
 
 // This wrapper is necessary to juggle wifi stuff
-#[derive(Deserialize, Default)]
+#[derive(Deserialize)]
 pub struct HeaplessString<const N: usize>(pub String<N>);
 
 impl<const N: usize> HeaplessString<N> {
@@ -60,13 +58,5 @@ impl<const N: usize> TryInto<heapless::String<N>> for HeaplessString<N> {
 
     fn try_into(self) -> anyhow::Result<heapless::String<N>> {
         Ok(self.0)
-    }
-}
-
-impl<const N: usize> TryInto<CString> for HeaplessString<N> {
-    type Error = anyhow::Error;
-
-    fn try_into(self) -> anyhow::Result<CString> {
-        Ok(CString::new(self.as_str())?)
     }
 }

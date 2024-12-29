@@ -23,11 +23,18 @@ use esp_idf_svc::sys::wg::{
     wireguard_ctx_t,
 };
 
-const MAX_SNTP_RETRIES: u32 = 10;
-const MAX_WG_RETRIES: u32 = 10;
+/// The maximum number of attempts to sync system time before declaring the call
+/// to [sync_systime] a failure.
+const MAX_SNTP_ATTEMPTS: u32 = 10;
 
-// Wireguard needs time to be synced to UTC to not explode
-pub fn sync_sntp(wifi: Arc<Mutex<EspWifi<'static>>>) -> anyhow::Result<()> {
+/// The maximum number of attempts to connect to a wireguard peer before
+/// declaring the call to [start_tunnel] a failure.
+const MAX_WG_ATTEMPTS: u32 = 10;
+
+/// Syncs system time with UTC using SNTP. This is necessary to establish a
+/// wireguard tunnel. Care should thus be taken to always call this function
+/// before attempting to establish a connection with a Wireguard peer.
+pub fn sync_systime(wifi: Arc<Mutex<EspWifi<'static>>>) -> anyhow::Result<()> {
     let wifi = wifi.lock().unwrap();
 
     if !wifi.is_connected()? {
@@ -36,7 +43,7 @@ pub fn sync_sntp(wifi: Arc<Mutex<EspWifi<'static>>>) -> anyhow::Result<()> {
 
     let sntp = EspSntp::new_default()?;
 
-    for retries in 0..=MAX_SNTP_RETRIES {
+    for retries in 0..=MAX_SNTP_ATTEMPTS {
         if sntp.get_sync_status() == SyncStatus::Completed {
             log::info!("Time synchronized successfully.");
             break;
@@ -44,7 +51,7 @@ pub fn sync_sntp(wifi: Arc<Mutex<EspWifi<'static>>>) -> anyhow::Result<()> {
         log::info!("Waiting for time synchronization...");
         std::thread::park_timeout(std::time::Duration::from_secs(1));
 
-        if retries == MAX_SNTP_RETRIES {
+        if retries == MAX_SNTP_ATTEMPTS {
             log::error!("Failed to synchronize time! Is internet available?");
             return Err(anyhow::anyhow!("Failed to synchronize time!"));
         }
@@ -53,7 +60,21 @@ pub fn sync_sntp(wifi: Arc<Mutex<EspWifi<'static>>>) -> anyhow::Result<()> {
     Ok(())
 }
 
-pub fn start_wg_tunnel(nvs: Arc<Mutex<EspNvs<NvsDefault>>>) -> anyhow::Result<()> {
+/// Establishes a tunnel with the peer defined in the `nvs` configuration.
+///
+/// This configuration should be set using the [`WgConfig`] struct. Care should
+/// be taken to always call this function with the `STA netif` connected to an
+/// access point.
+///
+/// No internet connection will result in the function returning
+/// after [`MAX_SNTP_ATTEMPTS`] to sync system time have been expanded. An
+/// invalid configuration will result in a cleanup of all allocated ressources
+/// after [`MAX_WG_ATTEMPTS`] have been expanded.
+///
+/// This function sets the [`WG_CTX`] global variable. Care should be taken
+/// NEVER TO DROP this context as it would unvariably result in undefined
+/// behavior or crash the program.
+pub fn start_tunnel(nvs: Arc<Mutex<EspNvs<NvsDefault>>>) -> anyhow::Result<()> {
     let wg_conf = WgConfig::get_config(nvs)?;
 
     unsafe {
@@ -82,11 +103,11 @@ pub fn start_wg_tunnel(nvs: Arc<Mutex<EspNvs<NvsDefault>>>) -> anyhow::Result<()
 
         log::info!("Connecting to peer..");
 
-        // Everything to do with ip shenanigans has to be executed in a tcpip context
+        // Everything to do with ip shenanigans has to be executed in a tcpip context.
         esp!(esp_netif_tcpip_exec(Some(wg_connect_wrapper), ctx as *mut core::ffi::c_void))?;
 
-        for i in 0..=MAX_WG_RETRIES {
-            if i == MAX_WG_RETRIES {
+        for i in 0..=MAX_WG_ATTEMPTS {
+            if i == MAX_WG_ATTEMPTS {
                 log::error!("Max retries reached, cleaning up.");
 
                 // While we're not connected yet, this allows us to fail gracefully by
@@ -116,7 +137,7 @@ pub fn start_wg_tunnel(nvs: Arc<Mutex<EspNvs<NvsDefault>>>) -> anyhow::Result<()
             ctx as *mut core::ffi::c_void
         ))?;
 
-        // Keep ctx in scope with global context
+        // Keep ctx in scope with global context.
         let mut guard = WG_CTX.lock().unwrap();
         guard.set(ctx);
 
@@ -124,19 +145,32 @@ pub fn start_wg_tunnel(nvs: Arc<Mutex<EspNvs<NvsDefault>>>) -> anyhow::Result<()
     }
 }
 
+/// Wrapper for a C function that requires execution in a tcpip context using
+/// the [`esp_netif_tcpip_exec`] utility.
 pub unsafe extern "C" fn wg_set_default_wrapper(ctx: *mut core::ffi::c_void) -> i32 {
     esp_wireguard_set_default(ctx as *mut wireguard_ctx_t)
 }
 
+/// Wrapper for a C function that requires execution in a tcpip context using
+/// the [`esp_netif_tcpip_exec`] utility.
 pub unsafe extern "C" fn wg_connect_wrapper(ctx: *mut core::ffi::c_void) -> i32 {
     esp_wireguard_connect(ctx as *mut wireguard_ctx_t)
 }
 
+/// Wrapper for a C function that requires execution in a tcpip context using
+/// the [`esp_netif_tcpip_exec`] utility.
 pub unsafe extern "C" fn wg_disconnect_wrapper(ctx: *mut core::ffi::c_void) -> i32 {
     esp_wireguard_disconnect(ctx as *mut wireguard_ctx_t)
 }
 
-pub fn end_wg_tunnel() -> anyhow::Result<()> {
+/// Ends an established tunnel with the peer defined in the `nvs` configuration.
+///
+/// This function resets the [`WG_CTX`] global variable. Care should be taken
+/// NEVER TO DROP this context before the execution of this function as it would
+/// unvariably result in either undefined behavior or crash the program.  
+pub fn end_tunnel() -> anyhow::Result<()> {
+    log::info!("Disconnecting from peer..");
+
     let mut guard = WG_CTX.lock().unwrap();
 
     if !guard.is_set() {
@@ -145,17 +179,13 @@ pub fn end_wg_tunnel() -> anyhow::Result<()> {
     }
 
     unsafe {
-        log::info!("Disconnecting from peer..");
-
         esp!(esp_netif_tcpip_exec(
             Some(wg_disconnect_wrapper),
             guard.0 as *mut core::ffi::c_void
         ))?;
-
-        log::info!("Resetting global context..");
-
-        guard.reset();
     }
+
+    guard.reset();
 
     Ok(())
 }
