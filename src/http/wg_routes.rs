@@ -31,7 +31,7 @@ pub fn set_routes(
 
                 if !wifi.is_connected()? {
                     log::error!("Wifi not connected!");
-                    return Ok(())
+                    return Ok(());
                 }
             }
 

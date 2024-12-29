@@ -65,17 +65,17 @@ pub fn sync_systime() -> anyhow::Result<()> {
 /// invalid configuration will result in a cleanup of all allocated ressources
 /// after [`MAX_WG_ATTEMPTS`] have been expanded.
 ///
-/// This function sets the [`static@WG_CTX`] global variable. Care should be taken
-/// NEVER TO DROP this context as it would unvariably result in undefined
+/// This function sets the [`static@WG_CTX`] global variable. Care should be
+/// taken NEVER TO DROP this context as it would unvariably result in undefined
 /// behavior or crash the program.
 pub fn start_tunnel(nvs: Arc<Mutex<EspNvs<NvsDefault>>>) -> anyhow::Result<()> {
-
-    //Check if a tunnel is already in service, otherwise we will get undefined behavior
+    // Check if a tunnel is already in service, otherwise we will get undefined
+    // behavior
     let mut guard = WG_CTX.lock().unwrap();
 
     if guard.is_set() {
         log::error!("Tunnel was already started! Disconnect first.");
-        return Ok(())
+        return Ok(());
     }
 
     let wg_conf = WgConfig::get_config(nvs)?;
@@ -118,7 +118,7 @@ pub fn start_tunnel(nvs: Arc<Mutex<EspNvs<NvsDefault>>>) -> anyhow::Result<()> {
                 // next time we make an attempt to connect to a peer.
                 esp!(esp_netif_tcpip_exec(Some(wg_disconnect_wrapper), ctx as *mut core::ffi::c_void))?;
 
-                return Ok(())
+                return Ok(());
             }
 
             match esp!(esp_wireguardif_peer_is_up(ctx)) {
@@ -167,9 +167,9 @@ unsafe extern "C" fn wg_disconnect_wrapper(ctx: *mut core::ffi::c_void) -> i32 {
 
 /// Ends an established tunnel with the peer defined in the `nvs` configuration.
 ///
-/// This function resets the [`static@WG_CTX`] global variable. Care should be taken
-/// NEVER TO DROP this context before the execution of this function as it would
-/// unvariably result in either undefined behavior or crash the program.  
+/// This function resets the [`static@WG_CTX`] global variable. Care should be
+/// taken NEVER TO DROP this context before the execution of this function as it
+/// would unvariably result in either undefined behavior or crash the program.  
 pub fn end_tunnel() -> anyhow::Result<()> {
     log::info!("Disconnecting from peer..");
 
@@ -177,7 +177,7 @@ pub fn end_tunnel() -> anyhow::Result<()> {
 
     if !guard.is_set() {
         log::error!("Attempted to disconnect without prior connection!");
-        return Ok(())
+        return Ok(());
     }
 
     unsafe {
