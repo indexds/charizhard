@@ -9,6 +9,7 @@ use esp_idf_svc::sys::esp;
 
 use crate::utils::nvs::WgConfig;
 
+/// Handles the management of the global context for the wireguard tunnel.
 pub mod ctx;
 
 use esp_idf_svc::sys::esp_netif_tcpip_exec;
@@ -64,7 +65,7 @@ pub fn sync_systime() -> anyhow::Result<()> {
 /// invalid configuration will result in a cleanup of all allocated ressources
 /// after [`MAX_WG_ATTEMPTS`] have been expanded.
 ///
-/// This function sets the [`WG_CTX`] global variable. Care should be taken
+/// This function sets the [`static@WG_CTX`] global variable. Care should be taken
 /// NEVER TO DROP this context as it would unvariably result in undefined
 /// behavior or crash the program.
 pub fn start_tunnel(nvs: Arc<Mutex<EspNvs<NvsDefault>>>) -> anyhow::Result<()> {
@@ -166,7 +167,7 @@ unsafe extern "C" fn wg_disconnect_wrapper(ctx: *mut core::ffi::c_void) -> i32 {
 
 /// Ends an established tunnel with the peer defined in the `nvs` configuration.
 ///
-/// This function resets the [`WG_CTX`] global variable. Care should be taken
+/// This function resets the [`static@WG_CTX`] global variable. Care should be taken
 /// NEVER TO DROP this context before the execution of this function as it would
 /// unvariably result in either undefined behavior or crash the program.  
 pub fn end_tunnel() -> anyhow::Result<()> {

@@ -6,6 +6,7 @@ use serde::Deserialize;
 
 use super::heapless::HeaplessString;
 
+/// Stores the wireguard configuration.
 #[derive(Deserialize)]
 pub struct WgConfig {
     #[serde(rename = "address")]
@@ -90,6 +91,7 @@ impl WgConfig {
     }
 }
 
+/// Stores the WiFi configuration.
 #[derive(Deserialize)]
 pub struct WifiConfig {
     #[serde(rename = "ssid")]

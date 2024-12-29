@@ -3,6 +3,7 @@ use base64::Engine;
 
 use crate::utils::nvs::WgConfig;
 
+/// Stores the data for the http server's favicon as a byte slice to be included in rendering.
 const FAVICON_DATA: &[u8] = include_bytes!("./static/assets/favicon.ico");
 
 /// Gives the html for the "/" handler, with respect to the current wireguard

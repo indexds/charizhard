@@ -1,7 +1,7 @@
 use heapless::String;
 use serde::Deserialize;
 
-// This wrapper is necessary to juggle wifi stuff
+/// Wrapper on [`heapless::String`] for additional capabilities.
 #[derive(Deserialize)]
 pub struct HeaplessString<const N: usize>(pub String<N>);
 

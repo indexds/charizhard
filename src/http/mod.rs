@@ -8,9 +8,13 @@ use esp_idf_svc::wifi::EspWifi;
 
 use crate::utils::nvs::WgConfig;
 
+/// Handles static routes (svgs, css, javascript).
 mod assets_routes;
+/// Handles the main page route.
 mod index;
+/// Handles wireguard related routes.
 mod wg_routes;
+/// Handles wifi related routes.
 mod wifi_routes;
 
 /// This IP will be the only one allowed to access the http server once it is

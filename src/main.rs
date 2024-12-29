@@ -6,12 +6,18 @@ use esp_idf_svc::log::EspLogger;
 use esp_idf_svc::nvs::{EspDefaultNvsPartition, EspNvs};
 use network::{eth, wifi};
 
+/// Handles the http server and its capabilities.
 mod http;
+/// Handles wifi and ethernet capabilities.
 mod network;
+/// Handles over-the-air updates.
 mod ota;
+/// Handles non-volatile storage.
 mod utils;
+/// Handles wireguard tunnel creation and destruction.
 mod wireguard;
 
+/// Runs the main sysloop.
 #[allow(unused_variables)]
 fn main() -> anyhow::Result<()> {
     esp_idf_svc::sys::link_patches();
