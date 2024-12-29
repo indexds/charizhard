@@ -20,7 +20,9 @@ impl WireguardCtx {
     /// Stores the wireguard `ctx` context pointer for safekeeping.
     ///
     /// This function should only ever be called when a wireguard tunnel is
-    /// established with a peer using [`crate::wireguard::mod::start_tunnel`].
+    /// established with a peer using [`start_tunnel`].
+    ///
+    /// [`start_tunnel`]: crate::wireguard::start_tunnel
     pub fn set(&mut self, ctx: *mut wireguard_ctx_t) {
         log::warn!("Storing Wireguard context pointer!");
         self.0 = ctx;
@@ -35,14 +37,15 @@ impl WireguardCtx {
         !(self.0.is_null())
     }
 
-    /// Dereferences the wireguard `ctx` context pointer from safekeeping.
-    ///
     /// This function should only ever be called when a wireguard tunnel is
-    /// ended with a peer using [`crate::wireguard::mod::start_tunnel`].
+    /// ended with a peer using [`start_tunnel`].
     ///
     /// Care should be taken never to call this function before first calling
     /// [`esp_wireguard_disconnect`] as this would result in a memory leak,
     /// definite undefined behavior and a potential crash.
+    ///
+    /// [`start_tunnel`]: crate::wireguard::start_tunnel
+    /// [`esp_wireguard_disconnect`]: esp_idf_svc::sys::wg::esp_wireguard_disconnect
     pub fn reset(&mut self) {
         log::warn!("Resetting Wireguard context pointer!");
         self.0 = null_mut();

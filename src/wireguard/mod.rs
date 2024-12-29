@@ -147,19 +147,19 @@ pub fn start_tunnel(nvs: Arc<Mutex<EspNvs<NvsDefault>>>) -> anyhow::Result<()> {
 
 /// Wrapper for a C function that requires execution in a tcpip context using
 /// the [`esp_netif_tcpip_exec`] utility.
-pub unsafe extern "C" fn wg_set_default_wrapper(ctx: *mut core::ffi::c_void) -> i32 {
+unsafe extern "C" fn wg_set_default_wrapper(ctx: *mut core::ffi::c_void) -> i32 {
     esp_wireguard_set_default(ctx as *mut wireguard_ctx_t)
 }
 
 /// Wrapper for a C function that requires execution in a tcpip context using
 /// the [`esp_netif_tcpip_exec`] utility.
-pub unsafe extern "C" fn wg_connect_wrapper(ctx: *mut core::ffi::c_void) -> i32 {
+unsafe extern "C" fn wg_connect_wrapper(ctx: *mut core::ffi::c_void) -> i32 {
     esp_wireguard_connect(ctx as *mut wireguard_ctx_t)
 }
 
 /// Wrapper for a C function that requires execution in a tcpip context using
 /// the [`esp_netif_tcpip_exec`] utility.
-pub unsafe extern "C" fn wg_disconnect_wrapper(ctx: *mut core::ffi::c_void) -> i32 {
+unsafe extern "C" fn wg_disconnect_wrapper(ctx: *mut core::ffi::c_void) -> i32 {
     esp_wireguard_disconnect(ctx as *mut wireguard_ctx_t)
 }
 
