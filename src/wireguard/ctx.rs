@@ -17,8 +17,8 @@ impl Wireguard {
         Wireguard(ctx, config)
     }
 
-    /// Stores the wireguard [`wireguard_ctx_t`] and [`wireguard_config_t`] context pointers for
-    /// safekeeping.
+    /// Stores the wireguard [`wireguard_ctx_t`] and [`wireguard_config_t`]
+    /// context pointers for safekeeping.
     ///
     /// This function should only ever be called when a wireguard tunnel is
     /// established with a peer using [`start_tunnel`].

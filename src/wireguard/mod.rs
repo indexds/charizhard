@@ -33,8 +33,8 @@ const MAX_SNTP_ATTEMPTS: u32 = 10;
 /// declaring the call to [start_tunnel] a failure.
 const MAX_WG_ATTEMPTS: u32 = 10;
 
-/// Syncs system time with UTC using SNTP. This is necessary to establish a
-/// wireguard tunnel. Care should thus be taken to always call this function
+/// Syncs system time with UTC using [`EspSntp`]. This is necessary to establish
+/// a wireguard tunnel. Care should thus be taken to always call this function
 /// before attempting to establish a connection with a Wireguard peer.
 pub fn sync_systime() -> anyhow::Result<()> {
     let sntp = EspSntp::new_default()?;
@@ -57,7 +57,8 @@ pub fn sync_systime() -> anyhow::Result<()> {
 }
 
 /// Creates "safe" raw pointers for [`wireguard_ctx_t`] and
-/// [`wireguard_config_t`] by retrieving the set configuration from nvs.
+/// [`wireguard_config_t`] by retrieving the set configuration from nvs and
+/// wrapping them in [`Box`].
 fn create_ctx_conf(
     nvs: Arc<Mutex<EspNvs<NvsDefault>>>,
 ) -> anyhow::Result<(*mut wireguard_ctx_t, *mut wireguard_config_t)> {
@@ -152,7 +153,7 @@ pub fn start_tunnel(nvs: Arc<Mutex<EspNvs<NvsDefault>>>) -> anyhow::Result<()> {
             ctx as *mut core::ffi::c_void
         ))?;
 
-        // Keep ctx in scope with global context.
+        // This keeps ctx and config in scope.
         guard.set(ctx, config);
 
         Ok(())
