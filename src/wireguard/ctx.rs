@@ -17,7 +17,7 @@ impl Wireguard {
         Wireguard(ctx, config)
     }
 
-    /// Stores the wireguard `ctx` and `config` context pointers for
+    /// Stores the wireguard [`wireguard_ctx_t`] and [`wireguard_config_t`] context pointers for
     /// safekeeping.
     ///
     /// This function should only ever be called when a wireguard tunnel is
@@ -30,7 +30,7 @@ impl Wireguard {
         self.1 = config;
     }
 
-    /// Checks if a wireguard `ctx` context pointer is stored.
+    /// Checks if a wireguard [`wireguard_ctx_t`] context pointer is stored.
     ///
     /// If so, and unless undefined behavior is achieved by improper use of
     /// other functions we know that we are connected to a peer through a
