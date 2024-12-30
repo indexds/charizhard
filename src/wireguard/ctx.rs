@@ -1,5 +1,6 @@
 use core::ptr;
 use std::sync::{Arc, Mutex};
+use std::ffi::CString;
 
 use esp_idf_svc::sys::wg::{wireguard_config_t, wireguard_ctx_t};
 
@@ -52,8 +53,15 @@ impl Wireguard {
         log::warn!("Resetting Wireguard context pointers!");
 
         unsafe {
+            // Necessary to prevent memory leak
             let _ = Box::from_raw(self.0);
-            let _ = Box::from_raw(self.1);
+            let config = Box::from_raw(self.1);
+
+            let _ = CString::from_raw(config.private_key);
+            let _ = CString::from_raw(config.public_key);
+            let _ = CString::from_raw(config.allowed_ip);
+            let _ = CString::from_raw(config.allowed_ip_mask);
+            let _ = CString::from_raw(config.endpoint);
         }
 
         self.0 = ptr::null_mut();
