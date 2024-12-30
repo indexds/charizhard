@@ -12,6 +12,8 @@ use crate::utils::nvs::WgConfig;
 /// Handles the management of the global context for the wireguard tunnel.
 pub mod ctx;
 
+use core::ptr;
+
 use esp_idf_svc::sys::esp_netif_tcpip_exec;
 use esp_idf_svc::sys::wg::{
     esp_wireguard_connect,
@@ -54,6 +56,35 @@ pub fn sync_systime() -> anyhow::Result<()> {
     Ok(())
 }
 
+/// Creates "safe" raw pointers for [`wireguard_ctx_t`] and
+/// [`wireguard_config_t`] by retrieving the set configuration from nvs.
+fn create_ctx_conf(
+    nvs: Arc<Mutex<EspNvs<NvsDefault>>>,
+) -> anyhow::Result<(*mut wireguard_ctx_t, *mut wireguard_config_t)> {
+    let nvs_conf = WgConfig::get_config(nvs)?;
+
+    let config = Box::new(wireguard_config_t {
+        private_key: CString::new(nvs_conf.client_private_key.as_str())?.into_raw(),
+        listen_port: 51820,
+        fw_mark: 0,
+        public_key: CString::new(nvs_conf.server_public_key.as_str())?.into_raw(),
+        preshared_key: ptr::null_mut(),
+        allowed_ip: CString::new("0.0.0.0")?.into_raw(),
+        allowed_ip_mask: CString::new("0.0.0.0")?.into_raw(),
+        endpoint: CString::new(nvs_conf.address.as_str())?.into_raw(),
+        port: nvs_conf.port.as_str().parse()?,
+        persistent_keepalive: 20,
+    });
+
+    let ctx = Box::new(wireguard_ctx_t {
+        config: ptr::null_mut(),
+        netif: ptr::null_mut(),
+        netif_default: ptr::null_mut(),
+    });
+
+    Ok((Box::into_raw(ctx), Box::into_raw(config)))
+}
+
 /// Establishes a tunnel with the peer defined in the `nvs` configuration.
 ///
 /// This configuration should be set using the [`WgConfig`] struct. Care should
@@ -69,37 +100,18 @@ pub fn sync_systime() -> anyhow::Result<()> {
 /// taken NEVER TO DROP this context as it would unvariably result in undefined
 /// behavior or crash the program.
 pub fn start_tunnel(nvs: Arc<Mutex<EspNvs<NvsDefault>>>) -> anyhow::Result<()> {
-    // Check if a tunnel is already in service, otherwise we will get undefined
-    // behavior
     let mut guard = WG_CTX.lock().unwrap();
 
+    // Check if a tunnel is already in service, otherwise we will get either
+    // undefined behavior or a crash. Likely both.
     if guard.is_set() {
         log::error!("Tunnel was already started! Disconnect first.");
         return Ok(());
     }
 
-    let wg_conf = WgConfig::get_config(nvs)?;
+    let (ctx, config) = create_ctx_conf(nvs)?;
 
     unsafe {
-        let config = &mut wireguard_config_t {
-            private_key: CString::new(wg_conf.client_private_key.as_str())?.into_raw(),
-            listen_port: 51820,
-            fw_mark: 0,
-            public_key: CString::new(wg_conf.server_public_key.as_str())?.into_raw(),
-            preshared_key: core::ptr::null_mut(),
-            allowed_ip: CString::new("0.0.0.0")?.into_raw(),
-            allowed_ip_mask: CString::new("0.0.0.0")?.into_raw(),
-            endpoint: CString::new(wg_conf.address.as_str())?.into_raw(),
-            port: wg_conf.port.as_str().parse()?,
-            persistent_keepalive: 20,
-        } as *mut _;
-
-        let ctx = &mut wireguard_ctx_t {
-            config,
-            netif: core::ptr::null_mut(),
-            netif_default: core::ptr::null_mut(),
-        } as *mut _;
-
         log::info!("Initializing wireguard..");
 
         esp!(esp_wireguard_init(config, ctx))?;
@@ -141,7 +153,7 @@ pub fn start_tunnel(nvs: Arc<Mutex<EspNvs<NvsDefault>>>) -> anyhow::Result<()> {
         ))?;
 
         // Keep ctx in scope with global context.
-        guard.set(ctx);
+        guard.set(ctx, config);
 
         Ok(())
     }
@@ -169,7 +181,7 @@ unsafe extern "C" fn wg_disconnect_wrapper(ctx: *mut core::ffi::c_void) -> i32 {
 ///
 /// This function resets the [`static@WG_CTX`] global variable. Care should be
 /// taken NEVER TO DROP this context before the execution of this function as it
-/// would unvariably result in either undefined behavior or crash the program.  
+/// would invariably result in either undefined behavior or crash the program.  
 pub fn end_tunnel() -> anyhow::Result<()> {
     log::info!("Disconnecting from peer..");
 
