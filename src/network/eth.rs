@@ -61,6 +61,10 @@ pub fn start(pins: Pins, mac: MAC, sysloop: EspSystemEventLoop) -> anyhow::Resul
         })?,
     )?;
 
+    log::info!("Enabling napt on eth netif..");
+    //Necessary for routing packets between subnets.
+    eth_netif.netif_mut().enable_napt(true);
+
     log::info!("Starting eth netif..");
 
     eth_netif.start()?;
