@@ -49,7 +49,7 @@ pub fn sync_systime() -> anyhow::Result<()> {
 
         if retries == MAX_SNTP_ATTEMPTS {
             log::error!("Failed to synchronize time! Is internet available?");
-            return Ok(());
+            return Err(anyhow::anyhow!("No internet to sync time."));
         }
     }
 

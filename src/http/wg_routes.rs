@@ -37,8 +37,9 @@ pub fn set_routes(http_server: &mut EspHttpServer<'static>, nvs: Arc<Mutex<EspNv
             let nvs = Arc::clone(&nvs);
 
             thread::spawn(move || {
-                _ = wg::sync_systime();
-                _ = wg::start_tunnel(Arc::clone(&nvs));
+                if wg::sync_systime().is_ok() {
+                    _ = wg::start_tunnel(Arc::clone(&nvs));
+                }
             });
 
             let connection = request.connection();
