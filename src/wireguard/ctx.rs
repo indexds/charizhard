@@ -1,6 +1,6 @@
 use core::ptr;
-use std::sync::{Arc, Mutex};
 use std::ffi::CString;
+use std::sync::{Arc, Mutex};
 
 use esp_idf_svc::sys::wg::{wireguard_config_t, wireguard_ctx_t};
 

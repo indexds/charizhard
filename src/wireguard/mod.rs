@@ -1,4 +1,5 @@
 use std::ffi::CString;
+use std::net::Ipv4Addr;
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
@@ -203,4 +204,17 @@ pub fn end_tunnel() -> anyhow::Result<()> {
     guard.reset();
 
     Ok(())
+}
+
+pub fn netif_ip() -> anyhow::Result<Ipv4Addr> {
+    let guard = WG_CTX.lock().unwrap();
+
+    if !guard.is_set() {
+        log::error!("Attempted to get ip without prior connection!");
+        return Err(anyhow::anyhow!("No netif to get ip from."));
+    }
+
+    let raw_ip = unsafe { (*(*guard.0).netif).ip_addr.addr };
+
+    Ok(Ipv4Addr::from(raw_ip.to_be_bytes()))
 }
