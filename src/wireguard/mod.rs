@@ -206,6 +206,7 @@ pub fn end_tunnel() -> anyhow::Result<()> {
     Ok(())
 }
 
+#[allow(dead_code)]
 pub fn netif_ip() -> anyhow::Result<Ipv4Addr> {
     let guard = WG_CTX.lock().unwrap();
 
