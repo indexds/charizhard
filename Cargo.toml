@@ -29,7 +29,7 @@ debug = true    # Symbols are nice and they don't increase the size on Flash
 opt-level = "z"
 
 [patch.crates-io]
-esp-idf-svc = { git = "https://github.com/indexds/esp-idf-svc", branch = "get_ip" }
+esp-idf-svc = { git = "https://github.com/esp-rs/esp-idf-svc", branch = "master" }
 esp-idf-sys = { git = "https://github.com/esp-rs/esp-idf-sys", branch = "master" }
 esp-idf-hal = { git = "https://github.com/esp-rs/esp-idf-hal", branch = "master" }
 embedded-hal = { git = "https://github.com/rust-embedded/embedded-hal", branch = "master" }
@@ -44,9 +44,6 @@ alloc = ["esp-idf-svc/alloc"]
 embassy = ["esp-idf-svc/embassy-sync", "esp-idf-svc/critical-section", "esp-idf-svc/embassy-time-driver"]
 
 [[package.metadata.esp-idf-sys.extra_components]]
-remote_component = { name = "espressif/mdns", version = "1.4.2" }
-
-[[package.metadata.esp-idf-sys.extra_components]]
 component_dirs = "src/wireguard/esp_wireguard"
 bindings_header = "src/wireguard/bindings.h"
 bindings_module = "wg"
@@ -56,7 +53,7 @@ esp_idf_sdkconfig="sdkconfig"
 
 [dependencies]
 log = { version = "0.4", default-features = false }
-esp-idf-svc = { version = "0.49", default-features = false, features = ["std"] }
+esp-idf-svc = { version = "0.50.0", default-features = false, features = ["std"] }
 embedded-svc = { version = "0.28", default-features = true }
 heapless = { version = "0.8", default-features = false }
 anyhow = { version = "1.0", default-features = false }
@@ -66,4 +63,4 @@ serde_urlencoded = { version = "0.7", default-features = false }
 lazy_static = { version = "1.5", default-features = false }
 
 [build-dependencies]
-embuild = "0.32"
+embuild = "0.33.0"
