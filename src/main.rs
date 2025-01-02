@@ -34,6 +34,8 @@ fn main() -> anyhow::Result<()> {
 
     let http_server = http::start(Arc::clone(&nvs_config), Arc::clone(&wifi_netif))?;
 
+    let bridge = network::bridge::start(Arc::clone(&eth_netif), Arc::clone(&wifi_netif));
+
     std::thread::park();
 
     Ok(())

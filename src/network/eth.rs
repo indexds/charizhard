@@ -1,20 +1,24 @@
-use core::num::NonZeroU32;
+use std::sync::{Arc, Mutex};
 
 use esp_idf_svc::eth::{EspEth, EthDriver, RmiiClockConfig, RmiiEth, RmiiEthChipset};
 use esp_idf_svc::eventloop::EspSystemEventLoop;
 use esp_idf_svc::hal::gpio::{self, Pins};
 use esp_idf_svc::hal::mac::MAC;
-use esp_idf_svc::ipv4::{ClientConfiguration, ClientSettings, Configuration, Ipv4Addr, Mask, Subnet};
-use esp_idf_svc::netif::{EspNetif, NetifConfiguration, NetifStack};
-use esp_idf_svc::sys::{
-    esp_netif_flags_ESP_NETIF_DHCP_SERVER,
-    esp_netif_flags_ESP_NETIF_FLAG_AUTOUP,
-    ip_event_t_IP_EVENT_ETH_GOT_IP,
-    ip_event_t_IP_EVENT_ETH_LOST_IP,
+use esp_idf_svc::ipv4::{
+    Configuration,
+    Ipv4Addr,
+    Mask,
+    RouterConfiguration,
+    Subnet,
 };
+use esp_idf_svc::netif::{EspNetif, NetifConfiguration, NetifStack};
 
 /// Initializes the Ethernet driver and network interface, then starts it.
-pub fn start(pins: Pins, mac: MAC, sysloop: EspSystemEventLoop) -> anyhow::Result<EspEth<'static, RmiiEth>> {
+pub fn start(
+    pins: Pins,
+    mac: MAC,
+    sysloop: EspSystemEventLoop,
+) -> anyhow::Result<Arc<Mutex<EspEth<'static, RmiiEth>>>> {
     log::info!("Initializing eth driver..");
 
     let eth_driver = EthDriver::new_rmii(
@@ -41,34 +45,29 @@ pub fn start(pins: Pins, mac: MAC, sysloop: EspSystemEventLoop) -> anyhow::Resul
     let mut eth_netif = EspEth::wrap_all(
         eth_driver,
         EspNetif::new_with_conf(&NetifConfiguration {
-            flags: esp_netif_flags_ESP_NETIF_DHCP_SERVER | esp_netif_flags_ESP_NETIF_FLAG_AUTOUP,
-            got_ip_event_id: NonZeroU32::new(ip_event_t_IP_EVENT_ETH_GOT_IP as _),
-            lost_ip_event_id: NonZeroU32::new(ip_event_t_IP_EVENT_ETH_LOST_IP as _),
+            flags: 0,
             key: "ETH_DEF".try_into().unwrap(),
             description: "eth".try_into().unwrap(),
-            route_priority: 50, // Higher is better
-            ip_configuration: Some(Configuration::Client(ClientConfiguration::Fixed(ClientSettings {
-                ip: Ipv4Addr::new(10, 10, 10, 1),
+            route_priority: 10,
+            ip_configuration: Some(Configuration::Router(RouterConfiguration {
                 subnet: Subnet {
-                    gateway: Ipv4Addr::new(10, 10, 10, 1), // This is the gateway advertised by the dhcp server
+                    gateway: Ipv4Addr::new(10, 10, 10, 1),
                     mask: Mask(30),
                 },
+                dhcp_enabled: true, //adds dhcp_server flag
                 dns: None,
                 secondary_dns: None,
-            }))),
+            })),
             stack: NetifStack::Eth,
             custom_mac: None,
+            got_ip_event_id: None,
+            lost_ip_event_id: None,
         })?,
     )?;
-
-    log::info!("Enabling napt on eth netif..");
-
-    // Necessary for routing packets between subnets.
-    eth_netif.netif_mut().enable_napt(true);
 
     log::info!("Starting eth netif..");
 
     eth_netif.start()?;
 
-    Ok(eth_netif)
+    Ok(Arc::new(Mutex::new(eth_netif)))
 }

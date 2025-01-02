@@ -2,11 +2,16 @@ use std::sync::{Arc, Mutex};
 
 use esp_idf_svc::eventloop::EspSystemEventLoop;
 use esp_idf_svc::hal::modem::Modem;
+use esp_idf_svc::ipv4;
 use esp_idf_svc::netif::{EspNetif, NetifConfiguration, NetifStack};
 use esp_idf_svc::nvs::{EspDefaultNvsPartition, EspNvs, NvsDefault};
 use esp_idf_svc::wifi::{ClientConfiguration, Configuration, EspWifi, WifiDriver};
 
 use crate::utils::nvs::WifiConfig;
+
+use std::num::NonZeroU32;
+
+use esp_idf_svc::sys::{ip_event_t_IP_EVENT_STA_GOT_IP, ip_event_t_IP_EVENT_STA_LOST_IP};
 
 /// Initializes the WiFi driver and network interface, but does not start it
 /// yet. This will be done when the user calls a scan using the web interface
@@ -23,8 +28,15 @@ pub fn init(
     let wifi_netif = EspWifi::wrap_all(
         wifi_driver,
         EspNetif::new_with_conf(&NetifConfiguration {
+            flags: 0,
+            key: "WIFI_STA_DEF".try_into().unwrap(),
+            description: "sta".try_into().unwrap(),
+            route_priority: 100,
+            ip_configuration: Some(ipv4::Configuration::Client(Default::default())), // DHCP
             stack: NetifStack::Sta,
-            ..NetifConfiguration::wifi_default_client()
+            custom_mac: None,
+            got_ip_event_id: NonZeroU32::new(ip_event_t_IP_EVENT_STA_GOT_IP as _),
+            lost_ip_event_id: NonZeroU32::new(ip_event_t_IP_EVENT_STA_LOST_IP as _),
         })?,
     )?;
 
