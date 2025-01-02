@@ -26,7 +26,7 @@ const ALLOWED_IP: Ipv4Addr = Ipv4Addr::new(10, 10, 10, 2);
 /// should be called at the beginning of every call to `fn_handler` to prevent
 /// security vulnerabilities.
 fn check_ip(request: &mut Request<&mut EspHttpConnection>) -> anyhow::Result<()> {
-    let source_ip = request.connection().raw_connection()?.source_ip4()?;
+    let source_ip = request.connection().raw_connection()?.source_ipv4()?;
 
     if source_ip != ALLOWED_IP {
         log::warn!("Forbidden ip [{}] tried to connect! Returned 403.", source_ip);
