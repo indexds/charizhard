@@ -4,8 +4,18 @@ use esp_idf_svc::eth::{EspEth, EthDriver, RmiiClockConfig, RmiiEth, RmiiEthChips
 use esp_idf_svc::eventloop::EspSystemEventLoop;
 use esp_idf_svc::hal::gpio::{self, Pins};
 use esp_idf_svc::hal::mac::MAC;
-use esp_idf_svc::ipv4::{Configuration, Ipv4Addr, Mask, RouterConfiguration, Subnet};
+use esp_idf_svc::ipv4::{
+    ClientConfiguration,
+    ClientSettings,
+    Configuration,
+    Ipv4Addr,
+    Mask,
+    Subnet,
+};
 use esp_idf_svc::netif::{EspNetif, NetifConfiguration, NetifStack};
+use esp_idf_svc::sys::{esp_netif_flags_ESP_NETIF_DHCP_SERVER, esp_netif_flags_ESP_NETIF_FLAG_AUTOUP};
+
+use crate::wireguard::ctx::WG_CTX;
 
 /// Initializes the Ethernet driver and network interface, then starts it.
 pub fn start(
@@ -36,34 +46,86 @@ pub fn start(
 
     log::info!("Installing ethernet netif...");
 
+    // let mut eth_netif = EspEth::wrap_all(
+    //     eth_driver,
+    //     EspNetif::new_with_conf(&NetifConfiguration {
+    //         flags: 0,
+    //         key: "ETH_DEF".try_into().unwrap(),
+    //         description: "eth".try_into().unwrap(),
+    //         route_priority: 10,
+    //         ip_configuration: Some(Configuration::Router(RouterConfiguration {
+    //             subnet: Subnet {
+    //                 gateway: Ipv4Addr::new(10, 10, 10, 1),
+    //                 mask: Mask(30),
+    //             },
+    //             dhcp_enabled: true, // adds dhcp_server flag
+    //             dns: None,
+    //             secondary_dns: None,
+    //         })),
+    //         stack: NetifStack::Eth,
+    //         custom_mac: None,
+    //         got_ip_event_id: None,
+    //         lost_ip_event_id: None,
+    //     })?,
+    // )?;
+
     let mut eth_netif = EspEth::wrap_all(
         eth_driver,
         EspNetif::new_with_conf(&NetifConfiguration {
-            flags: 0,
+            flags: esp_netif_flags_ESP_NETIF_DHCP_SERVER,
             key: "ETH_DEF".try_into().unwrap(),
             description: "eth".try_into().unwrap(),
             route_priority: 10,
-            ip_configuration: Some(Configuration::Router(RouterConfiguration {
+            ip_configuration: Some(Configuration::Client(ClientConfiguration::Fixed(ClientSettings {
+                ip: Ipv4Addr::new(10, 10, 10, 1),
                 subnet: Subnet {
-                    gateway: Ipv4Addr::new(10, 10, 10, 1),
+                    gateway: Ipv4Addr::new(0, 0, 0, 0),
                     mask: Mask(30),
                 },
-                dhcp_enabled: true, // adds dhcp_server flag
                 dns: None,
                 secondary_dns: None,
-            })),
-            stack: NetifStack::Eth,
-            custom_mac: None,
+            }))),
             got_ip_event_id: None,
             lost_ip_event_id: None,
+            stack: NetifStack::Eth,
+            custom_mac: None,
         })?,
     )?;
 
-    log::info!("Enabling ethernet NAPT..");
     eth_netif.netif_mut().enable_napt(true)?;
 
     log::info!("Starting ethernet netif..");
     eth_netif.start()?;
 
     Ok(Arc::new(Mutex::new(eth_netif)))
+}
+
+pub fn swap(eth_netif: Arc<Mutex<EspEth<'static, RmiiEth>>>) -> anyhow::Result<()> {
+    let gateway = Ipv4Addr::from(u32::from_be(unsafe { (*((*(WG_CTX.lock().unwrap().0)).netif)).ip_addr.addr }));
+
+    log::info!("new gw: {}", gateway);
+
+    let conf = EspNetif::new_with_conf(&NetifConfiguration {
+        flags: esp_netif_flags_ESP_NETIF_DHCP_SERVER | esp_netif_flags_ESP_NETIF_FLAG_AUTOUP,
+        got_ip_event_id: None,
+        lost_ip_event_id: None,
+        key: "ETH_DEF_1".try_into().unwrap(),
+        description: "eth_1".try_into().unwrap(),
+        route_priority: 10,
+        ip_configuration: Some(Configuration::Client(ClientConfiguration::Fixed(ClientSettings {
+            ip: Ipv4Addr::new(10, 10, 10, 1),
+            subnet: Subnet {
+                gateway,
+                mask: Mask(30),
+            },
+            dns: None,
+            secondary_dns: None,
+        }))),
+        stack: NetifStack::Eth,
+        custom_mac: None,
+    })?;
+
+    eth_netif.lock().unwrap().swap_netif(conf)?;
+
+    Ok(())
 }

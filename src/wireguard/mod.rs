@@ -4,6 +4,7 @@ use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
 use ctx::WG_CTX;
+use esp_idf_svc::eth::{EspEth, RmiiEth};
 use esp_idf_svc::nvs::{EspNvs, NvsDefault};
 use esp_idf_svc::sntp::{EspSntp, SyncStatus};
 use esp_idf_svc::sys::esp;
@@ -101,7 +102,10 @@ fn create_ctx_conf(
 /// This function sets the [`static@WG_CTX`] global variable. Care should be
 /// taken NEVER TO DROP this context as it would unvariably result in undefined
 /// behavior or crash the program.
-pub fn start_tunnel(nvs: Arc<Mutex<EspNvs<NvsDefault>>>) -> anyhow::Result<()> {
+pub fn start_tunnel(
+    nvs: Arc<Mutex<EspNvs<NvsDefault>>>,
+    eth_netif: Arc<Mutex<EspEth<'static, RmiiEth>>>,
+) -> anyhow::Result<()> {
     let mut guard = WG_CTX.lock().unwrap();
 
     // Check if a tunnel is already in service, otherwise we will get either
@@ -155,7 +159,7 @@ pub fn start_tunnel(nvs: Arc<Mutex<EspNvs<NvsDefault>>>) -> anyhow::Result<()> {
         ))?;
 
         // This keeps ctx and config in scope.
-        guard.set(ctx, config);
+        guard.set(ctx, config, eth_netif)?;
 
         Ok(())
     }
