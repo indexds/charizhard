@@ -19,6 +19,8 @@ use esp_idf_svc::sys::{
 
 use crate::utils::nvs::WgConfig;
 
+use esp_idf_svc::sys::_g_esp_netif_default_netstack_wg
+
 /// Handles the management of the global context for the wireguard tunnel.
 pub mod ctx;
 
@@ -107,7 +109,7 @@ fn create_ctx_conf(
                 secondary_dns: None,
             }),
         )),
-        stack: esp_idf_svc::netif::NetifStack::Eth,
+        stack: unsafe { _g_esp_netif_default_netstack_wg },
         custom_mac: None,
     })?;
 
@@ -146,12 +148,12 @@ pub fn start_tunnel(nvs: Arc<Mutex<EspNvs<NvsDefault>>>) -> anyhow::Result<()> {
         return Ok(());
     }
 
-    let (ctx, config) = create_ctx_conf(nvs)?;
+    let (wg_netif, ctx) = create_ctx_conf(nvs)?;
 
     unsafe {
         log::info!("Initializing wireguard..");
 
-        esp!(esp_wireguard_init(config, ctx))?;
+        esp!(esp_wireguard_init())?;
 
         log::info!("Connecting to peer..");
 

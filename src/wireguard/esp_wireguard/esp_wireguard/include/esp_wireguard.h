@@ -38,6 +38,7 @@ extern "C" {
 #include <stdint.h>
 #include <esp_err.h>
 #include <lwip/netif.h>
+#include <lwip/esp_netif_net_stack.h>
 
 #define ESP_WIREGUARD_CONFIG_DEFAULT() { \
     .private_key = NULL, \
@@ -76,6 +77,8 @@ typedef struct {
     struct netif*       netif_default; /**< a pointer to the default netif. */
 } wireguard_ctx_t;
 
+extern const esp_netif_netstack_config_t *_g_esp_netif_netstack_default_wg;
+
 /**
  * @brief Initialize WireGuard
  *
@@ -94,7 +97,7 @@ typedef struct {
  *      - ESP_ERR_INVALID_ARG: given argument is invalid.
  *      - ESP_FAIL: Other error.
  */
-esp_err_t esp_wireguard_init(wireguard_config_t *config, wireguard_ctx_t *ctx);
+esp_err_t esp_wireguard_init();
 
 /**
  * @brief Create a WireGuard interface and start establishing the connection

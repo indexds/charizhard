@@ -39,6 +39,7 @@
 #include <esp_log.h>
 #include <esp_wireguard.h>
 #include <mbedtls/base64.h>
+#include <lwip/esp_netif_net_stack.h>
 
 #include "wireguard-platform.h"
 #include "wireguardif.h"
@@ -57,6 +58,15 @@ static struct netif *wg_netif = NULL;
 static struct wireguardif_peer peer = {0};
 static uint8_t wireguard_peer_index = WIREGUARDIF_INVALID_INDEX;
 static uint8_t preshared_key_decoded[WG_KEY_LEN];
+
+static const struct esp_netif_netstack_config s_wg_netif_config = {
+        .lwip = {
+            .init_fn = wireguardif_init,
+            .input_fn = ip_input
+        }
+};
+
+const esp_netif_netstack_config *_g_esp_netif_netstack_default_wg = &s_wg_netif_config;
 
 static esp_err_t esp_wireguard_peer_init(const wireguard_config_t *config, struct wireguardif_peer *peer)
 {
@@ -112,7 +122,7 @@ static esp_err_t esp_wireguard_peer_init(const wireguard_config_t *config, struc
     }
 
     /* resolve peer name or IP address */
-    ESP_LOGI(TAG, "resolving ip address (dns)..");
+    ESP_LOGI(TAG, "getaddrinfo: Resolving ip address..");
     {
         ip_addr_t endpoint_ip;
         memset(&endpoint_ip, 0, sizeof(endpoint_ip));
@@ -122,11 +132,11 @@ static esp_err_t esp_wireguard_peer_init(const wireguard_config_t *config, struc
             err = ESP_FAIL;
 
             /* XXX gai_strerror() is not implemented */
-            ESP_LOGE(TAG, "getaddrinfo: unable to resolve `%s`", config->endpoint);
+            ESP_LOGE(TAG, "getaddrinfo: Unable to resolve `%s`", config->endpoint);
             goto fail;
         }
 
-        ESP_LOGI(TAG, "resolved ip address successfully!");
+        ESP_LOGI(TAG, "Resolved ip address successfully!");
 
         if (res->ai_family == AF_INET) {
             struct in_addr addr4 = ((struct sockaddr_in *) (res->ai_addr))->sin_addr;
@@ -137,7 +147,7 @@ static esp_err_t esp_wireguard_peer_init(const wireguard_config_t *config, struc
             inet6_addr_to_ip6addr(ip_2_ip6(&endpoint_ip), &addr6);
 #endif
         }
-        ESP_LOGI(TAG, "setting endpoint..");
+        ESP_LOGI(TAG, "Setting endpoint..");
         peer->endpoint_ip = endpoint_ip;
 
         if (inet_ntop(res->ai_family, &(peer->endpoint_ip), addr_str, WG_ADDRSTRLEN) == NULL) {
@@ -188,7 +198,7 @@ static esp_err_t esp_wireguard_netif_create(const wireguard_config_t *config)
         err = ESP_ERR_INVALID_ARG;
         goto fail;
     }
-
+ 
     ESP_LOGI(TAG, "attempting netif_add..");
     /* Register the new WireGuard network interface with lwIP */
     wg_netif = netif_add(
