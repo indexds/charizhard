@@ -1,12 +1,21 @@
 use std::ffi::CString;
 use std::net::Ipv4Addr;
+use std::num::NonZeroU32;
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
 use ctx::WG_CTX;
+use esp_idf_svc::handle::RawHandle;
+use esp_idf_svc::ipv4::{ClientSettings, Mask, Subnet};
+use esp_idf_svc::netif::{EspNetif, NetifConfiguration};
 use esp_idf_svc::nvs::{EspNvs, NvsDefault};
 use esp_idf_svc::sntp::{EspSntp, SyncStatus};
-use esp_idf_svc::sys::esp;
+use esp_idf_svc::sys::{
+    esp,
+    esp_netif_flags_ESP_NETIF_FLAG_AUTOUP,
+    esp_netif_ip_event_type_ESP_NETIF_IP_EVENT_GOT_IP,
+    esp_netif_ip_event_type_ESP_NETIF_IP_EVENT_LOST_IP,
+};
 
 use crate::utils::nvs::WgConfig;
 
@@ -25,6 +34,8 @@ use esp_idf_svc::sys::wg::{
     wireguard_config_t,
     wireguard_ctx_t,
 };
+use esp_idf_svc::sys::esp_netif_get_netif_impl;
+use esp_idf_svc::sys::wg::netif_default;
 
 /// The maximum number of attempts to sync system time before declaring the call
 /// to [sync_systime] a failure.
@@ -62,7 +73,7 @@ pub fn sync_systime() -> anyhow::Result<()> {
 /// wrapping them in [`Box`].
 fn create_ctx_conf(
     nvs: Arc<Mutex<EspNvs<NvsDefault>>>,
-) -> anyhow::Result<(*mut wireguard_ctx_t, *mut wireguard_config_t)> {
+) -> anyhow::Result<(EspNetif, *mut wireguard_ctx_t)> {
     let nvs_conf = WgConfig::get_config(nvs)?;
 
     let config = Box::new(wireguard_config_t {
@@ -78,13 +89,35 @@ fn create_ctx_conf(
         persistent_keepalive: 20,
     });
 
+    let wg_netif = EspNetif::new_with_conf(&NetifConfiguration {
+        flags: esp_netif_flags_ESP_NETIF_FLAG_AUTOUP,
+        got_ip_event_id: NonZeroU32::new(esp_netif_ip_event_type_ESP_NETIF_IP_EVENT_GOT_IP),
+        lost_ip_event_id: NonZeroU32::new(esp_netif_ip_event_type_ESP_NETIF_IP_EVENT_LOST_IP),
+        key: "wg0".try_into().unwrap(),
+        description: "wg_if".try_into().unwrap(),
+        route_priority: 50,
+        ip_configuration: Some(esp_idf_svc::ipv4::Configuration::Client(
+            esp_idf_svc::ipv4::ClientConfiguration::Fixed(ClientSettings {
+                ip: Ipv4Addr::new(0, 0, 0, 0),
+                subnet: Subnet {
+                    gateway: Ipv4Addr::new(0, 0, 0, 0),
+                    mask: Mask(0),
+                },
+                dns: None,
+                secondary_dns: None,
+            }),
+        )),
+        stack: esp_idf_svc::netif::NetifStack::Eth,
+        custom_mac: None,
+    })?;
+
     let ctx = Box::new(wireguard_ctx_t {
-        config: ptr::null_mut(),
-        netif: ptr::null_mut(),
-        netif_default: ptr::null_mut(),
+        config: Box::into_raw(config),
+        netif: unsafe { esp_netif_get_netif_impl(wg_netif.handle()) } as _,
+        netif_default: unsafe { netif_default },
     });
 
-    Ok((Box::into_raw(ctx), Box::into_raw(config)))
+    Ok((wg_netif, Box::into_raw(ctx)))
 }
 
 /// Establishes a tunnel with the peer defined in the `nvs` configuration.
@@ -102,6 +135,8 @@ fn create_ctx_conf(
 /// taken NEVER TO DROP this context as it would unvariably result in undefined
 /// behavior or crash the program.
 pub fn start_tunnel(nvs: Arc<Mutex<EspNvs<NvsDefault>>>) -> anyhow::Result<()> {
+
+
     let mut guard = WG_CTX.lock().unwrap();
 
     // Check if a tunnel is already in service, otherwise we will get either
@@ -204,18 +239,4 @@ pub fn end_tunnel() -> anyhow::Result<()> {
     guard.reset();
 
     Ok(())
-}
-
-#[allow(dead_code)]
-pub fn netif_ip() -> anyhow::Result<Ipv4Addr> {
-    let guard = WG_CTX.lock().unwrap();
-
-    if !guard.is_set() {
-        log::error!("Attempted to get ip without prior connection!");
-        return Err(anyhow::anyhow!("No netif to get ip from."));
-    }
-
-    let raw_ip = unsafe { (*(*guard.0).netif).ip_addr.addr };
-
-    Ok(Ipv4Addr::from(raw_ip.to_be_bytes()))
 }

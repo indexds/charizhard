@@ -214,11 +214,11 @@ fail:
     return err;
 }
 
-esp_err_t esp_wireguard_init(wireguard_config_t *config, wireguard_ctx_t *ctx)
+esp_err_t esp_wireguard_init(wireguard_ctx_t *ctx)
 {
     esp_err_t err = ESP_FAIL;
 
-    if (!config || !ctx) {
+    if (!ctx) {
         err = ESP_ERR_INVALID_ARG;
         goto fail;
     }
@@ -228,9 +228,6 @@ esp_err_t esp_wireguard_init(wireguard_config_t *config, wireguard_ctx_t *ctx)
         ESP_LOGE(TAG, "wireguard_platform_init: %s", esp_err_to_name(err));
         goto fail;
     }
-    ctx->config = config;
-    ctx->netif = NULL;
-    ctx->netif_default = netif_default;
 
     err = ESP_OK;
 fail:
