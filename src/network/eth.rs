@@ -59,9 +59,6 @@ pub fn start(
         })?,
     )?;
 
-    log::info!("Enabling ethernet NAPT..");
-    eth_netif.netif_mut().enable_napt(true)?;
-
     log::info!("Starting ethernet netif..");
     eth_netif.start()?;
 
