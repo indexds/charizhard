@@ -7,14 +7,14 @@ document.addEventListener('DOMContentLoaded', () => {
     })
 });
 
-document.addEventListener("DOMContentLoaded", function() {
+// document.addEventListener("DOMContentLoaded", function() {
 
-    fetchWifiStatus();
-    fetchWireguardStatus();
+//     fetchWifiStatus();
+//     fetchWireguardStatus();
 
-    setInterval(fetchWifiStatus, 2500);
-    setInterval(fetchWireguardStatus, 2500);
-});
+//     setInterval(fetchWifiStatus, 2500);
+//     setInterval(fetchWireguardStatus, 2500);
+// });
 
 async function sleep(time) {
     await new Promise(resolve => setTimeout(resolve, time))

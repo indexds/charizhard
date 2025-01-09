@@ -2,7 +2,6 @@ use core::ptr;
 use std::ffi::CString;
 use std::sync::{Arc, Mutex};
 
-use esp_idf_svc::eth::{EspEth, RmiiEth};
 use esp_idf_svc::sys::wg::{wireguard_config_t, wireguard_ctx_t};
 
 /// This struct wraps the raw pointers to the wireguard context. We declare it
@@ -30,16 +29,11 @@ impl Wireguard {
         &mut self,
         ctx: *mut wireguard_ctx_t,
         config: *mut wireguard_config_t,
-        eth_netif: Arc<Mutex<EspEth<'static, RmiiEth>>>,
     ) -> anyhow::Result<()> {
         log::warn!("Storing Wireguard context pointers!");
 
         self.0 = ctx;
         self.1 = config;
-
-        log::warn!("Swapping netif!");
-
-        crate::network::eth::swap(eth_netif)?;
 
         Ok(())
     }

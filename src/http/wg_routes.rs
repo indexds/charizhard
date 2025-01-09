@@ -2,7 +2,6 @@ use std::sync::{Arc, Mutex};
 use std::thread;
 
 use anyhow::Error;
-use esp_idf_svc::eth::{EspEth, RmiiEth};
 use esp_idf_svc::http::server::{EspHttpServer, Method};
 use esp_idf_svc::nvs::{EspNvs, NvsDefault};
 
@@ -13,13 +12,11 @@ use crate::wireguard as wg;
 pub fn set_routes(
     http_server: &mut EspHttpServer<'static>,
     nvs: Arc<Mutex<EspNvs<NvsDefault>>>,
-    eth_netif: Arc<Mutex<EspEth<'static, RmiiEth>>>,
 ) -> anyhow::Result<()> {
     // Handler to connect to a wireguard peer
     http_server.fn_handler("/connect-wg", Method::Post, {
         // This is so fucking stupid but we can't do otherwise
         let nvs = Arc::clone(&nvs);
-        let eth_netif = Arc::clone(&eth_netif);
 
         move |mut request| {
             super::check_ip(&mut request)?;
@@ -41,11 +38,10 @@ pub fn set_routes(
 
             // Yeah..
             let nvs = Arc::clone(&nvs);
-            let eth_netif = Arc::clone(&eth_netif);
 
             thread::spawn(move || {
                 if wg::sync_systime().is_ok() {
-                    _ = wg::start_tunnel(Arc::clone(&nvs), Arc::clone(&eth_netif));
+                    _ = wg::start_tunnel(Arc::clone(&nvs));
                 }
             });
 

@@ -1,7 +1,6 @@
 use std::sync::{Arc, Mutex};
 
 use anyhow::Error;
-use esp_idf_svc::eth::{EspEth, RmiiEth};
 use esp_idf_svc::http::server::{Configuration as HttpServerConfig, EspHttpConnection, EspHttpServer, Method, Request};
 use esp_idf_svc::ipv4::Ipv4Addr;
 use esp_idf_svc::nvs::{EspNvs, NvsDefault};
@@ -41,7 +40,6 @@ fn check_ip(request: &mut Request<&mut EspHttpConnection>) -> anyhow::Result<()>
 pub fn start(
     nvs: Arc<Mutex<EspNvs<NvsDefault>>>,
     wifi: Arc<Mutex<EspWifi<'static>>>,
-    eth_netif: Arc<Mutex<EspEth<'static, RmiiEth>>>,
 ) -> anyhow::Result<EspHttpServer<'static>> {
     let mut http_server = EspHttpServer::new(&HttpServerConfig {
         http_port: 80,
@@ -49,7 +47,7 @@ pub fn start(
     })?;
 
     assets_routes::set_routes(&mut http_server)?;
-    wg_routes::set_routes(&mut http_server, Arc::clone(&nvs), Arc::clone(&eth_netif))?;
+    wg_routes::set_routes(&mut http_server, Arc::clone(&nvs))?;
     wifi_routes::set_routes(&mut http_server, Arc::clone(&nvs), Arc::clone(&wifi))?;
 
     // Handler to get the main config page

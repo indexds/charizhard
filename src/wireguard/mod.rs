@@ -1,10 +1,8 @@
 use std::ffi::CString;
-use std::net::Ipv4Addr;
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
 use ctx::WG_CTX;
-use esp_idf_svc::eth::{EspEth, RmiiEth};
 use esp_idf_svc::nvs::{EspNvs, NvsDefault};
 use esp_idf_svc::sntp::{EspSntp, SyncStatus};
 use esp_idf_svc::sys::esp;
@@ -104,7 +102,6 @@ fn create_ctx_conf(
 /// behavior or crash the program.
 pub fn start_tunnel(
     nvs: Arc<Mutex<EspNvs<NvsDefault>>>,
-    eth_netif: Arc<Mutex<EspEth<'static, RmiiEth>>>,
 ) -> anyhow::Result<()> {
     let mut guard = WG_CTX.lock().unwrap();
 
@@ -159,7 +156,7 @@ pub fn start_tunnel(
         ))?;
 
         // This keeps ctx and config in scope.
-        guard.set(ctx, config, eth_netif)?;
+        guard.set(ctx, config)?;
 
         Ok(())
     }
@@ -208,18 +205,4 @@ pub fn end_tunnel() -> anyhow::Result<()> {
     guard.reset();
 
     Ok(())
-}
-
-#[allow(dead_code)]
-pub fn netif_ip() -> anyhow::Result<Ipv4Addr> {
-    let guard = WG_CTX.lock().unwrap();
-
-    if !guard.is_set() {
-        log::error!("Attempted to get ip without prior connection!");
-        return Err(anyhow::anyhow!("No netif to get ip from."));
-    }
-
-    let raw_ip = unsafe { (*(*guard.0).netif).ip_addr.addr };
-
-    Ok(Ipv4Addr::from(raw_ip.to_be_bytes()))
 }

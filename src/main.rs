@@ -32,7 +32,7 @@ fn main() -> anyhow::Result<()> {
     let eth_netif = eth::start(peripherals.pins, peripherals.mac, sysloop.clone())?;
     let wifi_netif = wifi::init(peripherals.modem, sysloop.clone(), nvs.clone())?;
 
-    let http_server = http::start(Arc::clone(&nvs_config), Arc::clone(&wifi_netif), Arc::clone(&eth_netif))?;
+    let http_server = http::start(Arc::clone(&nvs_config), Arc::clone(&wifi_netif))?;
 
     std::thread::park();
 
