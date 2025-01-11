@@ -1,4 +1,7 @@
 /// Handles ethernet related capabilities.
-pub mod eth;
+mod eth;
 /// Handles wifi related capbabilities.
-pub mod wifi;
+mod wifi;
+
+pub use eth::*;
+pub use wifi::*;

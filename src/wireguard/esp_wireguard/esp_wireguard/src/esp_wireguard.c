@@ -107,7 +107,7 @@ static esp_err_t esp_wireguard_peer_init(const wireguard_config_t *config, struc
     }
 
     /* resolve peer name or IP address */
-    ESP_LOGI(TAG, "resolving ip address (dns)..");
+    ESP_LOGI(TAG, "resolving ip address..");
     {
         ip_addr_t endpoint_ip;
         memset(&endpoint_ip, 0, sizeof(endpoint_ip));
@@ -188,7 +188,7 @@ static esp_err_t esp_wireguard_netif_create(const wireguard_config_t *config)
             ip_2_ip4(&netmask),
             ip_2_ip4(&gateway),
             &wg, &wireguardif_init,
-            &ip4_input);
+            &ip_input);
     if (wg_netif == NULL) {
         ESP_LOGE(TAG, "netif_add: failed");
         err = ESP_FAIL;

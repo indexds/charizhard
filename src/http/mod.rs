@@ -17,10 +17,7 @@ mod wg_routes;
 /// Handles wifi related routes.
 mod wifi_routes;
 
-/// This IP will be the only one allowed to access the http server once it is
-/// up. By default, this is set to the DHCP address allocated to the computer
-/// connecting to the esp32.
-const ALLOWED_IP: Ipv4Addr = Ipv4Addr::new(10, 10, 10, 2);
+use super::net::ETH_GATEWAY;
 
 /// Checks that the source ip of the request is [`ALLOWED_IP`]. This function
 /// should be called at the beginning of every call to `fn_handler` to prevent
@@ -28,7 +25,10 @@ const ALLOWED_IP: Ipv4Addr = Ipv4Addr::new(10, 10, 10, 2);
 fn check_ip(request: &mut Request<&mut EspHttpConnection>) -> anyhow::Result<()> {
     let source_ip = request.connection().raw_connection()?.source_ipv4()?;
 
-    if source_ip != ALLOWED_IP {
+    // This IP will be the only one allowed to access the http server once it is
+    // up. By default, this is set to the DHCP address allocated to the computer
+    // connecting to the esp32.
+    if source_ip != Ipv4Addr::from(u32::from(ETH_GATEWAY) + 1) {
         log::warn!("Forbidden ip [{}] tried to connect! Returned 403.", source_ip);
         return Err(Error::msg("Forbidden"));
     }
