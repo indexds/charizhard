@@ -44,10 +44,7 @@ pub fn wifi_init(
 }
 
 /// Stores the given configuration in nvs and sets it.
-pub fn wifi_set_config(
-    nvs: Arc<Mutex<EspNvs<NvsDefault>>>,
-    wifi: Arc<Mutex<EspWifi<'static>>>,
-) -> anyhow::Result<()> {
+pub fn wifi_set_config(nvs: Arc<Mutex<EspNvs<NvsDefault>>>, wifi: Arc<Mutex<EspWifi<'static>>>) -> anyhow::Result<()> {
     log::info!("Setting wifi configuration...");
 
     let mut wifi = wifi.lock().unwrap();

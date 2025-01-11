@@ -7,7 +7,10 @@ use esp_idf_svc::hal::mac::MAC;
 use esp_idf_svc::ipv4::{Configuration, Ipv4Addr, Mask, RouterConfiguration, Subnet};
 use esp_idf_svc::netif::{EspNetif, NetifConfiguration, NetifStack};
 
-/// Ethernet gateway to access the web configuration page. Care should be taken not to set this ip in a way that would clash with other subnet configurations on the local network. Whatever this ip is, the DHCP allocated ip the device will receive will be ip+1
+/// Ethernet gateway to access the web configuration page. Care should be taken
+/// not to set this ip in a way that would clash with other subnet
+/// configurations on the local network. Whatever this ip is, the DHCP allocated
+/// ip the device will receive will be ip+1
 pub const ETH_GATEWAY: Ipv4Addr = Ipv4Addr::new(192, 168, 100, 1);
 
 /// Initializes the Ethernet driver and network interface, then starts it.
