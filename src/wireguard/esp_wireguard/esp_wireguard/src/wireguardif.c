@@ -340,13 +340,6 @@ static void wireguardif_process_data_message(struct wireguard_device *device, st
 								}
 							}
 #endif /* LWIP_IPV4 */
-#if LWIP_IPV6
-							if (IPH_V(iphdr) == 6) {
-								// TODO: IPV6 support for route filtering
-								header_len = PP_NTOHS(IPH_LEN(iphdr));
-								dest_ok = true;
-							}
-#endif /* LWIP_IPV6 */
 							if (header_len <= pbuf->tot_len) {
 
 								// 5. If the plaintext packet has not been dropped, it is inserted into the receive queue of the wg0 interface.
@@ -436,25 +429,11 @@ static void wireguardif_send_handshake_response(struct wireguard_device *device,
 static size_t get_source_addr_port(const ip_addr_t *addr, u16_t port, uint8_t *buf, size_t buflen) {
 	size_t result = 0;
 
-#if LWIP_IPV4
 	if (IP_IS_V4(addr) && (buflen >= 4)) {
 		U32TO8_BIG(buf + result, PP_NTOHL(ip4_addr_get_u32(ip_2_ip4(addr))));
 		result += 4;
 	}
-#endif
-#if LWIP_IPV6
-	if (IP_IS_V6(addr) && (buflen >= 16)) {
-		U16TO8_BIG(buf + result + 0, IP6_ADDR_BLOCK1(ip_2_ip6(addr)));
-		U16TO8_BIG(buf + result + 2, IP6_ADDR_BLOCK2(ip_2_ip6(addr)));
-		U16TO8_BIG(buf + result + 4, IP6_ADDR_BLOCK3(ip_2_ip6(addr)));
-		U16TO8_BIG(buf + result + 6, IP6_ADDR_BLOCK4(ip_2_ip6(addr)));
-		U16TO8_BIG(buf + result + 8, IP6_ADDR_BLOCK5(ip_2_ip6(addr)));
-		U16TO8_BIG(buf + result + 10, IP6_ADDR_BLOCK6(ip_2_ip6(addr)));
-		U16TO8_BIG(buf + result + 12, IP6_ADDR_BLOCK7(ip_2_ip6(addr)));
-		U16TO8_BIG(buf + result + 14, IP6_ADDR_BLOCK8(ip_2_ip6(addr)));
-		result += 16;
-	}
-#endif
+
 	if (buflen >= result + 2) {
 		U16TO8_BIG(buf + result, port);
 		result += 2;
