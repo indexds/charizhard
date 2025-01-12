@@ -195,11 +195,11 @@ static esp_err_t esp_wireguard_netif_create(const wireguard_config_t *config)
         goto fail;
     }
 
-    ESP_LOGI(TAG, "netif_add success!");
     /* Mark the interface as administratively up, link up flag is set
-     * automatically when peer connects */
+     * automatically when peer connects 
+     */
+
     netif_set_up(wg_netif);
-    ESP_LOGI(TAG, "netif_set_up success!");
     err = ESP_OK;
 fail:
     return err;

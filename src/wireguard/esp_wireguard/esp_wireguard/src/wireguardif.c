@@ -890,7 +890,6 @@ err_t wireguardif_init(struct netif *netif) {
 	uint8_t private_key[WIREGUARD_PRIVATE_KEY_LEN];
 	size_t private_key_len = sizeof(private_key);
 
-#if defined(CONFIG_WIREGUARD_ESP_NETIF)
 	struct netif* underlying_netif = NULL;
 	char lwip_netif_name[8] = {0,};
 
@@ -906,15 +905,7 @@ err_t wireguardif_init(struct netif *netif) {
 		result = ERR_IF;
 		goto fail;
 	}
-#elif defined(CONFIG_WIREGUARD_ESP_TCPIP_ADAPTER)
-	void *underlying_netif = NULL;
-	err = tcpip_adapter_get_netif(TCPIP_ADAPTER_IF_STA, &underlying_netif);
-	if (err != ESP_OK) {
-		ESP_LOGE(TAG, "tcpip_adapter_get_netif: %s", esp_err_to_name(err));
-		result = ERR_IF;
-		goto fail;
-	}
-#endif
+
 	ESP_LOGD(TAG, "underlying_netif = %p", underlying_netif);
 
 	LWIP_ASSERT("netif != NULL", (netif != NULL));
