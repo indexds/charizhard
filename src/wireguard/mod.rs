@@ -1,5 +1,4 @@
 use std::ffi::CString;
-use std::net::Ipv4Addr;
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
@@ -71,8 +70,8 @@ fn create_ctx_conf(
         fw_mark: 0,
         public_key: CString::new(nvs_conf.server_public_key.as_str())?.into_raw(),
         preshared_key: ptr::null_mut(),
-        allowed_ip: CString::new("0.0.0.0")?.into_raw(),
-        allowed_ip_mask: CString::new("0.0.0.0")?.into_raw(),
+        allowed_ip: CString::new("192.168.200.1")?.into_raw(),
+        allowed_ip_mask: CString::new("255.255.255.0")?.into_raw(),
         endpoint: CString::new(nvs_conf.address.as_str())?.into_raw(),
         port: nvs_conf.port.as_str().parse()?,
         persistent_keepalive: 20,
@@ -204,18 +203,4 @@ pub fn end_tunnel() -> anyhow::Result<()> {
     guard.reset();
 
     Ok(())
-}
-
-#[allow(dead_code)]
-pub fn netif_ip() -> anyhow::Result<Ipv4Addr> {
-    let guard = WG_CTX.lock().unwrap();
-
-    if !guard.is_set() {
-        log::error!("Attempted to get ip without prior connection!");
-        return Err(anyhow::anyhow!("No netif to get ip from."));
-    }
-
-    let raw_ip = unsafe { (*(*guard.0).netif).ip_addr.addr };
-
-    Ok(Ipv4Addr::from(raw_ip.to_be_bytes()))
 }

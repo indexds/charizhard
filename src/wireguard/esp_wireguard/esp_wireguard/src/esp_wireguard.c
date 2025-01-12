@@ -46,11 +46,7 @@
 #define TAG "esp_wireguard"
 #define WG_KEY_LEN  (32)
 #define WG_B64_KEY_LEN (4 * ((WG_KEY_LEN + 2) / 3))
-#if defined(CONFIG_LWIP_IPV6)
-#define WG_ADDRSTRLEN  INET6_ADDRSTRLEN
-#else
 #define WG_ADDRSTRLEN  INET_ADDRSTRLEN
-#endif
 
 static struct netif wg_netif_struct = {0};
 static struct netif *wg_netif = NULL;
@@ -66,9 +62,8 @@ static esp_err_t esp_wireguard_peer_init(const wireguard_config_t *config, struc
     struct addrinfo hints;
 
     memset(&hints, 0, sizeof(hints));
-    // ONLY IPV4, AF_UNSPEC for IPV4&&IPV6
+    
     hints.ai_family = AF_INET;
-    //NO DNS LOOKUP
     hints.ai_flags = AI_NUMERICHOST;
 
     if (!config || !peer) {
@@ -112,7 +107,7 @@ static esp_err_t esp_wireguard_peer_init(const wireguard_config_t *config, struc
     }
 
     /* resolve peer name or IP address */
-    ESP_LOGI(TAG, "resolving ip address (dns)..");
+    ESP_LOGI(TAG, "resolving ip address..");
     {
         ip_addr_t endpoint_ip;
         memset(&endpoint_ip, 0, sizeof(endpoint_ip));
@@ -131,12 +126,8 @@ static esp_err_t esp_wireguard_peer_init(const wireguard_config_t *config, struc
         if (res->ai_family == AF_INET) {
             struct in_addr addr4 = ((struct sockaddr_in *) (res->ai_addr))->sin_addr;
             inet_addr_to_ip4addr(ip_2_ip4(&endpoint_ip), &addr4);
-        } else {
-#if defined(CONFIG_LWIP_IPV6)
-            struct in6_addr addr6 = ((struct sockaddr_in6 *) (res->ai_addr))->sin6_addr;
-            inet6_addr_to_ip6addr(ip_2_ip6(&endpoint_ip), &addr6);
-#endif
         }
+
         ESP_LOGI(TAG, "setting endpoint..");
         peer->endpoint_ip = endpoint_ip;
 
@@ -204,11 +195,11 @@ static esp_err_t esp_wireguard_netif_create(const wireguard_config_t *config)
         goto fail;
     }
 
-    ESP_LOGI(TAG, "netif_add success!");
     /* Mark the interface as administratively up, link up flag is set
-     * automatically when peer connects */
+     * automatically when peer connects 
+     */
+
     netif_set_up(wg_netif);
-    ESP_LOGI(TAG, "netif_set_up success!");
     err = ESP_OK;
 fail:
     return err;

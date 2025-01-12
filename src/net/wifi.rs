@@ -14,7 +14,7 @@ use crate::utils::nvs::WifiConfig;
 /// Initializes the WiFi driver and network interface, but does not start it
 /// yet. This will be done when the user calls a scan using the web interface
 /// provided by the http server.
-pub fn init(
+pub fn wifi_init(
     modem: Modem,
     sysloop: EspSystemEventLoop,
     nvs: EspDefaultNvsPartition,
@@ -44,10 +44,7 @@ pub fn init(
 }
 
 /// Stores the given configuration in nvs and sets it.
-pub fn set_configuration(
-    nvs: Arc<Mutex<EspNvs<NvsDefault>>>,
-    wifi: Arc<Mutex<EspWifi<'static>>>,
-) -> anyhow::Result<()> {
+pub fn wifi_set_config(nvs: Arc<Mutex<EspNvs<NvsDefault>>>, wifi: Arc<Mutex<EspWifi<'static>>>) -> anyhow::Result<()> {
     log::info!("Setting wifi configuration...");
 
     let mut wifi = wifi.lock().unwrap();
@@ -71,7 +68,7 @@ pub fn set_configuration(
 /// Connects the WiFi network interface to the configured access point.
 /// Care should be taken to always call [`set_configuration`] before this
 /// function.
-pub fn connect(wifi: Arc<Mutex<EspWifi<'static>>>) -> anyhow::Result<()> {
+pub fn wifi_connect(wifi: Arc<Mutex<EspWifi<'static>>>) -> anyhow::Result<()> {
     log::info!("Connecting to access point..");
 
     let mut wifi = wifi.lock().unwrap();
@@ -93,7 +90,7 @@ pub fn connect(wifi: Arc<Mutex<EspWifi<'static>>>) -> anyhow::Result<()> {
 
 /// Disconnects the WiFi network interface from the access point it is connected
 /// to.
-pub fn disconnect(wifi: Arc<Mutex<EspWifi<'static>>>) -> anyhow::Result<()> {
+pub fn wifi_disconnect(wifi: Arc<Mutex<EspWifi<'static>>>) -> anyhow::Result<()> {
     log::info!("Disconnecting from access point..");
 
     let mut wifi = wifi.lock().unwrap();

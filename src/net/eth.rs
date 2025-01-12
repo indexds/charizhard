@@ -7,8 +7,14 @@ use esp_idf_svc::hal::mac::MAC;
 use esp_idf_svc::ipv4::{Configuration, Ipv4Addr, Mask, RouterConfiguration, Subnet};
 use esp_idf_svc::netif::{EspNetif, NetifConfiguration, NetifStack};
 
+/// Ethernet gateway to access the web configuration page. Care should be taken
+/// not to set this ip in a way that would clash with other subnet
+/// configurations on the local network. Whatever this ip is, the DHCP allocated
+/// ip the device will receive will be ip+1
+pub const ETH_GATEWAY: Ipv4Addr = Ipv4Addr::new(192, 168, 100, 1);
+
 /// Initializes the Ethernet driver and network interface, then starts it.
-pub fn start(
+pub fn eth_start(
     pins: Pins,
     mac: MAC,
     sysloop: EspSystemEventLoop,
@@ -45,7 +51,7 @@ pub fn start(
             route_priority: 10,
             ip_configuration: Some(Configuration::Router(RouterConfiguration {
                 subnet: Subnet {
-                    gateway: Ipv4Addr::new(10, 10, 10, 1),
+                    gateway: ETH_GATEWAY,
                     mask: Mask(30),
                 },
                 dhcp_enabled: true, // adds dhcp_server flag
@@ -58,9 +64,6 @@ pub fn start(
             lost_ip_event_id: None,
         })?,
     )?;
-
-    log::info!("Enabling ethernet NAPT..");
-    eth_netif.netif_mut().enable_napt(true)?;
 
     log::info!("Starting ethernet netif..");
     eth_netif.start()?;

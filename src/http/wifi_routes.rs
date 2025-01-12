@@ -6,7 +6,7 @@ use esp_idf_svc::http::server::{EspHttpServer, Method};
 use esp_idf_svc::nvs::{EspNvs, NvsDefault};
 use esp_idf_svc::wifi::{AuthMethod, EspWifi};
 
-use crate::network::wifi;
+use crate::net;
 use crate::utils::nvs::WifiConfig;
 
 /// Sets the WiFi related routes for the http server.
@@ -22,7 +22,7 @@ pub fn set_routes(
         move |mut request| {
             super::check_ip(&mut request)?;
 
-            wifi::disconnect(Arc::clone(&wifi))?;
+            net::wifi_disconnect(Arc::clone(&wifi))?;
 
             let connection = request.connection();
 
@@ -58,8 +58,8 @@ pub fn set_routes(
             let wifi = Arc::clone(&wifi);
 
             thread::spawn(move || {
-                _ = wifi::set_configuration(Arc::clone(&nvs_thread), Arc::clone(&wifi));
-                _ = wifi::connect(Arc::clone(&wifi));
+                _ = net::wifi_set_config(Arc::clone(&nvs_thread), Arc::clone(&wifi));
+                _ = net::wifi_connect(Arc::clone(&wifi));
             });
 
             let connection = request.connection();

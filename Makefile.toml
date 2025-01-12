@@ -15,13 +15,9 @@ args = [
     "0x20000", "${CARGO_MAKE_WORKSPACE_WORKING_DIRECTORY}/target/xtensa-esp32-espidf/release/charizhard.bin"
 ]
 
-[tasks.monitor-windows]
-command = "putty"
-args = ["-serial", "${COM}", "-sercfg", "115200,8,n,1,N"]
-
-[tasks.monitor-linux]
-command = "screen"
-args = ["/dev/${ttyUSB}", "115200"]
+[tasks.monitor]
+command = "espflash"
+args = ["monitor"]
 
 [tasks.flash]
 dependencies = [
@@ -30,7 +26,7 @@ dependencies = [
     "write",
 ]
 
-[tasks.erase-flash]
+[tasks.erase]
 command = "espflash"
 args = ["erase-flash"]
 
