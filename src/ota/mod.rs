@@ -1,14 +1,14 @@
 // TODO
 use core::mem::size_of;
 
-use embedded_svc::http::Headers;
-use http::header::ACCEPT;
-use http::Uri;
+use embedded_svc::http::client::Client;
+use embedded_svc::http::{Headers, Method};
 use embedded_svc::ota::FirmwareInfo;
-use embedded_svc::http::{client::Client, Method};
 use esp_idf_svc::http::client::{Configuration, EspHttpConnection};
 use esp_idf_svc::ota::EspOta;
 use esp_idf_svc::sys::{EspError, ESP_ERR_IMAGE_INVALID, ESP_ERR_INVALID_RESPONSE};
+use http::header::ACCEPT;
+use http::Uri;
 
 /// Macro to quickly create EspError from an ESP_ERR_ constant.
 #[macro_export]
@@ -19,17 +19,16 @@ macro_rules! esp_err {
 }
 
 // Config to use once https is enabled
-// 
-//use esp_idf_svc::sys::esp_crt_bundle_attach;
+//
+// use esp_idf_svc::sys::esp_crt_bundle_attach;
 //
 //...
-//Configuration {
-//	buffer_size: Some(1024 * 4),
-//	use_global_ca_store: true,
-//	crt_bundle_attach: Some(esp_crt_bundle_attach),
-//	..Default::default()
+// Configuration {
+// 	buffer_size: Some(1024 * 4),
+// 	use_global_ca_store: true,
+// 	crt_bundle_attach: Some(esp_crt_bundle_attach),
+// 	..Default::default()
 //}
-
 
 const FIRMWARE_DOWNLOAD_CHUNK_SIZE: usize = 1024 * 20;
 // Not expect firmware bigger than 2MB
@@ -43,9 +42,7 @@ pub fn download_and_update_firmware(url: Uri) -> Result<(), EspError> {
     })?);
     let headers = [(ACCEPT.as_str(), mime::APPLICATION_OCTET_STREAM.as_ref())];
     let surl = url.to_string();
-    let request = client
-        .request(Method::Get, &surl, &headers)
-        .map_err(|e| e.0)?;
+    let request = client.request(Method::Get, &surl, &headers).map_err(|e| e.0)?;
     let mut response = request.submit().map_err(|e| e.0)?;
     if response.status() != 200 {
         log::info!("Bad HTTP response: {}", response.status());
@@ -53,9 +50,7 @@ pub fn download_and_update_firmware(url: Uri) -> Result<(), EspError> {
     }
     let file_size = response.content_len().unwrap_or(0) as usize;
     if file_size <= FIRMWARE_MIN_SIZE {
-        log::info!(
-            "File size is {file_size}, too small to be a firmware! No need to proceed further."
-        );
+        log::info!("File size is {file_size}, too small to be a firmware! No need to proceed further.");
         return Err(esp_err!(ESP_ERR_IMAGE_INVALID));
     }
     if file_size > FIRMWARE_MAX_SIZE {
@@ -94,12 +89,14 @@ pub fn download_and_update_firmware(url: Uri) -> Result<(), EspError> {
         return work.abort();
     }
     if total_read_len < file_size {
-        log::error!("Supposed to download {file_size} bytes, but we could only get {total_read_len}. May be network error?");
+        log::error!(
+            "Supposed to download {file_size} bytes, but we could only get {total_read_len}. May be network error?"
+        );
         return work.abort();
     }
     work.complete()
 }
 
-fn get_firmware_info(buff: &[u8]) -> Result<(), EspError>{
+fn get_firmware_info(buff: &[u8]) -> Result<(), EspError> {
     todo!()
 }
