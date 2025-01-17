@@ -29,12 +29,13 @@ macro_rules! esp_err {
 // 	crt_bundle_attach: Some(esp_crt_bundle_attach),
 // 	..Default::default()
 //}
-
+#[allow(unused_variables)]
 const FIRMWARE_DOWNLOAD_CHUNK_SIZE: usize = 1024 * 20;
 // Not expect firmware bigger than 2MB
 const FIRMWARE_MAX_SIZE: usize = 1024 * 1024 * 2;
 const FIRMWARE_MIN_SIZE: usize = size_of::<FirmwareInfo>() + 1024;
 
+#[allow(dead_code)]
 pub fn download_and_update_firmware(url: Uri) -> Result<(), EspError> {
     let mut client = Client::wrap(EspHttpConnection::new(&Configuration {
         buffer_size: Some(1024 * 4),
@@ -97,6 +98,7 @@ pub fn download_and_update_firmware(url: Uri) -> Result<(), EspError> {
     work.complete()
 }
 
-fn get_firmware_info(buff: &[u8]) -> Result<(), EspError> {
-    todo!()
+#[allow(unused_variables)]
+fn get_firmware_info(buff: &[u8]) -> Result<FirmwareInfo, EspError> {
+    todo!();
 }
