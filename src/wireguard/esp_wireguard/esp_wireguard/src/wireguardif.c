@@ -1,36 +1,3 @@
-/*
- * Copyright (c) 2021 Daniel Hope (www.floorsense.nz)
- * Copyright (c) 2021 Kenta Ida (fuga@fugafuga.org)
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without modification,
- * are permitted provided that the following conditions are met:
- *
- * 1. Redistributions of source code must retain the above copyright notice, this
- *  list of conditions and the following disclaimer.
- *
- * 2. Redistributions in binary form must reproduce the above copyright notice, this
- *  list of conditions and the following disclaimer in the documentation and/or
- *  other materials provided with the distribution.
- *
- * 3. Neither the name of "Floorsense Ltd", "Agile Workspace Ltd" nor the names of
- *  its contributors may be used to endorse or promote products derived from this
- *   software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
- * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Author: Daniel Hope <daniel.hope@smartalock.com>
- */
-
 #include "wireguardif.h"
 
 #include <string.h>
@@ -45,13 +12,7 @@
 #include <sys/socket.h>
 #include <esp_log.h>
 #include <esp_err.h>
-#if defined(CONFIG_WIREGUARD_ESP_NETIF)
 #include <esp_netif.h>
-#endif
-#if defined(CONFIG_WIREGUARD_ESP_TCPIP_ADAPTER)
-#include <tcpip_adapter.h>
-#endif
-
 #include "wireguard.h"
 #include "crypto.h"
 
@@ -125,6 +86,8 @@ static err_t wireguardif_output_to_peer(struct netif *netif, struct pbuf *q, con
 			// Calculate the outgoing packet size - round up to next 16 bytes, add 16 bytes for header
 			if (q) {
 				// This is actual transport data
+				struct ip_hdr *unpadded_header = (struct ip_hdr *)q->payload;
+				unpadded_header->src.addr = 0x02c8a8c0;
 				unpadded_len = q->tot_len;
 			} else {
 				// This is a keep-alive
@@ -264,6 +227,50 @@ static bool peer_add_ip(struct wireguard_peer *peer, ip_addr_t ip, ip_addr_t mas
 	return result;
 }
 
+err_t output_to_eth(struct pbuf *p) {    
+    struct netif *eth_netif = esp_netif_get_netif_impl(esp_netif_get_handle_from_ifkey("ETH_DEF"));
+    
+	if (eth_netif == NULL) {
+        ESP_LOGI(TAG, "couldnt find eth interface!");
+        return ERR_IF;
+    }
+    
+	struct ip_hdr *iphdr = (struct ip_hdr *)p->payload;
+
+	u16_t iphdr_hlen = IPH_HL_BYTES(iphdr);
+  	u16_t iphdr_len = lwip_ntohs(IPH_LEN(iphdr));
+
+	if (iphdr_len < p->tot_len) {
+		pbuf_realloc(p, iphdr_len);
+	}
+
+	if ((iphdr_hlen > p->len) || (iphdr_len > p->tot_len) || (iphdr_hlen < IP_HLEN)) {
+    	ESP_LOGW(TAG, "FUCKED LENGTH");
+		pbuf_free(p);
+    	return ERR_OK;
+  	}
+	if (inet_chksum(iphdr, iphdr_hlen) != 0) {
+		ESP_LOGW(TAG, "FAILED CHECKSUM!");
+		pbuf_free(p);
+		return ERR_OK;
+	}
+
+	ip4_addr_t src;
+	ip4_addr_copy(src, iphdr->src);
+
+	ip4_addr_t dest;
+	dest.addr = 0x0264a8c0; //2.100.168.192
+
+    if (ip4_output_if(p, &src, &dest, 
+                      IPH_TTL(iphdr), IPH_TOS(iphdr), 
+					  IPH_PROTO(iphdr), eth_netif) != ERR_OK) {
+        ESP_LOGI(TAG, "FAILED TO OUTPUT!");
+        return ERR_IF;
+    }
+
+    return ERR_OK;
+}
+
 static void wireguardif_process_data_message(struct wireguard_device *device, struct wireguard_peer *peer, struct message_transport_data *data_hdr, size_t data_len, const ip_addr_t *addr, u16_t port) {
 	struct wireguard_keypair *keypair;
 	uint64_t nonce;
@@ -340,23 +347,34 @@ static void wireguardif_process_data_message(struct wireguard_device *device, st
 								}
 							}
 #endif /* LWIP_IPV4 */
+#if LWIP_IPV6
+							if (IPH_V(iphdr) == 6) {
+								// TODO: IPV6 support for route filtering
+								header_len = PP_NTOHS(IPH_LEN(iphdr));
+								dest_ok = true;
+							}
+#endif /* LWIP_IPV6 */
 							if (header_len <= pbuf->tot_len) {
 
 								// 5. If the plaintext packet has not been dropped, it is inserted into the receive queue of the wg0 interface.
 								if (dest_ok) {
-									// Send packet to be process by LWIP
-									ip_input(pbuf, device->netif);
+									// Send packet to PC
+									ESP_LOGI(TAG, "Sending To: 192.168.100.2");
+									output_to_eth(pbuf);
 									// pbuf is owned by IP layer now
 									pbuf = NULL;
 								}
 							} else {
 								// IP header is corrupt or lied about packet size
+								ESP_LOGI(TAG, "Ip header is corrupt or lied about packet size.");
 							}
 						} else {
 							// This is a duplicate packet / replayed / too far out of order
+							ESP_LOGI(TAG, "Duplicate/Replayed packet.");
 						}
 					} else {
 						// This was a keep-alive packet
+						ESP_LOGI(TAG, "Keepalive.");
 					}
 				}
 
@@ -429,11 +447,25 @@ static void wireguardif_send_handshake_response(struct wireguard_device *device,
 static size_t get_source_addr_port(const ip_addr_t *addr, u16_t port, uint8_t *buf, size_t buflen) {
 	size_t result = 0;
 
+#if LWIP_IPV4
 	if (IP_IS_V4(addr) && (buflen >= 4)) {
 		U32TO8_BIG(buf + result, PP_NTOHL(ip4_addr_get_u32(ip_2_ip4(addr))));
 		result += 4;
 	}
-
+#endif
+#if LWIP_IPV6
+	if (IP_IS_V6(addr) && (buflen >= 16)) {
+		U16TO8_BIG(buf + result + 0, IP6_ADDR_BLOCK1(ip_2_ip6(addr)));
+		U16TO8_BIG(buf + result + 2, IP6_ADDR_BLOCK2(ip_2_ip6(addr)));
+		U16TO8_BIG(buf + result + 4, IP6_ADDR_BLOCK3(ip_2_ip6(addr)));
+		U16TO8_BIG(buf + result + 6, IP6_ADDR_BLOCK4(ip_2_ip6(addr)));
+		U16TO8_BIG(buf + result + 8, IP6_ADDR_BLOCK5(ip_2_ip6(addr)));
+		U16TO8_BIG(buf + result + 10, IP6_ADDR_BLOCK6(ip_2_ip6(addr)));
+		U16TO8_BIG(buf + result + 12, IP6_ADDR_BLOCK7(ip_2_ip6(addr)));
+		U16TO8_BIG(buf + result + 14, IP6_ADDR_BLOCK8(ip_2_ip6(addr)));
+		result += 16;
+	}
+#endif
 	if (buflen >= result + 2) {
 		U16TO8_BIG(buf + result, port);
 		result += 2;
@@ -544,6 +576,7 @@ void wireguardif_network_rx(void *arg, struct udp_pcb *pcb, struct pbuf *p, cons
 
 	switch (type) {
 		case MESSAGE_HANDSHAKE_INITIATION:
+			ESP_LOGI(TAG, "Received: MESSAGE_HANDSHAKE_INITIATION");
 			msg_initiation = (struct message_handshake_initiation *)data;
 			// Check mac1 (and optionally mac2) are correct - note it may internally generate a cookie reply packet
 			if (wireguardif_check_initiation_message(device, msg_initiation, addr, port)) {
@@ -560,6 +593,7 @@ void wireguardif_network_rx(void *arg, struct udp_pcb *pcb, struct pbuf *p, cons
 			break;
 
 		case MESSAGE_HANDSHAKE_RESPONSE:
+			ESP_LOGI(TAG, "Received: MESSAGE_HANDSHAKE_RESPONSE");
 			msg_response = (struct message_handshake_response *)data;
 
 			// Check mac1 (and optionally mac2) are correct - note it may internally generate a cookie reply packet
@@ -574,6 +608,7 @@ void wireguardif_network_rx(void *arg, struct udp_pcb *pcb, struct pbuf *p, cons
 			break;
 
 		case MESSAGE_COOKIE_REPLY:
+			ESP_LOGI(TAG, "Received: MESSAGE_COOKIE_REPLY");
 			msg_cookie = (struct message_cookie_reply *)data;
 			peer = peer_lookup_by_handshake(device, msg_cookie->receiver);
 			if (peer) {
@@ -587,6 +622,7 @@ void wireguardif_network_rx(void *arg, struct udp_pcb *pcb, struct pbuf *p, cons
 			break;
 
 		case MESSAGE_TRANSPORT_DATA:
+			ESP_LOGI(TAG, "Received: MESSAGE_TRANSPORT_DATA");
 			msg_data = (struct message_transport_data *)data;
 			peer = peer_lookup_by_receiver(device, msg_data->receiver);
 			if (peer) {
@@ -726,9 +762,6 @@ err_t wireguardif_update_endpoint(struct netif *netif, u8_t peer_index, const ip
 
 
 err_t wireguardif_add_peer(struct netif *netif, struct wireguardif_peer *p, u8_t *peer_index) {
-
-	ESP_LOGI(TAG, "registering wg peer..");
-
 	LWIP_ASSERT("netif != NULL", (netif != NULL));
 	LWIP_ASSERT("state != NULL", (netif->state != NULL));
 	LWIP_ASSERT("p != NULL", (p != NULL));
@@ -784,7 +817,6 @@ err_t wireguardif_add_peer(struct netif *netif, struct wireguardif_peer *p, u8_t
 			*peer_index = WIREGUARDIF_INVALID_INDEX;
 		}
 	}
-	ESP_LOGI(TAG, "peer add success!");
 	return result;
 }
 
@@ -890,6 +922,7 @@ err_t wireguardif_init(struct netif *netif) {
 	uint8_t private_key[WIREGUARD_PRIVATE_KEY_LEN];
 	size_t private_key_len = sizeof(private_key);
 
+#if defined(CONFIG_WIREGUARD_ESP_NETIF)
 	struct netif* underlying_netif = NULL;
 	char lwip_netif_name[8] = {0,};
 
@@ -905,7 +938,15 @@ err_t wireguardif_init(struct netif *netif) {
 		result = ERR_IF;
 		goto fail;
 	}
-
+#elif defined(CONFIG_WIREGUARD_ESP_TCPIP_ADAPTER)
+	void *underlying_netif = NULL;
+	err = tcpip_adapter_get_netif(TCPIP_ADAPTER_IF_STA, &underlying_netif);
+	if (err != ESP_OK) {
+		ESP_LOGE(TAG, "tcpip_adapter_get_netif: %s", esp_err_to_name(err));
+		result = ERR_IF;
+		goto fail;
+	}
+#endif
 	ESP_LOGD(TAG, "underlying_netif = %p", underlying_netif);
 
 	LWIP_ASSERT("netif != NULL", (netif != NULL));
@@ -1029,4 +1070,3 @@ void wireguardif_fini(struct netif *netif) {
 	free(device);
 	netif->state = NULL;
 }
-// vim: noexpandtab

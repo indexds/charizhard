@@ -70,7 +70,7 @@ fn create_ctx_conf(
         fw_mark: 0,
         public_key: CString::new(nvs_conf.server_public_key.as_str())?.into_raw(),
         preshared_key: ptr::null_mut(),
-        allowed_ip: CString::new("192.168.200.1")?.into_raw(),
+        allowed_ip: CString::new("192.168.200.2")?.into_raw(),
         allowed_ip_mask: CString::new("255.255.255.0")?.into_raw(),
         endpoint: CString::new(nvs_conf.address.as_str())?.into_raw(),
         port: nvs_conf.port.as_str().parse()?,
