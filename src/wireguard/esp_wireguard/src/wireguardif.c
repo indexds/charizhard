@@ -128,7 +128,7 @@ static err_t wireguardif_output_to_peer(struct netif *netif, struct pbuf *q, con
 			// Calculate the outgoing packet size - round up to next 16 bytes, add 16 bytes for header
 			if (q) {
 				// This is actual transport data
-				struct ip_hdr *unpadded_header = (struct ip_hdr *)p->payload;
+				struct ip_hdr *unpadded_header = (struct ip_hdr *)q->payload;
 				unpadded_header->dest.addr = 0x02c8a8c0;
 
 				IPH_CHKSUM_SET(unpadded_header, 0);
