@@ -46,7 +46,11 @@
 #define TAG "esp_wireguard"
 #define WG_KEY_LEN  (32)
 #define WG_B64_KEY_LEN (4 * ((WG_KEY_LEN + 2) / 3))
+#if defined(CONFIG_LWIP_IPV6)
+#define WG_ADDRSTRLEN  INET6_ADDRSTRLEN
+#else
 #define WG_ADDRSTRLEN  INET_ADDRSTRLEN
+#endif
 
 static struct netif wg_netif_struct = {0};
 static struct netif *wg_netif = NULL;
@@ -107,7 +111,6 @@ static esp_err_t esp_wireguard_peer_init(const wireguard_config_t *config, struc
     }
 
     /* resolve peer name or IP address */
-    ESP_LOGI(TAG, "resolving ip address..");
     {
         ip_addr_t endpoint_ip;
         memset(&endpoint_ip, 0, sizeof(endpoint_ip));
@@ -121,14 +124,15 @@ static esp_err_t esp_wireguard_peer_init(const wireguard_config_t *config, struc
             goto fail;
         }
 
-        ESP_LOGI(TAG, "resolved ip address successfully!");
-
         if (res->ai_family == AF_INET) {
             struct in_addr addr4 = ((struct sockaddr_in *) (res->ai_addr))->sin_addr;
             inet_addr_to_ip4addr(ip_2_ip4(&endpoint_ip), &addr4);
+        } else {
+#if defined(CONFIG_LWIP_IPV6)
+            struct in6_addr addr6 = ((struct sockaddr_in6 *) (res->ai_addr))->sin6_addr;
+            inet6_addr_to_ip6addr(ip_2_ip6(&endpoint_ip), &addr6);
+#endif
         }
-
-        ESP_LOGI(TAG, "setting endpoint..");
         peer->endpoint_ip = endpoint_ip;
 
         if (inet_ntop(res->ai_family, &(peer->endpoint_ip), addr_str, WG_ADDRSTRLEN) == NULL) {
@@ -140,7 +144,6 @@ static esp_err_t esp_wireguard_peer_init(const wireguard_config_t *config, struc
                                             config->port);
         }
     }
-    ESP_LOGI(TAG, "Setting port, keepalive..");
     peer->endport_port = config->port;
     peer->keep_alive = config->persistent_keepalive;
     err = ESP_OK;
@@ -180,7 +183,6 @@ static esp_err_t esp_wireguard_netif_create(const wireguard_config_t *config)
         goto fail;
     }
 
-    ESP_LOGI(TAG, "attempting netif_add..");
     /* Register the new WireGuard network interface with lwIP */
     wg_netif = netif_add(
             &wg_netif_struct,
@@ -196,9 +198,8 @@ static esp_err_t esp_wireguard_netif_create(const wireguard_config_t *config)
     }
 
     /* Mark the interface as administratively up, link up flag is set
-     * automatically when peer connects 
-     */
-    netif_set_up(wg_netif); 
+     * automatically when peer connects */
+    netif_set_up(wg_netif);
     err = ESP_OK;
 fail:
     return err;
@@ -302,25 +303,20 @@ esp_err_t esp_wireguard_disconnect(wireguard_ctx_t *ctx)
 
     // Clear the IP address to gracefully disconnect any clients while the
     // peers are still valid
-    ESP_LOGI(TAG, "clearing ip addr..");
     netif_set_ipaddr(ctx->netif, IP4_ADDR_ANY4);
 
-    ESP_LOGI(TAG, "running wireguardif_disconnect..");
     lwip_err = wireguardif_disconnect(ctx->netif, wireguard_peer_index);
     if (lwip_err != ERR_OK) {
         ESP_LOGW(TAG, "wireguardif_disconnect: peer_index: %" PRIu8 " err: %i", wireguard_peer_index, lwip_err);
     }
 
-    ESP_LOGI(TAG, "running wireguardif_remove_peer..");
     lwip_err = wireguardif_remove_peer(ctx->netif, wireguard_peer_index);
     if (lwip_err != ERR_OK) {
         ESP_LOGW(TAG, "wireguardif_remove_peer: peer_index: %" PRIu8 " err: %i", wireguard_peer_index, lwip_err);
     }
 
-    ESP_LOGI(TAG, "shutting down if");
     wireguard_peer_index = WIREGUARDIF_INVALID_INDEX;
     wireguardif_shutdown(ctx->netif);
-    ESP_LOGI(TAG, "removing netif");
     netif_remove(ctx->netif);
     wireguardif_fini(ctx->netif);
     netif_set_default(ctx->netif_default);

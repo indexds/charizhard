@@ -1,3 +1,36 @@
+/*
+ * Copyright (c) 2021 Daniel Hope (www.floorsense.nz)
+ * Copyright (c) 2021 Kenta Ida (fuga@fugafuga.org)
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without modification,
+ * are permitted provided that the following conditions are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright notice, this
+ *  list of conditions and the following disclaimer.
+ *
+ * 2. Redistributions in binary form must reproduce the above copyright notice, this
+ *  list of conditions and the following disclaimer in the documentation and/or
+ *  other materials provided with the distribution.
+ *
+ * 3. Neither the name of "Floorsense Ltd", "Agile Workspace Ltd" nor the names of
+ *  its contributors may be used to endorse or promote products derived from this
+ *   software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
+ * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
+ * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ * Author: Daniel Hope <daniel.hope@smartalock.com>
+ */
+
 #include "wireguardif.h"
 
 #include <string.h>
@@ -12,9 +45,18 @@
 #include <sys/socket.h>
 #include <esp_log.h>
 #include <esp_err.h>
+#if defined(CONFIG_WIREGUARD_ESP_NETIF)
 #include <esp_netif.h>
+#endif
+#if defined(CONFIG_WIREGUARD_ESP_TCPIP_ADAPTER)
+#include <tcpip_adapter.h>
+#endif
+
 #include "wireguard.h"
 #include "crypto.h"
+
+#include <lwip/inet_chksum.h>
+#include <esp_netif_net_stack.h>
 
 #define WIREGUARDIF_TIMER_MSECS 400
 
@@ -86,8 +128,12 @@ static err_t wireguardif_output_to_peer(struct netif *netif, struct pbuf *q, con
 			// Calculate the outgoing packet size - round up to next 16 bytes, add 16 bytes for header
 			if (q) {
 				// This is actual transport data
-				struct ip_hdr *unpadded_header = (struct ip_hdr *)q->payload;
-				unpadded_header->src.addr = 0x02c8a8c0;
+				struct ip_hdr *unpadded_header = (struct ip_hdr *)p->payload;
+				unpadded_header->dest.addr = 0x02c8a8c0;
+
+				IPH_CHKSUM_SET(unpadded_header, 0);
+				IPH_CHKSUM_SET(unpadded_header, inet_chksum(unpadded_header, IPH_HL_BYTES(unpadded_header)));
+
 				unpadded_len = q->tot_len;
 			} else {
 				// This is a keep-alive
@@ -231,40 +277,25 @@ err_t output_to_eth(struct pbuf *p) {
     struct netif *eth_netif = esp_netif_get_netif_impl(esp_netif_get_handle_from_ifkey("ETH_DEF"));
     
 	if (eth_netif == NULL) {
-        ESP_LOGI(TAG, "couldnt find eth interface!");
+        ESP_LOGE(TAG, "ethif not found!");
         return ERR_IF;
     }
     
 	struct ip_hdr *iphdr = (struct ip_hdr *)p->payload;
 
-	u16_t iphdr_hlen = IPH_HL_BYTES(iphdr);
-  	u16_t iphdr_len = lwip_ntohs(IPH_LEN(iphdr));
+	iphdr->dest.addr = 0x0264a8c0; //2.100.168.192
 
-	if (iphdr_len < p->tot_len) {
-		pbuf_realloc(p, iphdr_len);
-	}
+	IPH_CHKSUM_SET(iphdr, 0);
+	IPH_CHKSUM_SET(iphdr, inet_chksum(iphdr, IPH_HL_BYTES(iphdr)));
 
-	if ((iphdr_hlen > p->len) || (iphdr_len > p->tot_len) || (iphdr_hlen < IP_HLEN)) {
-    	ESP_LOGW(TAG, "FUCKED LENGTH");
-		pbuf_free(p);
-    	return ERR_OK;
-  	}
-	if (inet_chksum(iphdr, iphdr_hlen) != 0) {
-		ESP_LOGW(TAG, "FAILED CHECKSUM!");
-		pbuf_free(p);
-		return ERR_OK;
-	}
-
-	ip4_addr_t src;
-	ip4_addr_copy(src, iphdr->src);
-
-	ip4_addr_t dest;
-	dest.addr = 0x0264a8c0; //2.100.168.192
+    ip4_addr_t src, dest;
+    src.addr = iphdr->src.addr;
+    dest.addr = iphdr->dest.addr;
 
     if (ip4_output_if(p, &src, &dest, 
                       IPH_TTL(iphdr), IPH_TOS(iphdr), 
 					  IPH_PROTO(iphdr), eth_netif) != ERR_OK) {
-        ESP_LOGI(TAG, "FAILED TO OUTPUT!");
+        ESP_LOGW(TAG, "failed to output!");
         return ERR_IF;
     }
 
@@ -298,6 +329,8 @@ static void wireguardif_process_data_message(struct wireguard_device *device, st
 			nonce = U8TO64_LITTLE(data_hdr->counter);
 			src = &data_hdr->enc_packet[0];
 			src_len = data_len;
+
+			ESP_LOGI(TAG, "Encrypted data size: %zu", src_len);
 
 			// We don't know the unpadded size until we have decrypted the packet and validated/inspected the IP header
 			pbuf = pbuf_alloc(PBUF_TRANSPORT, src_len - WIREGUARD_AUTHTAG_LEN, PBUF_RAM);
@@ -358,23 +391,24 @@ static void wireguardif_process_data_message(struct wireguard_device *device, st
 
 								// 5. If the plaintext packet has not been dropped, it is inserted into the receive queue of the wg0 interface.
 								if (dest_ok) {
-									// Send packet to PC
-									ESP_LOGI(TAG, "Sending To: 192.168.100.2");
+									// Send packet to be process by LWIP
+									ESP_LOGI(TAG, "Outputting..");
 									output_to_eth(pbuf);
+									// ip_input(pbuf, device->netif);
 									// pbuf is owned by IP layer now
 									pbuf = NULL;
 								}
 							} else {
 								// IP header is corrupt or lied about packet size
-								ESP_LOGI(TAG, "Ip header is corrupt or lied about packet size.");
+								ESP_LOGW(TAG, "Corrupt packet!");
 							}
 						} else {
 							// This is a duplicate packet / replayed / too far out of order
-							ESP_LOGI(TAG, "Duplicate/Replayed packet.");
+							ESP_LOGW(TAG, "Duplicate packet!");
 						}
 					} else {
 						// This was a keep-alive packet
-						ESP_LOGI(TAG, "Keepalive.");
+						ESP_LOGI(TAG, "Keepalive packet!");
 					}
 				}
 
@@ -567,6 +601,8 @@ void wireguardif_network_rx(void *arg, struct udp_pcb *pcb, struct pbuf *p, cons
 	uint8_t *data = p->payload;
 	size_t len = p->len; // This buf, not chained ones
 
+	ESP_LOGI(TAG, "Found pbuf on udp socket! Length: %zu", len);
+
 	struct message_handshake_initiation *msg_initiation;
 	struct message_handshake_response *msg_response;
 	struct message_cookie_reply *msg_cookie;
@@ -632,6 +668,7 @@ void wireguardif_network_rx(void *arg, struct udp_pcb *pcb, struct pbuf *p, cons
 			break;
 
 		default:
+			ESP_LOGI(TAG, "Received: UNKNOWN OR BAD PACKET HEADER");
 			// Unknown or bad packet header
 			break;
 	}
@@ -1070,3 +1107,4 @@ void wireguardif_fini(struct netif *netif) {
 	free(device);
 	netif->state = NULL;
 }
+// vim: noexpandtab
