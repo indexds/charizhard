@@ -131,7 +131,7 @@ pub fn start_tunnel(nvs: Arc<Mutex<EspNvs<NvsDefault>>>) -> anyhow::Result<()> {
                 // next time we make an attempt to connect to a peer.
                 esp!(esp_netif_tcpip_exec(Some(wg_disconnect_wrapper), ctx as *mut core::ffi::c_void))?;
 
-                return Ok(());
+                return Err(anyhow::anyhow!("Failed to connect."));
             }
 
             match esp!(esp_wireguardif_peer_is_up(ctx)) {

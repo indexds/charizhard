@@ -21,11 +21,10 @@ pub fn set_routes(http_server: &mut EspHttpServer<'static>, nvs: Arc<Mutex<EspNv
         if *locked {
             log::warn!("Wireguard connection already in progress!");
             return Ok(());
-        } else {
-            *locked = true;
-
-            drop(locked);
         }
+
+        *locked = true;
+        drop(locked);
 
         // This is so fucking stupid but we can't do otherwise
         let nvs = Arc::clone(&nvs);
@@ -52,9 +51,9 @@ pub fn set_routes(http_server: &mut EspHttpServer<'static>, nvs: Arc<Mutex<EspNv
             let nvs = Arc::clone(&nvs);
 
             thread::spawn(move || {
-                if wg::sync_systime().is_ok() {
-                    _ = wg::start_tunnel(Arc::clone(&nvs));
-                } else {
+                let success = wg::sync_systime().is_ok() && wg::start_tunnel(Arc::clone(&nvs)).is_ok();
+
+                if !success {
                     let mut locked = WG_LOCK.lock().unwrap();
                     *locked = false;
                 }
@@ -70,20 +69,21 @@ pub fn set_routes(http_server: &mut EspHttpServer<'static>, nvs: Arc<Mutex<EspNv
 
     // Handler to disconnect from the wireguard peer
     http_server.fn_handler("/disconnect-wg", Method::Get, move |mut request| {
-        let mut locked = WG_LOCK.lock().unwrap();
+        let locked = WG_LOCK.lock().unwrap();
 
         if !*locked {
             log::warn!("No wireguard connection found for disconnection attempt!");
             return Ok(());
-        } else {
-            super::check_ip(&mut request)?;
-
-            thread::spawn(move || {
-                _ = wg::end_tunnel();
-            });
-
-            *locked = false;
         }
+
+        super::check_ip(&mut request)?;
+
+        thread::spawn(move || {
+            if wg::end_tunnel().is_ok() {
+                let mut locked = WG_LOCK.lock().unwrap();
+                *locked = false;
+            }
+        });
 
         let connection = request.connection();
 
