@@ -53,7 +53,7 @@ esp_idf_sdkconfig="sdkconfig"
 
 [dependencies]
 log = { version = "0.4", default-features = false }
-esp-idf-svc = { version = "0.51", default-features = false, features = ["std"] }
+esp-idf-svc = { version = "0.50.1", default-features = false, features = ["std"] }
 embedded-svc = { version = "0.28", default-features = true }
 heapless = { version = "0.8", default-features = false }
 anyhow = { version = "1.0", default-features = false }
