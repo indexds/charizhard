@@ -8,10 +8,24 @@ use esp_idf_svc::nvs::{EspNvs, NvsDefault};
 use crate::utils::nvs::WgConfig;
 use crate::wireguard as wg;
 
+lazy_static::lazy_static!(
+    static ref WG_LOCK: Mutex<bool> = Mutex::new(false);
+);
+
 /// Sets the Wireguard related routes for the http server.
 pub fn set_routes(http_server: &mut EspHttpServer<'static>, nvs: Arc<Mutex<EspNvs<NvsDefault>>>) -> anyhow::Result<()> {
     // Handler to connect to a wireguard peer
     http_server.fn_handler("/connect-wg", Method::Post, {
+        let mut locked = WG_LOCK.lock().unwrap();
+
+        if *locked {
+            log::warn!("Wireguard connection already in progress!");
+            return Ok(());
+        }
+        else {
+            *locked = true;
+        }
+
         // This is so fucking stupid but we can't do otherwise
         let nvs = Arc::clone(&nvs);
 
@@ -52,6 +66,16 @@ pub fn set_routes(http_server: &mut EspHttpServer<'static>, nvs: Arc<Mutex<EspNv
 
     // Handler to disconnect from the wireguard peer
     http_server.fn_handler("/disconnect-wg", Method::Get, move |mut request| {
+        let locked = WG_LOCK.lock().unwrap();
+
+        if !*locked {
+            log::warn!("No wireguard connection found for disconnection attempt!");
+            return Ok(());
+        }
+        else {
+            *locked = false;
+        }
+
         super::check_ip(&mut request)?;
 
         thread::spawn(move || {
