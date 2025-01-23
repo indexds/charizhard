@@ -9,7 +9,7 @@ use crate::utils::nvs::WgConfig;
 use crate::wireguard as wg;
 
 lazy_static::lazy_static!(
-    static ref WG_LOCK: Mutex<bool> = Mutex::new(false);
+    static ref WG_LOCK: Arc<Mutex<bool>> = Arc::new(Mutex::new(false));
 );
 
 /// Sets the Wireguard related routes for the http server.
@@ -23,6 +23,8 @@ pub fn set_routes(http_server: &mut EspHttpServer<'static>, nvs: Arc<Mutex<EspNv
             return Ok(());
         } else {
             *locked = true;
+
+            drop(locked);
         }
 
         // This is so fucking stupid but we can't do otherwise
@@ -52,6 +54,9 @@ pub fn set_routes(http_server: &mut EspHttpServer<'static>, nvs: Arc<Mutex<EspNv
             thread::spawn(move || {
                 if wg::sync_systime().is_ok() {
                     _ = wg::start_tunnel(Arc::clone(&nvs));
+                } else {
+                    let mut locked = WG_LOCK.lock().unwrap();
+                    *locked = false;
                 }
             });
 
@@ -71,14 +76,14 @@ pub fn set_routes(http_server: &mut EspHttpServer<'static>, nvs: Arc<Mutex<EspNv
             log::warn!("No wireguard connection found for disconnection attempt!");
             return Ok(());
         } else {
+            super::check_ip(&mut request)?;
+
+            thread::spawn(move || {
+                _ = wg::end_tunnel();
+            });
+
             *locked = false;
         }
-
-        super::check_ip(&mut request)?;
-
-        thread::spawn(move || {
-            _ = wg::end_tunnel();
-        });
 
         let connection = request.connection();
 
