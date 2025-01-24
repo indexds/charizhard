@@ -16,20 +16,26 @@ lazy_static::lazy_static!(
 pub fn set_routes(http_server: &mut EspHttpServer<'static>, nvs: Arc<Mutex<EspNvs<NvsDefault>>>) -> anyhow::Result<()> {
     // Handler to connect to a wireguard peer
     http_server.fn_handler("/connect-wg", Method::Post, {
-        let mut locked = WG_LOCK.lock().unwrap();
-
-        if *locked {
-            log::warn!("Wireguard connection already in progress!");
-            return Ok(());
-        }
-
-        *locked = true;
-        drop(locked);
-
         // This is so fucking stupid but we can't do otherwise
         let nvs = Arc::clone(&nvs);
 
         move |mut request| {
+            {
+                let mut locked = WG_LOCK.lock().unwrap();
+                if *locked {
+                    log::warn!("Wireguard connection already in progress!");
+                    
+                    let connection = request.connection();
+                    
+                    connection.initiate_response(204, Some("OK"), &[("Content-Type", "text/html")])?;
+                    
+                    return Ok::<(), Error>(());
+                }
+                else {
+                    *locked = true;
+                }
+            }
+
             super::check_ip(&mut request)?;
 
             let mut body = Vec::new();
@@ -69,11 +75,19 @@ pub fn set_routes(http_server: &mut EspHttpServer<'static>, nvs: Arc<Mutex<EspNv
 
     // Handler to disconnect from the wireguard peer
     http_server.fn_handler("/disconnect-wg", Method::Get, move |mut request| {
-        let locked = WG_LOCK.lock().unwrap();
+        
+        {
+            let locked = WG_LOCK.lock().unwrap();
 
-        if !*locked {
-            log::warn!("No wireguard connection found for disconnection attempt!");
-            return Ok(());
+            if !*locked {
+                log::warn!("No wireguard connection found for disconnection attempt!");
+
+                let connection = request.connection();
+
+                connection.initiate_response(204, Some("OK"), &[("Content-Type", "text/html")])?;
+
+                return Ok::<(), Error>(());
+            }
         }
 
         super::check_ip(&mut request)?;
