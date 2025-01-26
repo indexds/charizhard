@@ -24,14 +24,13 @@ pub fn set_routes(http_server: &mut EspHttpServer<'static>, nvs: Arc<Mutex<EspNv
                 let mut locked = WG_LOCK.lock().unwrap();
                 if *locked {
                     log::warn!("Wireguard connection already in progress!");
-                    
+
                     let connection = request.connection();
-                    
+
                     connection.initiate_response(204, Some("OK"), &[("Content-Type", "text/html")])?;
-                    
+
                     return Ok::<(), Error>(());
-                }
-                else {
+                } else {
                     *locked = true;
                 }
             }
@@ -75,7 +74,6 @@ pub fn set_routes(http_server: &mut EspHttpServer<'static>, nvs: Arc<Mutex<EspNv
 
     // Handler to disconnect from the wireguard peer
     http_server.fn_handler("/disconnect-wg", Method::Get, move |mut request| {
-        
         {
             let locked = WG_LOCK.lock().unwrap();
 
