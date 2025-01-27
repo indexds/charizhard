@@ -19,7 +19,7 @@ mod wifi_routes;
 
 use super::net::ETH_GATEWAY;
 
-/// Checks that the source ip of the request is [`ALLOWED_IP`]. This function
+/// Checks that the source ip of the request is [`ETH_GATEWAY`] + 1. This function
 /// should be called at the beginning of every call to `fn_handler` to prevent
 /// security vulnerabilities.
 fn check_ip(request: &mut Request<&mut EspHttpConnection>) -> anyhow::Result<()> {

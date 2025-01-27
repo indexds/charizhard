@@ -66,7 +66,7 @@ pub fn wifi_set_config(nvs: Arc<Mutex<EspNvs<NvsDefault>>>, wifi: Arc<Mutex<EspW
 }
 
 /// Connects the WiFi network interface to the configured access point.
-/// Care should be taken to always call [`set_configuration`] before this
+/// Care should be taken to always call [`EspWifi::set_configuration`] before this
 /// function.
 pub fn wifi_connect(wifi: Arc<Mutex<EspWifi<'static>>>) -> anyhow::Result<()> {
     log::info!("Connecting to access point..");
