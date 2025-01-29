@@ -46,6 +46,11 @@ pub fn index_html(wg_config: &WgConfig) -> anyhow::Result<String> {
                             <input type="text" id="pubkey" name="pubkey" value="{}" placeholder="e.g. vBTj0TgQpQzjBWEShTkd8AU=" required>
                             <div class="error" id="pubkey-error"></div>
 
+                            <div class="checkbox-container">
+                                <input type="checkbox" id="remember-me" name="remember_me">
+                                <label for="remember-me">Remember me</label>
+                            </div>
+
                             <button type="submit">Connect</button>
                         </form>
                     </div>
