@@ -2,7 +2,7 @@ use heapless::String;
 use serde::Deserialize;
 
 /// Wrapper on [`heapless::String`] for additional capabilities.
-#[derive(Deserialize)]
+#[derive(Deserialize, Default)]
 pub struct HeaplessString<const N: usize>(pub String<N>);
 
 impl<const N: usize> HeaplessString<N> {
