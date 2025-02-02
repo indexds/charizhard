@@ -31,11 +31,11 @@ impl WgConfig {
     const DEFAULT_ADDR: &str = "";
     const DEFAULT_CLIENT_PRIV: &str = "";
     const DEFAULT_PORT: &str = "51820";
+    const DEFAULT_REMEMBER_ME: &'static str = "false";
     const DEFAULT_SERVER_PUB: &str = "";
     const PORT: &'static str = "PORT";
-    const SERVER_PUB: &'static str = "PUBKEY";
     const REMEMBER_ME: &'static str = "REMBER";
-    const DEFAULT_REMEMBER_ME: &'static str = "false";
+    const SERVER_PUB: &'static str = "PUBKEY";
 
     /// Retrieves and sanitizes a key from nvs.
     fn get_key<const N: usize>(nvs: &MutexGuard<'_, EspNvs<NvsDefault>>, key: &str) -> anyhow::Result<String<N>> {
@@ -63,8 +63,7 @@ impl WgConfig {
 
         if config.remember_me.as_str() == "on" {
             nvs.set_str(Self::REMEMBER_ME, "true")?;
-        }
-        else {
+        } else {
             nvs.set_str(Self::REMEMBER_ME, "false")?;
         }
 
@@ -99,11 +98,12 @@ impl WgConfig {
                     .unwrap_or_else(|_| Self::DEFAULT_SERVER_PUB.try_into().unwrap()),
             )
             .clean_string(),
-            
-            remember_me: HeaplessString(WgConfig::get_key::<8>(&nvs, Self::REMEMBER_ME)
+
+            remember_me: HeaplessString(
+                WgConfig::get_key::<8>(&nvs, Self::REMEMBER_ME)
                     .unwrap_or_else(|_| Self::DEFAULT_REMEMBER_ME.try_into().unwrap()),
             )
-            .clean_string()
+            .clean_string(),
         })
     }
 }

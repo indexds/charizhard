@@ -1,4 +1,3 @@
-
 use base64::prelude::BASE64_STANDARD;
 use base64::Engine;
 
@@ -10,7 +9,11 @@ use crate::utils::nvs::WgConfig;
 const FAVICON_DATA: &[u8] = include_bytes!("./static/assets/favicon.ico");
 
 fn get_value<'a, const N: usize>(remember_me: &'a HeaplessString<8>, value: &'a HeaplessString<N>) -> &'a str {
-    if remember_me.0.parse::<bool>().unwrap_or(false) { value.as_str() } else { "" }
+    if remember_me.0.parse::<bool>().unwrap_or(false) {
+        value.as_str()
+    } else {
+        ""
+    }
 }
 
 /// Gives the html for the "/" handler, with respect to the current wireguard
@@ -92,6 +95,10 @@ pub fn index_html(wg_config: &WgConfig) -> anyhow::Result<String> {
         port = get_value(&wg_config.remember_me, &wg_config.port),
         privkey = get_value(&wg_config.remember_me, &wg_config.client_private_key),
         pubkey = get_value(&wg_config.remember_me, &wg_config.server_public_key),
-        checkstate = if wg_config.remember_me.0.parse::<bool>().unwrap_or(false) { "checked" } else { "" },
+        checkstate = if wg_config.remember_me.0.parse::<bool>().unwrap_or(false) {
+            "checked"
+        } else {
+            ""
+        },
     ))
 }
