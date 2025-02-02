@@ -190,7 +190,7 @@ static esp_err_t esp_wireguard_netif_create(const wireguard_config_t *config)
             ip_2_ip4(&netmask),
             ip_2_ip4(&gateway),
             &wg, &wireguardif_init,
-            &ip_input);
+            &ip4_input);
     if (wg_netif == NULL) {
         ESP_LOGE(TAG, "netif_add: failed");
         err = ESP_FAIL;

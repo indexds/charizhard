@@ -296,8 +296,6 @@ static void wireguardif_process_data_message(struct wireguard_device *device, st
 			src = &data_hdr->enc_packet[0];
 			src_len = data_len;
 
-			ESP_LOGD(TAG, "Encrypted data size: %zu", src_len);
-
 			// We don't know the unpadded size until we have decrypted the packet and validated/inspected the IP header
 			pbuf = pbuf_alloc(PBUF_TRANSPORT, src_len - WIREGUARD_AUTHTAG_LEN, PBUF_RAM);
 			if (pbuf) {
@@ -358,21 +356,18 @@ static void wireguardif_process_data_message(struct wireguard_device *device, st
 								// 5. If the plaintext packet has not been dropped, it is inserted into the receive queue of the wg0 interface.
 								if (dest_ok) {
 									// Send packet to be process by LWIP
-									ip_input(pbuf, device->netif);
+									ip4_input(pbuf, device->netif);
 									// pbuf is owned by IP layer now
 									pbuf = NULL;
 								}
 							} else {
 								// IP header is corrupt or lied about packet size
-								ESP_LOGD(TAG, "Corrupt packet!");
 							}
 						} else {
 							// This is a duplicate packet / replayed / too far out of order
-							ESP_LOGD(TAG, "Duplicate packet!");
 						}
 					} else {
 						// This was a keep-alive packet
-						ESP_LOGD(TAG, "Keepalive packet!");
 					}
 				}
 
@@ -398,7 +393,6 @@ static struct pbuf *wireguardif_initiate_handshake(struct wireguard_device *devi
 	struct pbuf *pbuf = NULL;
 	err_t err = ERR_OK;
 	if (wireguard_create_handshake_initiation(device, peer, msg)) {
-		ESP_LOGD(TAG, "sending initiation packet");
 		pbuf = pbuf_alloc(PBUF_TRANSPORT, sizeof(struct message_handshake_initiation), PBUF_RAM);
 		if (pbuf) {
 			err = pbuf_take(pbuf, msg, sizeof(struct message_handshake_initiation));
@@ -429,7 +423,6 @@ static void wireguardif_send_handshake_response(struct wireguard_device *device,
 
 		wireguard_start_session(peer, false);
 
-		ESP_LOGD(TAG, "sending handshake response packet");
 		pbuf = pbuf_alloc(PBUF_TRANSPORT, sizeof(struct message_handshake_response), PBUF_RAM);
 		if (pbuf) {
 			err = pbuf_take(pbuf, &packet, sizeof(struct message_handshake_response));
@@ -574,7 +567,6 @@ void wireguardif_network_rx(void *arg, struct udp_pcb *pcb, struct pbuf *p, cons
 
 	switch (type) {
 		case MESSAGE_HANDSHAKE_INITIATION:
-			ESP_LOGD(TAG, "Received: MESSAGE_HANDSHAKE_INITIATION");
 			msg_initiation = (struct message_handshake_initiation *)data;
 			// Check mac1 (and optionally mac2) are correct - note it may internally generate a cookie reply packet
 			if (wireguardif_check_initiation_message(device, msg_initiation, addr, port)) {
@@ -591,7 +583,6 @@ void wireguardif_network_rx(void *arg, struct udp_pcb *pcb, struct pbuf *p, cons
 			break;
 
 		case MESSAGE_HANDSHAKE_RESPONSE:
-			ESP_LOGD(TAG, "Received: MESSAGE_HANDSHAKE_RESPONSE");
 			msg_response = (struct message_handshake_response *)data;
 
 			// Check mac1 (and optionally mac2) are correct - note it may internally generate a cookie reply packet
@@ -606,7 +597,6 @@ void wireguardif_network_rx(void *arg, struct udp_pcb *pcb, struct pbuf *p, cons
 			break;
 
 		case MESSAGE_COOKIE_REPLY:
-			ESP_LOGD(TAG, "Received: MESSAGE_COOKIE_REPLY");
 			msg_cookie = (struct message_cookie_reply *)data;
 			peer = peer_lookup_by_handshake(device, msg_cookie->receiver);
 			if (peer) {
@@ -620,7 +610,6 @@ void wireguardif_network_rx(void *arg, struct udp_pcb *pcb, struct pbuf *p, cons
 			break;
 
 		case MESSAGE_TRANSPORT_DATA:
-			ESP_LOGD(TAG, "Received: MESSAGE_TRANSPORT_DATA");
 			msg_data = (struct message_transport_data *)data;
 			peer = peer_lookup_by_receiver(device, msg_data->receiver);
 			if (peer) {
@@ -630,7 +619,6 @@ void wireguardif_network_rx(void *arg, struct udp_pcb *pcb, struct pbuf *p, cons
 			break;
 
 		default:
-			ESP_LOGD(TAG, "Received: UNKNOWN OR BAD PACKET HEADER");
 			// Unknown or bad packet header
 			break;
 	}
