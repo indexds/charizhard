@@ -20,6 +20,9 @@ pub struct WgConfig {
 
     #[serde(rename = "pubkey")]
     pub server_public_key: HeaplessString<64>,
+
+    #[serde(rename = "rember", default)]
+    pub remember_me: HeaplessString<8>,
 }
 
 impl WgConfig {
@@ -28,8 +31,10 @@ impl WgConfig {
     const DEFAULT_ADDR: &str = "";
     const DEFAULT_CLIENT_PRIV: &str = "";
     const DEFAULT_PORT: &str = "51820";
+    const DEFAULT_REMEMBER_ME: &'static str = "false";
     const DEFAULT_SERVER_PUB: &str = "";
     const PORT: &'static str = "PORT";
+    const REMEMBER_ME: &'static str = "REMBER";
     const SERVER_PUB: &'static str = "PUBKEY";
 
     /// Retrieves and sanitizes a key from nvs.
@@ -55,6 +60,12 @@ impl WgConfig {
         nvs.set_str(Self::PORT, config.port.clean_string().as_str())?;
         nvs.set_str(Self::CLIENT_PRIV, config.client_private_key.clean_string().as_str())?;
         nvs.set_str(Self::SERVER_PUB, config.server_public_key.clean_string().as_str())?;
+
+        if config.remember_me.as_str() == "on" {
+            nvs.set_str(Self::REMEMBER_ME, "true")?;
+        } else {
+            nvs.set_str(Self::REMEMBER_ME, "false")?;
+        }
 
         Ok(())
     }
@@ -85,6 +96,12 @@ impl WgConfig {
             server_public_key: HeaplessString(
                 WgConfig::get_key::<64>(&nvs, Self::SERVER_PUB)
                     .unwrap_or_else(|_| Self::DEFAULT_SERVER_PUB.try_into().unwrap()),
+            )
+            .clean_string(),
+
+            remember_me: HeaplessString(
+                WgConfig::get_key::<8>(&nvs, Self::REMEMBER_ME)
+                    .unwrap_or_else(|_| Self::DEFAULT_REMEMBER_ME.try_into().unwrap()),
             )
             .clean_string(),
         })

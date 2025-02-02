@@ -8,6 +8,10 @@ use esp_idf_svc::nvs::{EspNvs, NvsDefault};
 use crate::utils::nvs::WgConfig;
 use crate::wireguard as wg;
 
+lazy_static::lazy_static!(
+    static ref WG_LOCK: Arc<Mutex<bool>> = Arc::new(Mutex::new(false));
+);
+
 /// Sets the Wireguard related routes for the http server.
 pub fn set_routes(http_server: &mut EspHttpServer<'static>, nvs: Arc<Mutex<EspNvs<NvsDefault>>>) -> anyhow::Result<()> {
     // Handler to connect to a wireguard peer
@@ -16,6 +20,21 @@ pub fn set_routes(http_server: &mut EspHttpServer<'static>, nvs: Arc<Mutex<EspNv
         let nvs = Arc::clone(&nvs);
 
         move |mut request| {
+            {
+                let mut locked = WG_LOCK.lock().unwrap();
+                if *locked {
+                    log::warn!("Wireguard connection already in progress!");
+
+                    let connection = request.connection();
+
+                    connection.initiate_response(204, Some("OK"), &[("Content-Type", "text/html")])?;
+
+                    return Ok::<(), Error>(());
+                } else {
+                    *locked = true;
+                }
+            }
+
             super::check_ip(&mut request)?;
 
             let mut body = Vec::new();
@@ -37,8 +56,11 @@ pub fn set_routes(http_server: &mut EspHttpServer<'static>, nvs: Arc<Mutex<EspNv
             let nvs = Arc::clone(&nvs);
 
             thread::spawn(move || {
-                if wg::sync_systime().is_ok() {
-                    _ = wg::start_tunnel(Arc::clone(&nvs));
+                let success = wg::sync_systime().is_ok() && wg::start_tunnel(Arc::clone(&nvs)).is_ok();
+
+                if !success {
+                    let mut locked = WG_LOCK.lock().unwrap();
+                    *locked = false;
                 }
             });
 
@@ -52,10 +74,27 @@ pub fn set_routes(http_server: &mut EspHttpServer<'static>, nvs: Arc<Mutex<EspNv
 
     // Handler to disconnect from the wireguard peer
     http_server.fn_handler("/disconnect-wg", Method::Get, move |mut request| {
+        {
+            let locked = WG_LOCK.lock().unwrap();
+
+            if !*locked {
+                log::warn!("No wireguard connection found for disconnection attempt!");
+
+                let connection = request.connection();
+
+                connection.initiate_response(204, Some("OK"), &[("Content-Type", "text/html")])?;
+
+                return Ok::<(), Error>(());
+            }
+        }
+
         super::check_ip(&mut request)?;
 
         thread::spawn(move || {
-            _ = wg::end_tunnel();
+            if wg::end_tunnel().is_ok() {
+                let mut locked = WG_LOCK.lock().unwrap();
+                *locked = false;
+            }
         });
 
         let connection = request.connection();

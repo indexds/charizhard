@@ -205,3 +205,13 @@ button:active{
     margin-top: 10px;
     margin-bottom: 10px;
 }
+
+.checkbox-container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.checkbox-container input[type="checkbox"] {
+    margin: 0;
+}

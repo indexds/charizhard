@@ -55,6 +55,9 @@
 #include "wireguard.h"
 #include "crypto.h"
 
+#include <lwip/inet_chksum.h>
+#include <esp_netif_net_stack.h>
+
 #define WIREGUARDIF_TIMER_MSECS 400
 
 #define TAG "wireguardif"
@@ -125,6 +128,7 @@ static err_t wireguardif_output_to_peer(struct netif *netif, struct pbuf *q, con
 			// Calculate the outgoing packet size - round up to next 16 bytes, add 16 bytes for header
 			if (q) {
 				// This is actual transport data
+
 				unpadded_len = q->tot_len;
 			} else {
 				// This is a keep-alive
@@ -340,12 +344,19 @@ static void wireguardif_process_data_message(struct wireguard_device *device, st
 								}
 							}
 #endif /* LWIP_IPV4 */
+#if LWIP_IPV6
+							if (IPH_V(iphdr) == 6) {
+								// TODO: IPV6 support for route filtering
+								header_len = PP_NTOHS(IPH_LEN(iphdr));
+								dest_ok = true;
+							}
+#endif /* LWIP_IPV6 */
 							if (header_len <= pbuf->tot_len) {
 
 								// 5. If the plaintext packet has not been dropped, it is inserted into the receive queue of the wg0 interface.
 								if (dest_ok) {
 									// Send packet to be process by LWIP
-									ip_input(pbuf, device->netif);
+									ip4_input(pbuf, device->netif);
 									// pbuf is owned by IP layer now
 									pbuf = NULL;
 								}
@@ -382,7 +393,6 @@ static struct pbuf *wireguardif_initiate_handshake(struct wireguard_device *devi
 	struct pbuf *pbuf = NULL;
 	err_t err = ERR_OK;
 	if (wireguard_create_handshake_initiation(device, peer, msg)) {
-		ESP_LOGD(TAG, "sending initiation packet");
 		pbuf = pbuf_alloc(PBUF_TRANSPORT, sizeof(struct message_handshake_initiation), PBUF_RAM);
 		if (pbuf) {
 			err = pbuf_take(pbuf, msg, sizeof(struct message_handshake_initiation));
@@ -413,7 +423,6 @@ static void wireguardif_send_handshake_response(struct wireguard_device *device,
 
 		wireguard_start_session(peer, false);
 
-		ESP_LOGD(TAG, "sending handshake response packet");
 		pbuf = pbuf_alloc(PBUF_TRANSPORT, sizeof(struct message_handshake_response), PBUF_RAM);
 		if (pbuf) {
 			err = pbuf_take(pbuf, &packet, sizeof(struct message_handshake_response));
@@ -429,11 +438,25 @@ static void wireguardif_send_handshake_response(struct wireguard_device *device,
 static size_t get_source_addr_port(const ip_addr_t *addr, u16_t port, uint8_t *buf, size_t buflen) {
 	size_t result = 0;
 
+#if LWIP_IPV4
 	if (IP_IS_V4(addr) && (buflen >= 4)) {
 		U32TO8_BIG(buf + result, PP_NTOHL(ip4_addr_get_u32(ip_2_ip4(addr))));
 		result += 4;
 	}
-
+#endif
+#if LWIP_IPV6
+	if (IP_IS_V6(addr) && (buflen >= 16)) {
+		U16TO8_BIG(buf + result + 0, IP6_ADDR_BLOCK1(ip_2_ip6(addr)));
+		U16TO8_BIG(buf + result + 2, IP6_ADDR_BLOCK2(ip_2_ip6(addr)));
+		U16TO8_BIG(buf + result + 4, IP6_ADDR_BLOCK3(ip_2_ip6(addr)));
+		U16TO8_BIG(buf + result + 6, IP6_ADDR_BLOCK4(ip_2_ip6(addr)));
+		U16TO8_BIG(buf + result + 8, IP6_ADDR_BLOCK5(ip_2_ip6(addr)));
+		U16TO8_BIG(buf + result + 10, IP6_ADDR_BLOCK6(ip_2_ip6(addr)));
+		U16TO8_BIG(buf + result + 12, IP6_ADDR_BLOCK7(ip_2_ip6(addr)));
+		U16TO8_BIG(buf + result + 14, IP6_ADDR_BLOCK8(ip_2_ip6(addr)));
+		result += 16;
+	}
+#endif
 	if (buflen >= result + 2) {
 		U16TO8_BIG(buf + result, port);
 		result += 2;
@@ -726,9 +749,6 @@ err_t wireguardif_update_endpoint(struct netif *netif, u8_t peer_index, const ip
 
 
 err_t wireguardif_add_peer(struct netif *netif, struct wireguardif_peer *p, u8_t *peer_index) {
-
-	ESP_LOGI(TAG, "registering wg peer..");
-
 	LWIP_ASSERT("netif != NULL", (netif != NULL));
 	LWIP_ASSERT("state != NULL", (netif->state != NULL));
 	LWIP_ASSERT("p != NULL", (p != NULL));
@@ -784,7 +804,6 @@ err_t wireguardif_add_peer(struct netif *netif, struct wireguardif_peer *p, u8_t
 			*peer_index = WIREGUARDIF_INVALID_INDEX;
 		}
 	}
-	ESP_LOGI(TAG, "peer add success!");
 	return result;
 }
 
@@ -890,6 +909,7 @@ err_t wireguardif_init(struct netif *netif) {
 	uint8_t private_key[WIREGUARD_PRIVATE_KEY_LEN];
 	size_t private_key_len = sizeof(private_key);
 
+#if defined(CONFIG_WIREGUARD_ESP_NETIF)
 	struct netif* underlying_netif = NULL;
 	char lwip_netif_name[8] = {0,};
 
@@ -905,7 +925,15 @@ err_t wireguardif_init(struct netif *netif) {
 		result = ERR_IF;
 		goto fail;
 	}
-
+#elif defined(CONFIG_WIREGUARD_ESP_TCPIP_ADAPTER)
+	void *underlying_netif = NULL;
+	err = tcpip_adapter_get_netif(TCPIP_ADAPTER_IF_STA, &underlying_netif);
+	if (err != ESP_OK) {
+		ESP_LOGE(TAG, "tcpip_adapter_get_netif: %s", esp_err_to_name(err));
+		result = ERR_IF;
+		goto fail;
+	}
+#endif
 	ESP_LOGD(TAG, "underlying_netif = %p", underlying_netif);
 
 	LWIP_ASSERT("netif != NULL", (netif != NULL));

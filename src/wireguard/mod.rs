@@ -70,7 +70,7 @@ fn create_ctx_conf(
         fw_mark: 0,
         public_key: CString::new(nvs_conf.server_public_key.as_str())?.into_raw(),
         preshared_key: ptr::null_mut(),
-        allowed_ip: CString::new("192.168.200.1")?.into_raw(),
+        allowed_ip: CString::new("192.168.200.2")?.into_raw(),
         allowed_ip_mask: CString::new("255.255.255.0")?.into_raw(),
         endpoint: CString::new(nvs_conf.address.as_str())?.into_raw(),
         port: nvs_conf.port.as_str().parse()?,
@@ -131,7 +131,7 @@ pub fn start_tunnel(nvs: Arc<Mutex<EspNvs<NvsDefault>>>) -> anyhow::Result<()> {
                 // next time we make an attempt to connect to a peer.
                 esp!(esp_netif_tcpip_exec(Some(wg_disconnect_wrapper), ctx as *mut core::ffi::c_void))?;
 
-                return Ok(());
+                return Err(anyhow::anyhow!("Failed to connect."));
             }
 
             match esp!(esp_wireguardif_peer_is_up(ctx)) {
